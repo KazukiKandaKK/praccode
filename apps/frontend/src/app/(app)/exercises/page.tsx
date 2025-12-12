@@ -1,58 +1,60 @@
 import Link from 'next/link';
+import { auth } from '@/lib/auth';
+import { redirect } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ExercisesHeader } from '@/components/exercises-header';
 import { getDifficultyLabel, getDifficultyColor, getLanguageLabel, getLearningGoalLabel } from '@/lib/utils';
 import { Search, Filter, ArrowRight } from 'lucide-react';
 
-// In a real app, this would fetch from the API
-async function getExercises() {
-  // Mock data for MVP
-  return {
-    exercises: [
-      {
-        id: '00000000-0000-0000-0000-000000000001',
-        title: 'TypeScript サービスクラスの責務を理解する',
-        language: 'typescript',
-        difficulty: 2,
-        learningGoals: ['responsibility', 'data_flow', 'error_handling'],
-      },
-      {
-        id: '00000000-0000-0000-0000-000000000002',
-        title: 'React カスタムフックのデータフェッチパターン',
-        language: 'typescript',
-        difficulty: 3,
-        learningGoals: ['data_flow', 'error_handling', 'performance'],
-      },
-      {
-        id: '00000000-0000-0000-0000-000000000003',
-        title: 'API エラーハンドリングパターン',
-        language: 'typescript',
-        difficulty: 3,
-        learningGoals: ['error_handling', 'responsibility'],
-      },
-    ],
-    pagination: {
-      page: 1,
-      limit: 10,
-      total: 3,
-      totalPages: 1,
-    },
-  };
+interface Exercise {
+  id: string;
+  title: string;
+  language: string;
+  difficulty: number;
+  learningGoals: string[];
+}
+
+// APIから問題一覧を取得
+async function getExercises(): Promise<{ exercises: Exercise[] }> {
+  try {
+    const apiUrl = process.env.API_URL || 'http://localhost:3001';
+    const response = await fetch(`${apiUrl}/exercises`, {
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      console.error('Failed to fetch exercises:', response.status);
+      return { exercises: [] };
+    }
+
+    const data = await response.json();
+    return {
+      exercises: data.exercises.map((e: Exercise & { learningGoals: unknown }) => ({
+        ...e,
+        learningGoals: Array.isArray(e.learningGoals) ? e.learningGoals : [],
+      })),
+    };
+  } catch (error) {
+    console.error('Error fetching exercises:', error);
+    return { exercises: [] };
+  }
 }
 
 export default async function ExercisesPage() {
+  const session = await auth();
+  
+  if (!session?.user?.id) {
+    redirect('/login');
+  }
+
   const { exercises } = await getExercises();
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-white">学習</h1>
-          <p className="text-slate-400 mt-1">コードを読んで理解力を鍛えましょう</p>
-        </div>
-      </div>
+      {/* Header with Create Button */}
+      <ExercisesHeader userId={session.user.id} />
 
       {/* Filters */}
       <div className="flex flex-wrap gap-4 mb-6">
@@ -96,7 +98,7 @@ export default async function ExercisesPage() {
             <Filter className="w-8 h-8 text-slate-500" />
           </div>
           <h3 className="text-lg font-medium text-white mb-2">学習が見つかりません</h3>
-          <p className="text-slate-400">フィルターを変更してみてください</p>
+          <p className="text-slate-400">「問題を作成」ボタンから新しい問題を生成してみましょう</p>
         </div>
       )}
     </div>
@@ -106,13 +108,7 @@ export default async function ExercisesPage() {
 function ExerciseCard({
   exercise,
 }: {
-  exercise: {
-    id: string;
-    title: string;
-    language: string;
-    difficulty: number;
-    learningGoals: string[];
-  };
+  exercise: Exercise;
 }) {
   return (
     <Card className="group hover:border-cyan-500/30 transition-colors">
@@ -153,4 +149,3 @@ function ExerciseCard({
     </Card>
   );
 }
-

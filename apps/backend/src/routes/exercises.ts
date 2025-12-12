@@ -1,6 +1,8 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma.js';
 import { z } from 'zod';
+import { generateExercise } from '../llm/generator.js';
+import { checkOllamaHealth } from '../llm/ollama.js';
 
 const exerciseFiltersSchema = z.object({
   language: z.string().optional(),
@@ -105,6 +107,84 @@ export async function exerciseRoutes(fastify: FastifyInstance) {
     });
 
     return reply.status(201).send(submission);
+  });
+
+  // POST /exercises/generate - LLMで問題を生成
+  const generateExerciseSchema = z.object({
+    language: z.string().min(1),
+    difficulty: z.coerce.number().min(1).max(5),
+    userId: z.string().uuid(),
+  });
+
+  fastify.post('/generate', async (request, reply) => {
+    // リクエストのバリデーション
+    const body = generateExerciseSchema.parse(request.body);
+    const { language, difficulty, userId } = body;
+
+    // ユーザーの存在確認
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      return reply.status(404).send({ error: 'User not found' });
+    }
+
+    // Ollamaの接続確認
+    const isHealthy = await checkOllamaHealth();
+    if (!isHealthy) {
+      return reply.status(503).send({
+        error: 'LLM service is not available. Please ensure Ollama is running.',
+      });
+    }
+
+    try {
+      // LLMで問題を生成
+      const generated = await generateExercise({ language, difficulty });
+
+      // データベースに保存
+      const exercise = await prisma.exercise.create({
+        data: {
+          title: generated.title,
+          language,
+          difficulty,
+          sourceType: 'generated',
+          code: generated.code,
+          learningGoals: generated.learningGoals,
+          createdById: userId,
+          questions: {
+            create: generated.questions.map((q, index) => ({
+              questionIndex: index,
+              questionText: q.questionText,
+              idealAnswerPoints: q.idealAnswerPoints,
+            })),
+          },
+        },
+        include: {
+          questions: true,
+        },
+      });
+
+      return reply.status(201).send({
+        id: exercise.id,
+        title: exercise.title,
+      });
+    } catch (error) {
+      console.error('Failed to generate exercise:', error);
+      return reply.status(500).send({
+        error: 'Failed to generate exercise',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  });
+
+  // GET /exercises/generate/health - LLM接続状態確認
+  fastify.get('/generate/health', async (request, reply) => {
+    const isHealthy = await checkOllamaHealth();
+    return reply.send({
+      status: isHealthy ? 'ok' : 'unavailable',
+      message: isHealthy ? 'Ollama is running' : 'Ollama is not available',
+    });
   });
 }
 

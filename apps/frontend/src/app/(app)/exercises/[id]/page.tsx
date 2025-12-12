@@ -10,8 +10,7 @@ import { getDifficultyLabel, getDifficultyColor, getLanguageLabel, getLearningGo
 import { Lightbulb, Send, Loader2, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 
-// Mock data - in real app, fetch from API
-const mockExercises: Record<string, {
+interface Exercise {
   id: string;
   title: string;
   language: string;
@@ -23,235 +22,60 @@ const mockExercises: Record<string, {
     questionIndex: number;
     questionText: string;
   }>;
-}> = {
-  '00000000-0000-0000-0000-000000000001': {
-    id: '00000000-0000-0000-0000-000000000001',
-    title: 'TypeScript サービスクラスの責務を理解する',
-    language: 'typescript',
-    difficulty: 2,
-    learningGoals: ['responsibility', 'data_flow', 'error_handling'],
-    code: `import { prisma } from '../lib/prisma';
-
-export class UserService {
-  async createUser(email: string, name: string) {
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (existingUser) {
-      throw new Error('User already exists');
-    }
-
-    const user = await prisma.user.create({
-      data: { email, name },
-    });
-
-    await this.sendWelcomeEmail(user.email);
-    return user;
-  }
-
-  private async sendWelcomeEmail(email: string) {
-    // メール送信ロジック（省略）
-    console.log(\`Sending welcome email to \${email}\`);
-  }
-
-  async getUserById(id: string) {
-    const user = await prisma.user.findUnique({
-      where: { id },
-    });
-
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    return user;
-  }
-}`,
-    questions: [
-      {
-        id: 'q1',
-        questionIndex: 0,
-        questionText: 'このクラスの責務を1〜2文で説明してください。',
-      },
-      {
-        id: 'q2',
-        questionIndex: 1,
-        questionText: 'createUser メソッドのデータフロー（入力→処理→出力）を説明してください。',
-      },
-      {
-        id: 'q3',
-        questionIndex: 2,
-        questionText: 'このコードで気になる点や改善すべき点があれば挙げてください。',
-      },
-    ],
-  },
-  '00000000-0000-0000-0000-000000000002': {
-    id: '00000000-0000-0000-0000-000000000002',
-    title: 'React カスタムフックのデータフェッチパターン',
-    language: 'typescript',
-    difficulty: 3,
-    learningGoals: ['data_flow', 'error_handling', 'performance'],
-    code: `import { useState, useEffect, useCallback } from 'react';
-
-interface FetchState<T> {
-  data: T | null;
-  loading: boolean;
-  error: Error | null;
 }
-
-export function useFetch<T>(url: string): FetchState<T> & { refetch: () => void } {
-  const [state, setState] = useState<FetchState<T>>({
-    data: null,
-    loading: true,
-    error: null,
-  });
-
-  const fetchData = useCallback(async () => {
-    setState(prev => ({ ...prev, loading: true, error: null }));
-    
-    try {
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        throw new Error(\`HTTP error! status: \${response.status}\`);
-      }
-      
-      const data = await response.json();
-      setState({ data, loading: false, error: null });
-    } catch (error) {
-      setState({ 
-        data: null, 
-        loading: false, 
-        error: error instanceof Error ? error : new Error('Unknown error') 
-      });
-    }
-  }, [url]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  return { ...state, refetch: fetchData };
-}`,
-    questions: [
-      {
-        id: 'q1',
-        questionIndex: 0,
-        questionText: 'このカスタムフックが提供する機能を説明してください。',
-      },
-      {
-        id: 'q2',
-        questionIndex: 1,
-        questionText: 'useCallback と useEffect の依存配列について、なぜこの構成になっているか説明してください。',
-      },
-      {
-        id: 'q3',
-        questionIndex: 2,
-        questionText: 'このフックの改善点やエッジケースへの対応について考えてください。',
-      },
-    ],
-  },
-  '00000000-0000-0000-0000-000000000003': {
-    id: '00000000-0000-0000-0000-000000000003',
-    title: 'API エラーハンドリングパターン',
-    language: 'typescript',
-    difficulty: 3,
-    learningGoals: ['error_handling', 'responsibility'],
-    code: `export class ApiError extends Error {
-  constructor(
-    message: string,
-    public statusCode: number,
-    public code: string
-  ) {
-    super(message);
-    this.name = 'ApiError';
-  }
-}
-
-export async function handleApiResponse<T>(
-  response: Response
-): Promise<T> {
-  if (!response.ok) {
-    const errorBody = await response.json().catch(() => ({}));
-    
-    throw new ApiError(
-      errorBody.message || 'An error occurred',
-      response.status,
-      errorBody.code || 'UNKNOWN_ERROR'
-    );
-  }
-
-  return response.json();
-}
-
-export function isApiError(error: unknown): error is ApiError {
-  return error instanceof ApiError;
-}
-
-export function getErrorMessage(error: unknown): string {
-  if (isApiError(error)) {
-    switch (error.code) {
-      case 'UNAUTHORIZED':
-        return 'ログインが必要です';
-      case 'FORBIDDEN':
-        return 'アクセス権限がありません';
-      case 'NOT_FOUND':
-        return 'リソースが見つかりません';
-      case 'VALIDATION_ERROR':
-        return '入力内容に誤りがあります';
-      default:
-        return error.message;
-    }
-  }
-  
-  if (error instanceof Error) {
-    return error.message;
-  }
-  
-  return '予期しないエラーが発生しました';
-}`,
-    questions: [
-      {
-        id: 'q1',
-        questionIndex: 0,
-        questionText: 'ApiError クラスの設計意図を説明してください。',
-      },
-      {
-        id: 'q2',
-        questionIndex: 1,
-        questionText: 'handleApiResponse 関数でのエラー処理の流れを説明してください。',
-      },
-      {
-        id: 'q3',
-        questionIndex: 2,
-        questionText: 'このエラーハンドリング設計の良い点と改善点を挙げてください。',
-      },
-    ],
-  },
-};
 
 export default function ExerciseDetailPage() {
   const params = useParams();
   const router = useRouter();
   const exerciseId = params.id as string;
 
-  const [exercise, setExercise] = useState<typeof mockExercises[string] | null>(null);
+  const [exercise, setExercise] = useState<Exercise | null>(null);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [hints, setHints] = useState<Record<number, string>>({});
   const [loadingHint, setLoadingHint] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // In real app, fetch from API
-    const ex = mockExercises[exerciseId];
-    if (ex) {
-      setExercise(ex);
-      // Initialize empty answers
-      const initialAnswers: Record<number, string> = {};
-      ex.questions.forEach((q) => {
-        initialAnswers[q.questionIndex] = '';
-      });
-      setAnswers(initialAnswers);
+    async function fetchExercise() {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+        const response = await fetch(`${apiUrl}/exercises/${exerciseId}`);
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            setError('問題が見つかりません');
+          } else {
+            setError('問題の読み込みに失敗しました');
+          }
+          setExercise(null);
+          return;
+        }
+
+        const data = (await response.json()) as Exercise;
+        setExercise(data);
+
+        // Initialize empty answers
+        const initialAnswers: Record<number, string> = {};
+        data.questions.forEach((q) => {
+          initialAnswers[q.questionIndex] = '';
+        });
+        setAnswers(initialAnswers);
+      } catch (err) {
+        console.error('Error fetching exercise:', err);
+        setExercise(null);
+        setError('問題の読み込みに失敗しました');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    if (exerciseId) {
+      fetchExercise();
     }
   }, [exerciseId]);
 
@@ -278,10 +102,27 @@ export default function ExerciseDetailPage() {
     router.push(`/submissions/mock-submission-id`);
   };
 
-  if (!exercise) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+      </div>
+    );
+  }
+
+  if (error || !exercise) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-400 mb-4">{error || '問題が見つかりません'}</p>
+          <Link
+            href="/exercises"
+            className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            学習一覧に戻る
+          </Link>
+        </div>
       </div>
     );
   }
@@ -323,7 +164,7 @@ export default function ExerciseDetailPage() {
         {/* Right: Questions */}
         <div className="space-y-6">
           {exercise.questions.map((question, index) => (
-            <Card key={question.id}>
+            <Card key={question.id || String(question.questionIndex)}>
               <CardHeader>
                 <CardTitle className="text-lg">
                   問題 {index + 1}
