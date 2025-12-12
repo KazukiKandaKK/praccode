@@ -5,6 +5,7 @@ import { exerciseRoutes } from './routes/exercises.js';
 import { submissionRoutes } from './routes/submissions.js';
 import { progressRoutes } from './routes/progress.js';
 import { hintRoutes } from './routes/hints.js';
+import { userRoutes } from './routes/users.js';
 
 const fastify = Fastify({
   logger: true,
@@ -27,6 +28,7 @@ fastify.register(exerciseRoutes, { prefix: '/exercises' });
 fastify.register(submissionRoutes, { prefix: '/submissions' });
 fastify.register(progressRoutes, { prefix: '/me' });
 fastify.register(hintRoutes, { prefix: '/hints' });
+fastify.register(userRoutes, { prefix: '/users' });
 
 // エラーハンドリング
 fastify.setErrorHandler((error, request, reply) => {

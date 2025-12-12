@@ -149,9 +149,13 @@ export default function SubmissionResultPage() {
     };
   }, [submissionId, apiUrl, fetchSubmission]);
 
+  // Mobile top bar offset (sidebar layout)
+  // On md+ there's no top bar; on mobile, the menu bar is fixed (h-14)
+  const topOffsetClass = 'pt-14 md:pt-0';
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className={`min-h-screen flex items-center justify-center ${topOffsetClass}`}>
         <div className="text-center">
           <Loader2 className="w-8 h-8 text-cyan-400 animate-spin mx-auto" />
           <p className="text-slate-400 mt-4">LLMが評価中です…（数十秒かかる場合があります）</p>
@@ -162,7 +166,7 @@ export default function SubmissionResultPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className={`min-h-screen flex items-center justify-center ${topOffsetClass}`}>
         <div className="text-center">
           <p className="text-red-400 mb-4">{error}</p>
           <Link
@@ -179,7 +183,7 @@ export default function SubmissionResultPage() {
 
   if (!submission) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className={`min-h-screen flex items-center justify-center ${topOffsetClass}`}>
         <p className="text-slate-400">結果が見つかりません</p>
       </div>
     );

@@ -218,7 +218,7 @@ export function EvaluationToastProvider({ children }: { children: React.ReactNod
 
       {/* 処理中インジケーター（右上固定） */}
       {totalPending > 0 && (
-        <div className="fixed top-20 right-4 z-40 space-y-2">
+        <div className="fixed top-4 right-4 z-40 space-y-2">
           {pendingGenerations.length > 0 && (
             <div className="flex items-center gap-3 px-4 py-3 bg-slate-800/95 backdrop-blur border border-violet-500/30 rounded-xl shadow-lg shadow-violet-500/10">
               <div className="relative">
