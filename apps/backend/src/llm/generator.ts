@@ -23,6 +23,7 @@ export type GeneratedExercise = z.infer<typeof generatedExerciseSchema>;
 export interface GenerateExerciseInput {
   language: string;
   difficulty: number;
+  genre: string;
 }
 
 // 言語ごとのコード例のヒント
@@ -43,12 +44,25 @@ const difficultyDescriptions: Record<number, string> = {
   5: 'エキスパートレベル: 高度な設計パターン、パフォーマンス最適化、メタプログラミングなど。',
 };
 
+// ジャンル（プリセット）の説明
+const genreDescriptions: Record<string, string> = {
+  auth: '認証/認可、セッション、トークン、権限チェックなど',
+  database: 'DBアクセス、トランザクション、N+1、スキーマ設計など',
+  error_handling: '例外設計、エラー型、リトライ、失敗時のふるまいなど',
+  api_client: 'HTTPクライアント、リクエスト/レスポンス変換、タイムアウト、リトライなど',
+  async_concurrency: '非同期処理、並行処理、キュー、レースコンディションなど',
+  performance: 'パフォーマンス最適化、キャッシュ、メモ化、ボトルネック分析など',
+  testing: 'テスト設計、モック、テスト容易性、依存の切り方など',
+  refactoring: 'リファクタリング、責務分離、抽象化、命名、構造改善など',
+};
+
 /**
  * 問題生成用のプロンプトを構築
  */
 function buildGenerationPrompt(input: GenerateExerciseInput): string {
   const languageHint = languageHints[input.language] || input.language;
   const difficultyDesc = difficultyDescriptions[input.difficulty] || '中級レベル';
+  const genreDesc = genreDescriptions[input.genre] || input.genre;
 
   return `あなたはソフトウェアエンジニア向けの教育コンテンツ作成者です。
 コードリーディング練習問題を作成してください。
@@ -56,6 +70,7 @@ function buildGenerationPrompt(input: GenerateExerciseInput): string {
 ## 要件
 - 言語: ${input.language}
 - 難易度: ${input.difficulty}/5 (${difficultyDesc})
+- ジャンル: ${input.genre} (${genreDesc})
 - コードの種類: ${languageHint}
 
 ## 出力形式

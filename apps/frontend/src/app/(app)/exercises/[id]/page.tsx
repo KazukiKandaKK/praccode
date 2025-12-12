@@ -7,8 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { getDifficultyLabel, getDifficultyColor, getLanguageLabel, getLearningGoalLabel } from '@/lib/utils';
-import { Lightbulb, Send, Loader2, ChevronLeft } from 'lucide-react';
+import { Lightbulb, Send, Loader2, ChevronLeft, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
+import { useEvaluationToast } from '@/components/evaluation-toast-provider';
 
 interface Exercise {
   id: string;
@@ -28,29 +30,33 @@ export default function ExerciseDetailPage() {
   const params = useParams();
   const router = useRouter();
   const exerciseId = params.id as string;
+  const { data: session, status: sessionStatus } = useSession();
+  const { startEvaluationWatch } = useEvaluationToast();
 
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [hints, setHints] = useState<Record<number, string>>({});
   const [loadingHint, setLoadingHint] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchExercise() {
       try {
         setIsLoading(true);
-        setError(null);
+        setFetchError(null);
 
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
         const response = await fetch(`${apiUrl}/exercises/${exerciseId}`);
 
         if (!response.ok) {
           if (response.status === 404) {
-            setError('問題が見つかりません');
+            setFetchError('問題が見つかりません');
           } else {
-            setError('問題の読み込みに失敗しました');
+            setFetchError('問題の読み込みに失敗しました');
           }
           setExercise(null);
           return;
@@ -68,7 +74,7 @@ export default function ExerciseDetailPage() {
       } catch (err) {
         console.error('Error fetching exercise:', err);
         setExercise(null);
-        setError('問題の読み込みに失敗しました');
+        setFetchError('問題の読み込みに失敗しました');
       } finally {
         setIsLoading(false);
       }
@@ -95,12 +101,76 @@ export default function ExerciseDetailPage() {
   };
 
   const handleSubmit = async () => {
+    if (!session?.user?.id) {
+      router.push('/login');
+      return;
+    }
+
     setIsSubmitting(true);
-    // In real app, create submission, save answers, then evaluate
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    // Redirect to results page
-    router.push(`/submissions/mock-submission-id`);
+    setSubmitError(null);
+
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+      // 1) submission 作成
+      const createRes = await fetch(`${apiUrl}/exercises/${exerciseId}/submissions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: session.user.id }),
+      });
+
+      if (!createRes.ok) {
+        const t = await createRes.text();
+        throw new Error(`サブミッション作成に失敗しました: ${createRes.status} ${t}`);
+      }
+
+      const created = (await createRes.json()) as { id: string };
+      const submissionId = created.id;
+
+      // 2) 回答保存
+      const payloadAnswers = Object.entries(answers).map(([questionIndex, answerText]) => ({
+        questionIndex: Number(questionIndex),
+        answerText,
+      }));
+
+      const saveRes = await fetch(`${apiUrl}/submissions/${submissionId}/answers`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answers: payloadAnswers }),
+      });
+
+      if (!saveRes.ok) {
+        const t = await saveRes.text();
+        throw new Error(`回答保存に失敗しました: ${saveRes.status} ${t}`);
+      }
+
+      // 3) 評価キック（非同期）
+      const evalRes = await fetch(`${apiUrl}/submissions/${submissionId}/evaluate`, {
+        method: 'POST',
+      });
+
+      if (!evalRes.ok && evalRes.status !== 202) {
+        const t = await evalRes.text();
+        throw new Error(`評価開始に失敗しました: ${evalRes.status} ${t}`);
+      }
+
+      // 4) バックグラウンドで評価完了を監視（トースト通知付き）
+      startEvaluationWatch(submissionId, exercise?.title || '問題');
+      setIsSubmitted(true);
+    } catch (e) {
+      setSubmitError(e instanceof Error ? e.message : '送信に失敗しました');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  if (sessionStatus === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -110,11 +180,11 @@ export default function ExerciseDetailPage() {
     );
   }
 
-  if (error || !exercise) {
+  if (fetchError || !exercise) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-400 mb-4">{error || '問題が見つかりません'}</p>
+          <p className="text-red-400 mb-4">{fetchError || '問題が見つかりません'}</p>
           <Link
             href="/exercises"
             className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300"
@@ -219,24 +289,69 @@ export default function ExerciseDetailPage() {
           ))}
 
           {/* Submit Button */}
-          <Button
-            size="lg"
-            className="w-full"
-            onClick={handleSubmit}
-            disabled={isSubmitting || Object.values(answers).every((a) => !a.trim())}
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                評価中...
-              </>
-            ) : (
-              <>
-                <Send className="w-5 h-5 mr-2" />
-                回答を送信して評価を受ける
-              </>
-            )}
-          </Button>
+          {submitError && (
+            <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+              <p className="text-sm text-red-400">{submitError}</p>
+            </div>
+          )}
+
+          {isSubmitted ? (
+            <div className="space-y-4">
+              <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-6 h-6 text-emerald-400" />
+                  <div>
+                    <p className="text-emerald-400 font-medium">回答を送信しました！</p>
+                    <p className="text-sm text-slate-400 mt-1">
+                      AIが評価中です。完了したら右上に通知が届きます。
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => router.push('/exercises')}
+                >
+                  <ChevronLeft className="w-4 h-4 mr-2" />
+                  他の問題を解く
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="flex-1"
+                  onClick={() => {
+                    setIsSubmitted(false);
+                    setAnswers({});
+                    exercise?.questions.forEach((q) => {
+                      setAnswers((prev) => ({ ...prev, [q.questionIndex]: '' }));
+                    });
+                  }}
+                >
+                  もう一度解く
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button
+              size="lg"
+              className="w-full"
+              onClick={handleSubmit}
+              disabled={isSubmitting || Object.values(answers).every((a) => !a.trim())}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  送信中...
+                </>
+              ) : (
+                <>
+                  <Send className="w-5 h-5 mr-2" />
+                  回答を送信して評価を受ける
+                </>
+              )}
+            </Button>
+          )}
         </div>
       </div>
     </div>

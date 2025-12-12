@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { X, Sparkles, Loader2 } from 'lucide-react';
+import { useEvaluationToast } from '@/components/evaluation-toast-provider';
 
 interface CreateExerciseDialogProps {
   isOpen: boolean;
@@ -28,10 +28,22 @@ const DIFFICULTIES = [
   { value: 5, label: 'エキスパート', description: '高度な設計パターン' },
 ];
 
+const GENRES = [
+  { value: 'auth', label: '認証/認可' },
+  { value: 'database', label: 'DB' },
+  { value: 'error_handling', label: 'エラーハンドリング' },
+  { value: 'api_client', label: 'APIクライアント' },
+  { value: 'async_concurrency', label: '非同期/並行' },
+  { value: 'performance', label: 'パフォーマンス' },
+  { value: 'testing', label: 'テスト' },
+  { value: 'refactoring', label: 'リファクタリング' },
+];
+
 export function CreateExerciseDialog({ isOpen, onClose, userId }: CreateExerciseDialogProps) {
-  const router = useRouter();
+  const { startGenerationWatch } = useEvaluationToast();
   const [language, setLanguage] = useState('typescript');
   const [difficulty, setDifficulty] = useState(2);
+  const [genre, setGenre] = useState('error_handling');
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,19 +63,20 @@ export function CreateExerciseDialog({ isOpen, onClose, userId }: CreateExercise
         body: JSON.stringify({
           language,
           difficulty,
+          genre,
           userId,
         }),
       });
 
-      if (!response.ok) {
+      if (!response.ok && response.status !== 202) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to generate exercise');
       }
 
       const data = await response.json();
-      
-      // 生成された問題ページに遷移
-      router.push(`/exercises/${data.id}`);
+
+      // 非同期生成開始: ダイアログを閉じてバックグラウンド監視開始
+      startGenerationWatch(data.id);
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : '問題の生成に失敗しました');
@@ -115,6 +128,29 @@ export function CreateExerciseDialog({ isOpen, onClose, userId }: CreateExercise
                   }`}
                 >
                   {lang.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* ジャンル選択 */}
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              ジャンル
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {GENRES.map((g) => (
+                <button
+                  key={g.value}
+                  onClick={() => setGenre(g.value)}
+                  disabled={isGenerating}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    genre === g.value
+                      ? 'bg-cyan-500 text-slate-900'
+                      : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                  }`}
+                >
+                  {g.label}
                 </button>
               ))}
             </div>
@@ -176,7 +212,7 @@ export function CreateExerciseDialog({ isOpen, onClose, userId }: CreateExercise
             {isGenerating ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                AIが問題を生成中...
+                送信中...
               </>
             ) : (
               <>
@@ -186,11 +222,9 @@ export function CreateExerciseDialog({ isOpen, onClose, userId }: CreateExercise
             )}
           </Button>
 
-          {isGenerating && (
-            <p className="text-xs text-center text-slate-400">
-              生成には30秒〜1分程度かかることがあります
-            </p>
-          )}
+          <p className="text-xs text-center text-slate-400">
+            生成完了後、右上に通知が届きます
+          </p>
         </CardContent>
       </Card>
     </div>

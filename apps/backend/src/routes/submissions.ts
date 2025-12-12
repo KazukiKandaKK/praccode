@@ -81,19 +81,16 @@ export async function submissionRoutes(fastify: FastifyInstance) {
     return reply.send(updated);
   });
 
-  // POST /submissions/:id/evaluate - LLM評価実行
+  // POST /submissions/:id/evaluate - LLM評価実行（非同期）
   fastify.post('/:id/evaluate', async (request, reply) => {
     const { id } = request.params as { id: string };
 
     const submission = await prisma.submission.findUnique({
       where: { id },
       include: {
-        answers: { orderBy: { questionIndex: 'asc' } },
-        exercise: {
-          include: {
-            questions: { orderBy: { questionIndex: 'asc' } },
-          },
-        },
+        // ここではステータス確認が主目的。詳細はジョブ側で再取得する
+        answers: { select: { id: true }, take: 1 },
+        exercise: { select: { id: true } },
       },
     });
 
@@ -105,63 +102,89 @@ export async function submissionRoutes(fastify: FastifyInstance) {
       return reply.status(400).send({ error: 'Already evaluated' });
     }
 
-    const scores = [];
+    if (submission.status === 'SUBMITTED') {
+      // すでに評価キューに乗っている想定
+      return reply.status(202).send({ submissionId: id, status: 'queued' });
+    }
 
-    // 各設問を評価
-    for (const answer of submission.answers) {
-      const question = submission.exercise.questions.find(
-        (q) => q.questionIndex === answer.questionIndex
-      );
+    // 二重起動防止: 先に SUBMITTED に遷移
+    await prisma.submission.update({
+      where: { id },
+      data: { status: 'SUBMITTED' },
+    });
 
-      if (!question || !answer.answerText) {
-        continue;
-      }
-
+    // バックグラウンドで評価実行（ジョブ風）
+    setImmediate(async () => {
       try {
-        const result = await evaluateAnswer({
-          code: submission.exercise.code,
-          question: question.questionText,
-          idealPoints: question.idealAnswerPoints as string[],
-          userAnswer: answer.answerText,
-        });
-
-        // 結果をDBに保存
-        await prisma.submissionAnswer.update({
-          where: { id: answer.id },
-          data: {
-            score: result.score,
-            level: result.level,
-            llmFeedback: result.feedback,
-            aspects: result.aspects || {},
+        const jobSubmission = await prisma.submission.findUnique({
+          where: { id },
+          include: {
+            answers: { orderBy: { questionIndex: 'asc' } },
+            exercise: {
+              include: {
+                questions: { orderBy: { questionIndex: 'asc' } },
+              },
+            },
           },
         });
 
-        scores.push({
-          questionIndex: answer.questionIndex,
-          ...result,
+        if (!jobSubmission) return;
+
+        for (const answer of jobSubmission.answers) {
+          const question = jobSubmission.exercise.questions.find(
+            (q) => q.questionIndex === answer.questionIndex
+          );
+
+          if (!question || !answer.answerText) {
+            continue;
+          }
+
+          try {
+            const result = await evaluateAnswer({
+              code: jobSubmission.exercise.code,
+              question: question.questionText,
+              idealPoints: question.idealAnswerPoints as string[],
+              userAnswer: answer.answerText,
+            });
+
+            await prisma.submissionAnswer.update({
+              where: { id: answer.id },
+              data: {
+                score: result.score,
+                level: result.level,
+                llmFeedback: result.feedback,
+                aspects: result.aspects || {},
+              },
+            });
+          } catch (error) {
+            fastify.log.error(error, `Failed to evaluate answer ${answer.id}`);
+            await prisma.submissionAnswer.update({
+              where: { id: answer.id },
+              data: {
+                score: 0,
+                level: 'D',
+                llmFeedback: '評価中にエラーが発生しました。',
+                aspects: {},
+              },
+            });
+          }
+        }
+
+        await prisma.submission.update({
+          where: { id },
+          data: { status: 'EVALUATED' },
         });
       } catch (error) {
-        fastify.log.error(error, `Failed to evaluate answer ${answer.id}`);
-        scores.push({
-          questionIndex: answer.questionIndex,
-          score: 0,
-          level: 'D' as const,
-          feedback: '評価中にエラーが発生しました。',
-          aspects: {},
+        fastify.log.error(error, `Evaluation job failed for submission ${id}`);
+        // 失敗してもEVALUATEDにしてUIを進める（フィードバックは各設問に入れてある想定）
+        await prisma.submission.update({
+          where: { id },
+          data: { status: 'EVALUATED' },
         });
       }
-    }
-
-    // ステータスを更新
-    await prisma.submission.update({
-      where: { id },
-      data: { status: 'EVALUATED' },
     });
 
-    return reply.send({
-      submissionId: id,
-      scores,
-    });
+    return reply.status(202).send({ submissionId: id, status: 'queued' });
   });
 }
 

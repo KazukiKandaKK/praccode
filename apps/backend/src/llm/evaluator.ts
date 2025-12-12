@@ -1,7 +1,5 @@
-import { Mastra } from '@mastra/core';
 import { z } from 'zod';
-
-const mastra = new Mastra({});
+import { generateWithOllama } from './ollama.js';
 
 export interface EvaluateAnswerInput {
   code: string;
@@ -64,48 +62,25 @@ ${input.userAnswer}
 export async function evaluateAnswer(input: EvaluateAnswerInput): Promise<EvaluateAnswerOutput> {
   const prompt = buildPrompt(input);
 
-  const agent = mastra.getAgent('code-answer-evaluator');
-
-  // Mastra経由でOpenAI APIを呼び出し
-  // 注: 実際のMastra設定に応じて調整が必要
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content:
-            'あなたはコードリーディングの回答を評価する専門家です。JSON形式で回答してください。',
-        },
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-      temperature: 0.3,
-      response_format: { type: 'json_object' },
-    }),
+  const response = await generateWithOllama(prompt, {
+    temperature: 0.3,
+    maxTokens: 1024,
+    jsonMode: true,
   });
 
-  if (!response.ok) {
-    throw new Error(`OpenAI API error: ${response.status}`);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(response);
+  } catch {
+    // JSONパースに失敗した場合、コードブロックを除去して再試行
+    const jsonMatch = response.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (jsonMatch) {
+      parsed = JSON.parse(jsonMatch[1]);
+    } else {
+      throw new Error(`Failed to parse LLM response as JSON: ${response.substring(0, 200)}`);
+    }
   }
 
-  const data = (await response.json()) as {
-    choices?: Array<{ message?: { content?: string } }>;
-  };
-  const content = data.choices?.[0]?.message?.content;
-
-  if (!content) {
-    throw new Error('No response from OpenAI');
-  }
-
-  const parsed = JSON.parse(content);
   return outputSchema.parse(parsed);
 }
 

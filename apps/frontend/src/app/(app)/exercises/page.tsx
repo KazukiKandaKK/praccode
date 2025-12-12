@@ -13,6 +13,7 @@ interface Exercise {
   title: string;
   language: string;
   difficulty: number;
+  genre?: string | null;
   learningGoals: string[];
 }
 

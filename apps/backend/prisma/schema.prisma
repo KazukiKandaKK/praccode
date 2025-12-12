@@ -75,17 +75,19 @@ model VerificationToken {
 
 // 学習（問題）
 model Exercise {
-  id            String       @id @default(uuid())
+  id            String         @id @default(uuid())
   title         String
-  language      String       // typescript, go, ruby, etc.
-  difficulty    Int          // 1-5
-  sourceType    String       @default("embedded") @map("source_type")
-  sourceUrl     String?      @map("source_url")
-  code          String       @db.Text
-  learningGoals Json         @default("[]") @map("learning_goals")
-  createdById   String       @map("created_by_id")
-  createdAt     DateTime     @default(now()) @map("created_at")
-  updatedAt     DateTime     @updatedAt @map("updated_at")
+  language      String         // typescript, go, ruby, etc.
+  difficulty    Int            // 1-5
+  genre         String?        // auth, database, error_handling, ...
+  status        ExerciseStatus @default(READY) // GENERATING, READY, FAILED
+  sourceType    String         @default("embedded") @map("source_type")
+  sourceUrl     String?        @map("source_url")
+  code          String         @db.Text
+  learningGoals Json           @default("[]") @map("learning_goals")
+  createdById   String         @map("created_by_id")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
 
   createdBy   User                       @relation("CreatedExercises", fields: [createdById], references: [id])
   questions   ExerciseReferenceAnswer[]
@@ -130,6 +132,12 @@ enum SubmissionStatus {
   DRAFT
   SUBMITTED
   EVALUATED
+}
+
+enum ExerciseStatus {
+  GENERATING
+  READY
+  FAILED
 }
 
 // 個別の回答
