@@ -2,6 +2,11 @@ import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma.js';
 import { z } from 'zod';
 import { evaluateAnswer } from '../llm/evaluator.js';
+import {
+  emitEvaluationComplete,
+  emitEvaluationFailed,
+  onEvaluationEvent,
+} from '../lib/evaluation-events.js';
 
 const answerInputSchema = z.object({
   answers: z.array(
@@ -12,7 +17,97 @@ const answerInputSchema = z.object({
   ),
 });
 
+const submissionListQuerySchema = z.object({
+  userId: z.string().uuid(),
+  status: z.enum(['DRAFT', 'SUBMITTED', 'EVALUATED']).optional(),
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(50).default(20),
+});
+
 export async function submissionRoutes(fastify: FastifyInstance) {
+  // GET /submissions - ユーザーのサブミッション一覧
+  fastify.get('/', async (request, reply) => {
+    const query = submissionListQuerySchema.parse(request.query);
+    const { userId, status, page, limit } = query;
+
+    const where = {
+      userId,
+      ...(status && { status }),
+    };
+
+    const [submissions, total] = await Promise.all([
+      prisma.submission.findMany({
+        where,
+        include: {
+          exercise: {
+            select: {
+              id: true,
+              title: true,
+              language: true,
+              difficulty: true,
+              genre: true,
+            },
+          },
+          answers: {
+            select: {
+              score: true,
+              level: true,
+            },
+          },
+        },
+        orderBy: { updatedAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.submission.count({ where }),
+    ]);
+
+    // 各サブミッションの平均スコアと評価レベルを計算
+    const submissionsWithStats = submissions.map((sub) => {
+      const evaluatedAnswers = sub.answers.filter(
+        (a) => a.score !== null && a.level !== null
+      );
+      const avgScore =
+        evaluatedAnswers.length > 0
+          ? Math.round(
+              evaluatedAnswers.reduce((sum, a) => sum + (a.score || 0), 0) /
+                evaluatedAnswers.length
+            )
+          : null;
+      const overallLevel =
+        avgScore !== null
+          ? avgScore >= 90
+            ? 'A'
+            : avgScore >= 70
+            ? 'B'
+            : avgScore >= 50
+            ? 'C'
+            : 'D'
+          : null;
+
+      return {
+        id: sub.id,
+        status: sub.status,
+        createdAt: sub.createdAt,
+        updatedAt: sub.updatedAt,
+        exercise: sub.exercise,
+        avgScore,
+        overallLevel,
+        answerCount: sub.answers.length,
+      };
+    });
+
+    return reply.send({
+      submissions: submissionsWithStats,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
+  });
+
   // GET /submissions/:id - サブミッション詳細取得
   fastify.get('/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
@@ -174,6 +269,10 @@ export async function submissionRoutes(fastify: FastifyInstance) {
           where: { id },
           data: { status: 'EVALUATED' },
         });
+
+        // 評価完了イベントを発行（SSE通知用）
+        emitEvaluationComplete(id);
+        fastify.log.info(`Evaluation completed for submission ${id}`);
       } catch (error) {
         fastify.log.error(error, `Evaluation job failed for submission ${id}`);
         // 失敗してもEVALUATEDにしてUIを進める（フィードバックは各設問に入れてある想定）
@@ -181,10 +280,79 @@ export async function submissionRoutes(fastify: FastifyInstance) {
           where: { id },
           data: { status: 'EVALUATED' },
         });
+
+        // 評価失敗イベントを発行
+        emitEvaluationFailed(id);
       }
     });
 
     return reply.status(202).send({ submissionId: id, status: 'queued' });
+  });
+
+  // GET /submissions/:id/events - SSEストリーム（評価完了通知）
+  fastify.get('/:id/events', async (request, reply) => {
+    const { id } = request.params as { id: string };
+
+    // サブミッションの存在確認
+    const submission = await prisma.submission.findUnique({
+      where: { id },
+      select: { status: true },
+    });
+
+    if (!submission) {
+      return reply.status(404).send({ error: 'Submission not found' });
+    }
+
+    // 既に評価済みの場合は即座にイベントを送信して終了
+    if (submission.status === 'EVALUATED') {
+      reply.raw.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+        'Access-Control-Allow-Origin': '*',
+      });
+      reply.raw.write(`event: evaluated\ndata: ${JSON.stringify({ submissionId: id, status: 'EVALUATED' })}\n\n`);
+      reply.raw.end();
+      return;
+    }
+
+    // SSEヘッダー設定
+    reply.raw.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+      'Access-Control-Allow-Origin': '*',
+    });
+
+    // 接続確認用のコメントを送信
+    reply.raw.write(': connected\n\n');
+
+    // 評価イベントをリスン
+    const cleanup = onEvaluationEvent(id, (event) => {
+      const eventType = event.type === 'evaluated' ? 'evaluated' : 'failed';
+      reply.raw.write(`event: ${eventType}\ndata: ${JSON.stringify(event)}\n\n`);
+      // イベント送信後に接続を閉じる
+      setTimeout(() => {
+        reply.raw.end();
+      }, 100);
+    });
+
+    // クライアント切断時のクリーンアップ
+    request.raw.on('close', () => {
+      cleanup();
+      fastify.log.info(`SSE connection closed for submission ${id}`);
+    });
+
+    // タイムアウト（5分）
+    const timeout = setTimeout(() => {
+      reply.raw.write(`event: timeout\ndata: ${JSON.stringify({ message: 'Connection timeout' })}\n\n`);
+      reply.raw.end();
+      cleanup();
+    }, 5 * 60 * 1000);
+
+    request.raw.on('close', () => {
+      clearTimeout(timeout);
+    });
   });
 }
 

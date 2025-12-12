@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { CodeViewer } from '@/components/code-viewer';
@@ -47,49 +47,107 @@ export default function SubmissionResultPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+  // サブミッションデータを取得
+  const fetchSubmission = useCallback(async () => {
+    try {
+      const res = await fetch(`${apiUrl}/submissions/${submissionId}`, { cache: 'no-store' });
+      if (!res.ok) {
+        const t = await res.text();
+        throw new Error(`取得に失敗しました: ${res.status} ${t}`);
+      }
+      const data = (await res.json()) as SubmissionDto;
+      setSubmission(data);
+      setError(null);
+      return data;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '取得に失敗しました');
+      return null;
+    }
+  }, [apiUrl, submissionId]);
+
   useEffect(() => {
-    let timer: ReturnType<typeof setInterval> | undefined;
+    let eventSource: EventSource | null = null;
+    let pollInterval: ReturnType<typeof setInterval> | null = null;
     let cancelled = false;
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    const init = async () => {
+      // 初回データ取得
+      const data = await fetchSubmission();
+      if (cancelled) return;
 
-    const fetchSubmission = async () => {
-      try {
-        const res = await fetch(`${apiUrl}/submissions/${submissionId}`, { cache: 'no-store' });
-        if (!res.ok) {
-          const t = await res.text();
-          // 404などのエラーはポーリングを止める（無駄なリトライでログを汚さない）
-          if (timer) clearInterval(timer);
-          throw new Error(`取得に失敗しました: ${res.status} ${t}`);
-        }
-        const data = (await res.json()) as SubmissionDto;
-        if (cancelled) return;
-        setSubmission(data);
-        setError(null);
-
-        if (data.status === 'EVALUATED') {
-          if (timer) clearInterval(timer);
-          setLoading(false);
-        } else {
-          // 評価中はローディングを維持
-          setLoading(true);
-        }
-      } catch (e) {
-        if (cancelled) return;
-        if (timer) clearInterval(timer);
-        setError(e instanceof Error ? e.message : '取得に失敗しました');
+      if (!data) {
         setLoading(false);
+        return;
       }
+
+      // 既に評価済みの場合はローディング解除
+      if (data.status === 'EVALUATED') {
+        setLoading(false);
+        return;
+      }
+
+      // 評価中の場合はSSE接続
+      setLoading(true);
+
+      eventSource = new EventSource(`${apiUrl}/submissions/${submissionId}/events`);
+
+      eventSource.addEventListener('evaluated', async () => {
+        if (cancelled) return;
+        // 評価完了イベントを受信したらデータを再取得
+        const updated = await fetchSubmission();
+        if (updated && updated.status === 'EVALUATED') {
+          setLoading(false);
+        }
+        eventSource?.close();
+      });
+
+      eventSource.addEventListener('failed', async () => {
+        if (cancelled) return;
+        // 評価失敗でもデータを再取得
+        await fetchSubmission();
+        setLoading(false);
+        eventSource?.close();
+      });
+
+      eventSource.addEventListener('timeout', () => {
+        if (cancelled) return;
+        setError('評価がタイムアウトしました。リロードしてください。');
+        setLoading(false);
+        eventSource?.close();
+      });
+
+      eventSource.onerror = () => {
+        if (cancelled) return;
+        // SSE接続エラー時はフォールバックとしてポーリング
+        console.warn('SSE connection error, falling back to polling');
+        eventSource?.close();
+
+        // ポーリングにフォールバック
+        pollInterval = setInterval(async () => {
+          const polledData = await fetchSubmission();
+          if (polledData?.status === 'EVALUATED') {
+            if (pollInterval) clearInterval(pollInterval);
+            setLoading(false);
+          }
+        }, 2000);
+
+        // 30秒でポーリングを打ち切り
+        setTimeout(() => {
+          if (pollInterval) clearInterval(pollInterval);
+        }, 30000);
+      };
     };
 
-    fetchSubmission();
-    timer = setInterval(fetchSubmission, 1500);
+    init();
 
     return () => {
       cancelled = true;
-      if (timer) clearInterval(timer);
+      eventSource?.close();
+      if (pollInterval) clearInterval(pollInterval);
     };
-  }, [submissionId]);
+  }, [submissionId, apiUrl, fetchSubmission]);
 
   if (loading) {
     return (
