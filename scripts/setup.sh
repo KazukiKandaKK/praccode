@@ -1,0 +1,77 @@
+#!/bin/bash
+set -e
+
+# Define colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+echo -e "${CYAN}"
+echo "╔════════════════════════════════════════════════════════════╗"
+echo "║           PracCode 開発環境セットアップ                    ║"
+echo "╚════════════════════════════════════════════════════════════╝"
+echo -e "${NC}"
+
+# 現在のディレクトリがプロジェクトルートか確認
+if [ ! -f "package.json" ] || [ ! -d "apps" ]; then
+    echo -e "${RED}エラー: プロジェクトルートディレクトリで実行してください${NC}"
+    exit 1
+fi
+
+# Dockerが起動しているか確認
+if ! docker info > /dev/null 2>&1; then
+    echo -e "${RED}エラー: Docker が起動していません。Docker Desktop を起動してください${NC}"
+    exit 1
+fi
+
+echo -e "${YELLOW}[1/5]${NC} Docker コンテナを起動中..."
+docker compose -f docker-compose.dev.yml up -d db
+
+echo -e "${YELLOW}[2/5]${NC} データベースの起動を待機中..."
+until docker compose -f docker-compose.dev.yml exec -T db pg_isready -U postgres > /dev/null 2>&1; do
+    echo -n "."
+    sleep 1
+done
+echo ""
+echo -e "${GREEN}✓ PostgreSQL が起動しました${NC}"
+
+# API コンテナを起動
+echo -e "${YELLOW}[3/5]${NC} API コンテナを起動中..."
+docker compose -f docker-compose.dev.yml up -d api
+sleep 5
+
+# Prisma マイグレーションとシードデータ投入
+echo -e "${YELLOW}[4/5]${NC} データベースをセットアップ中..."
+docker compose -f docker-compose.dev.yml exec -T api sh -c "pnpm db:push" || {
+    echo -e "${RED}db:push に失敗しました。再試行中...${NC}"
+    sleep 3
+    docker compose -f docker-compose.dev.yml exec -T api sh -c "pnpm db:push"
+}
+
+echo -e "${YELLOW}[5/5]${NC} サンプルデータを投入中..."
+docker compose -f docker-compose.dev.yml exec -T api sh -c "pnpm db:seed"
+
+# Web コンテナを起動
+echo -e "${CYAN}Web コンテナを起動中...${NC}"
+docker compose -f docker-compose.dev.yml up -d web
+
+echo ""
+echo -e "${GREEN}╔════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${GREEN}║           セットアップ完了！                               ║${NC}"
+echo -e "${GREEN}╚════════════════════════════════════════════════════════════╝${NC}"
+echo ""
+echo -e "${CYAN}アクセス URL:${NC}"
+echo -e "  フロントエンド: ${GREEN}http://localhost:3000${NC}"
+echo -e "  API:            ${GREEN}http://localhost:3001${NC}"
+echo ""
+echo -e "${CYAN}サンプルユーザー:${NC}"
+echo -e "  メールアドレス: ${GREEN}user@example.com${NC}"
+echo -e "  パスワード:     ${GREEN}user${NC}"
+echo ""
+echo -e "${YELLOW}ヒント:${NC}"
+echo -e "  - ログを見る: ${CYAN}docker compose -f docker-compose.dev.yml logs -f${NC}"
+echo -e "  - 停止する:   ${CYAN}docker compose -f docker-compose.dev.yml down${NC}"
+echo ""
+
