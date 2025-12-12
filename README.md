@@ -41,6 +41,21 @@ praccode/
 - Docker & Docker Compose
 - OpenAI API Key (オプション: AI評価機能に必要)
 
+### ローカルLLM（Ollama）を使う場合
+
+macでOllamaを起動し、Dockerコンテナから `host.docker.internal:11434` 経由で叩けるようにしています。
+
+```bash
+# 1) Ollama を起動（別ターミナル）
+ollama serve
+
+# 2) モデル取得（初回のみ）
+./llm/scripts/ollama_setup.sh qwen2.5-coder:7b
+
+# 3) 疎通確認（DockerコンテナからホストOllamaへ）
+docker compose -f docker-compose.dev.yml run --rm llm
+```
+
 ### セットアップ
 
 ```bash

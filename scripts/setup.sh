@@ -37,25 +37,25 @@ done
 echo ""
 echo -e "${GREEN}✓ PostgreSQL が起動しました${NC}"
 
-# API コンテナを起動
-echo -e "${YELLOW}[3/5]${NC} API コンテナを起動中..."
-docker compose -f docker-compose.dev.yml up -d api
+# Backend コンテナを起動
+echo -e "${YELLOW}[3/5]${NC} Backend コンテナを起動中..."
+docker compose -f docker-compose.dev.yml up -d backend
 sleep 5
 
 # Prisma マイグレーションとシードデータ投入
 echo -e "${YELLOW}[4/5]${NC} データベースをセットアップ中..."
-docker compose -f docker-compose.dev.yml exec -T api sh -c "pnpm db:push" || {
+docker compose -f docker-compose.dev.yml exec -T backend sh -c "cd /app/apps/backend && pnpm db:push" || {
     echo -e "${RED}db:push に失敗しました。再試行中...${NC}"
     sleep 3
-    docker compose -f docker-compose.dev.yml exec -T api sh -c "pnpm db:push"
+    docker compose -f docker-compose.dev.yml exec -T backend sh -c "cd /app/apps/backend && pnpm db:push"
 }
 
 echo -e "${YELLOW}[5/5]${NC} サンプルデータを投入中..."
-docker compose -f docker-compose.dev.yml exec -T api sh -c "pnpm db:seed"
+docker compose -f docker-compose.dev.yml exec -T backend sh -c "cd /app/apps/backend && pnpm db:seed"
 
-# Web コンテナを起動
-echo -e "${CYAN}Web コンテナを起動中...${NC}"
-docker compose -f docker-compose.dev.yml up -d web
+# Frontend コンテナを起動
+echo -e "${CYAN}Frontend コンテナを起動中...${NC}"
+docker compose -f docker-compose.dev.yml up -d frontend
 
 echo ""
 echo -e "${GREEN}╔════════════════════════════════════════════════════════════╗${NC}"
@@ -74,4 +74,14 @@ echo -e "${YELLOW}ヒント:${NC}"
 echo -e "  - ログを見る: ${CYAN}docker compose -f docker-compose.dev.yml logs -f${NC}"
 echo -e "  - 停止する:   ${CYAN}docker compose -f docker-compose.dev.yml down${NC}"
 echo ""
+
+echo -e "${CYAN}ローカルLLM（Ollama）を使う場合（任意）:${NC}"
+echo -e "  1) mac側でOllamaを起動（別ターミナル）:"
+echo -e "     ${CYAN}ollama serve${NC}"
+echo -e "  2) モデル取得（初回のみ）:"
+echo -e "     ${CYAN}./llm/scripts/ollama_setup.sh qwen2.5-coder:7b${NC}"
+echo -e "  3) Dockerから疎通確認:"
+echo -e "     ${CYAN}docker compose -f docker-compose.dev.yml run --rm llm${NC}"
+echo ""
+
 

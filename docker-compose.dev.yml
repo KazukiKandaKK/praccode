@@ -1,8 +1,5 @@
-# 開発用 docker-compose
-# 使い方: docker compose -f docker-compose.dev.yml up
-
 services:
-  # PostgreSQL データベース
+  # PostgreSQL
   db:
     image: postgres:16-alpine
     container_name: praccode-db
@@ -21,19 +18,19 @@ services:
       timeout: 5s
       retries: 5
 
-  # Fastify バックエンド API (開発モード)
-  api:
+  # Backend API
+  backend:
     build:
       context: .
-      dockerfile: apps/api/Dockerfile
+      dockerfile: apps/backend/Dockerfile
       target: dev
-    container_name: praccode-api
+    container_name: praccode-backend
     restart: unless-stopped
     ports:
       - "3001:3001"
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/praccode?schema=public
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       PORT: 3001
       HOST: 0.0.0.0
       CORS_ORIGIN: http://localhost:3000
@@ -41,17 +38,17 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - ./apps/api/src:/app/apps/api/src
-      - ./apps/api/prisma:/app/apps/api/prisma
+      - ./apps/backend/src:/app/apps/backend/src
+      - ./apps/backend/prisma:/app/apps/backend/prisma
       - ./packages/shared/src:/app/packages/shared/src
 
-  # Next.js フロントエンド (開発モード)
-  web:
+  # Frontend
+  frontend:
     build:
       context: .
-      dockerfile: apps/web/Dockerfile
+      dockerfile: apps/frontend/Dockerfile
       target: dev
-    container_name: praccode-web
+    container_name: praccode-frontend
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -60,19 +57,30 @@ services:
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-development-secret-key}
       GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
       GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
-      # For client-side API calls (browser)
       NEXT_PUBLIC_API_URL: http://localhost:3001
-      # For server-side API calls (container to container)
-      API_URL: http://api:3001
+      API_URL: http://backend:3001
       DATABASE_URL: postgresql://postgres:postgres@db:5432/praccode?schema=public
     depends_on:
-      - api
+      - backend
     volumes:
-      - ./apps/web/src:/app/apps/web/src
-      - ./apps/web/public:/app/apps/web/public
+      - ./apps/frontend/src:/app/apps/frontend/src
+      - ./apps/frontend/public:/app/apps/frontend/public
       - ./packages/shared/src:/app/packages/shared/src
-      - ./apps/api/prisma:/app/apps/api/prisma
+      - ./apps/backend/prisma:/app/apps/backend/prisma
+
+  # LLM smoke-test container (talks to host Ollama)
+  llm:
+    build:
+      context: .
+      dockerfile: llm/Dockerfile
+    environment:
+      OLLAMA_HOST: http://host.docker.internal:11434
+      OLLAMA_MODEL: qwen2.5-coder:7b
+    extra_hosts:
+      # Linuxでも動くように（Docker Desktopでは既に存在することが多い）
+      - "host.docker.internal:host-gateway"
 
 volumes:
   postgres_data:
+
 

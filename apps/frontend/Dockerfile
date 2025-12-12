@@ -8,22 +8,22 @@ WORKDIR /app
 # Dependencies
 FROM base AS deps
 COPY package.json pnpm-workspace.yaml ./
-COPY apps/web/package.json ./apps/web/
+COPY apps/frontend/package.json ./apps/frontend/
 COPY packages/shared/package.json ./packages/shared/
 RUN pnpm install --no-frozen-lockfile
 
 # Development
 FROM base AS dev
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
+COPY --from=deps /app/apps/frontend/node_modules ./apps/frontend/node_modules
 COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
 COPY . .
 
-# Generate Prisma Client for web app
-WORKDIR /app/apps/api
+# Generate Prisma Client for frontend app
+WORKDIR /app/apps/backend
 RUN pnpm db:generate || true
 
-WORKDIR /app/apps/web
+WORKDIR /app/apps/frontend
 
 EXPOSE 3000
 
@@ -32,17 +32,17 @@ CMD ["pnpm", "dev"]
 # Production build
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
+COPY --from=deps /app/apps/frontend/node_modules ./apps/frontend/node_modules
 COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
 COPY . .
 
-WORKDIR /app/apps/web
+WORKDIR /app/apps/frontend
 
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Generate Prisma Client for web app
-# Copy schema and generate client in web's node_modules
-RUN cp -r ../api/prisma ./prisma-temp || true
+# Generate Prisma Client for frontend app
+# Copy schema and generate client in frontend's node_modules
+RUN cp -r ../backend/prisma ./prisma-temp || true
 RUN pnpm prisma generate --schema=./prisma-temp/schema.prisma || true
 RUN rm -rf ./prisma-temp || true
 
@@ -58,13 +58,13 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-COPY --from=builder /app/apps/web/public ./public
+COPY --from=builder /app/apps/frontend/public ./public
 
 RUN mkdir .next
 RUN chown nextjs:nodejs .next
 
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/apps/frontend/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/frontend/.next/static ./.next/static
 
 USER nextjs
 

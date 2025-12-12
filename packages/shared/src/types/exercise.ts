@@ -50,3 +50,4 @@ export interface ExerciseFilters {
   limit?: number;
 }
 
+

@@ -1,5 +1,4 @@
 services:
-  # PostgreSQL データベース
   db:
     image: postgres:16-alpine
     container_name: praccode-db
@@ -18,55 +17,44 @@ services:
       timeout: 5s
       retries: 5
 
-  # Fastify バックエンド API
-  api:
+  backend:
     build:
       context: .
-      dockerfile: apps/api/Dockerfile
-    container_name: praccode-api
+      dockerfile: apps/backend/Dockerfile
+    container_name: praccode-backend
     restart: unless-stopped
     ports:
       - "3001:3001"
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/praccode?schema=public
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       PORT: 3001
       HOST: 0.0.0.0
       CORS_ORIGIN: http://localhost:3000
     depends_on:
       db:
         condition: service_healthy
-    volumes:
-      - ./apps/api:/app/apps/api
-      - ./packages:/app/packages
-      - /app/node_modules
-      - /app/apps/api/node_modules
 
-  # Next.js フロントエンド
-  web:
+  frontend:
     build:
       context: .
-      dockerfile: apps/web/Dockerfile
-    container_name: praccode-web
+      dockerfile: apps/frontend/Dockerfile
+    container_name: praccode-frontend
     restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
       NEXTAUTH_URL: http://localhost:3000
-      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-your-development-secret-key-change-in-production}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-change-me}
       GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
       GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
       NEXT_PUBLIC_API_URL: http://localhost:3001
+      API_URL: http://backend:3001
       DATABASE_URL: postgresql://postgres:postgres@db:5432/praccode?schema=public
     depends_on:
-      - api
-    volumes:
-      - ./apps/web:/app/apps/web
-      - ./packages:/app/packages
-      - /app/node_modules
-      - /app/apps/web/node_modules
-      - /app/apps/web/.next
+      - backend
 
 volumes:
   postgres_data:
+
 
