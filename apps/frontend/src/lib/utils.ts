@@ -71,3 +71,17 @@ export function getLearningGoalLabel(goal: string): string {
   return labels[goal] || goal;
 }
 
+export function getGenreLabel(genre: string): string {
+  const labels: Record<string, string> = {
+    auth: '認証/認可',
+    database: 'データベース',
+    error_handling: 'エラーハンドリング',
+    api_client: 'APIクライアント',
+    async_concurrency: '非同期/並行',
+    performance: 'パフォーマンス',
+    testing: 'テスト',
+    refactoring: 'リファクタリング',
+  };
+  return labels[genre] || genre;
+}
+

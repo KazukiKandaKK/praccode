@@ -5,8 +5,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ExercisesHeader } from '@/components/exercises-header';
-import { getDifficultyLabel, getDifficultyColor, getLanguageLabel, getLearningGoalLabel } from '@/lib/utils';
-import { Search, Filter, ArrowRight } from 'lucide-react';
+import { ExerciseFilters } from '@/components/exercise-filters';
+import { getDifficultyLabel, getDifficultyColor, getLanguageLabel, getLearningGoalLabel, getGenreLabel } from '@/lib/utils';
+import { Filter, ArrowRight } from 'lucide-react';
 
 interface Exercise {
   id: string;
@@ -17,11 +18,27 @@ interface Exercise {
   learningGoals: string[];
 }
 
+interface FilterParams {
+  language?: string;
+  difficulty?: string;
+  genre?: string;
+}
+
 // APIから問題一覧を取得
-async function getExercises(): Promise<{ exercises: Exercise[] }> {
+async function getExercises(filters: FilterParams): Promise<{ exercises: Exercise[] }> {
   try {
     const apiUrl = process.env.API_URL || 'http://localhost:3001';
-    const response = await fetch(`${apiUrl}/exercises`, {
+    
+    // クエリパラメータを構築
+    const params = new URLSearchParams();
+    if (filters.language) params.set('language', filters.language);
+    if (filters.difficulty) params.set('difficulty', filters.difficulty);
+    if (filters.genre) params.set('genre', filters.genre);
+    
+    const queryString = params.toString();
+    const url = queryString ? `${apiUrl}/exercises?${queryString}` : `${apiUrl}/exercises`;
+    
+    const response = await fetch(url, {
       cache: 'no-store',
     });
 
@@ -43,14 +60,25 @@ async function getExercises(): Promise<{ exercises: Exercise[] }> {
   }
 }
 
-export default async function ExercisesPage() {
+interface PageProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+export default async function ExercisesPage({ searchParams }: PageProps) {
   const session = await auth();
   
   if (!session?.user?.id) {
     redirect('/login');
   }
 
-  const { exercises } = await getExercises();
+  const params = await searchParams;
+  const filters: FilterParams = {
+    language: typeof params.language === 'string' ? params.language : undefined,
+    difficulty: typeof params.difficulty === 'string' ? params.difficulty : undefined,
+    genre: typeof params.genre === 'string' ? params.genre : undefined,
+  };
+
+  const { exercises } = await getExercises(filters);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -58,32 +86,7 @@ export default async function ExercisesPage() {
       <ExercisesHeader userId={session.user.id} />
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-4 mb-6">
-        <div className="relative flex-1 min-w-[200px] max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-          <input
-            type="text"
-            placeholder="学習を検索..."
-            className="w-full pl-10 pr-4 py-2.5 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-          />
-        </div>
-        <select className="px-4 py-2.5 bg-slate-800/50 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500">
-          <option value="">言語を選択</option>
-          <option value="typescript">TypeScript</option>
-          <option value="javascript">JavaScript</option>
-          <option value="go">Go</option>
-          <option value="ruby">Ruby</option>
-          <option value="python">Python</option>
-        </select>
-        <select className="px-4 py-2.5 bg-slate-800/50 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500">
-          <option value="">難易度を選択</option>
-          <option value="1">入門</option>
-          <option value="2">初級</option>
-          <option value="3">中級</option>
-          <option value="4">上級</option>
-          <option value="5">エキスパート</option>
-        </select>
-      </div>
+      <ExerciseFilters />
 
       {/* Exercise Grid */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -120,6 +123,9 @@ function ExerciseCard({
           <Badge className={getDifficultyColor(exercise.difficulty)}>
             {getDifficultyLabel(exercise.difficulty)}
           </Badge>
+          {exercise.genre && (
+            <Badge variant="secondary">{getGenreLabel(exercise.genre)}</Badge>
+          )}
         </div>
 
         {/* Title */}
