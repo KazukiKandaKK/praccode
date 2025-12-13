@@ -22,3 +22,4 @@ ollama pull "${MODEL}"
 echo "OK: ollama pull 完了"
 
 
+

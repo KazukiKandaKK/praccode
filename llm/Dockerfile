@@ -13,3 +13,4 @@ ENV OLLAMA_MODEL="qwen2.5-coder:14b"
 ENTRYPOINT ["/work/scripts/smoke_test.sh"]
 
 
+

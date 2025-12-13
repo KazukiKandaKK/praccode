@@ -12,10 +12,7 @@ import {
   getScoreLevelBgColor,
   getGenreLabel,
 } from '@/lib/utils';
-import { FileText, ArrowRight, Clock, Eye, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
-
-type SortColumn = 'title' | 'language' | 'level' | 'score' | 'createdAt';
-type SortDirection = 'asc' | 'desc';
+import { FileText, ArrowRight, Clock, Eye, ChevronDown, ChevronRight, Trophy } from 'lucide-react';
 
 interface SubmissionSummary {
   id: string;
@@ -34,129 +31,101 @@ interface SubmissionSummary {
   answerCount: number;
 }
 
+interface ExerciseGroup {
+  exerciseId: string;
+  title: string;
+  language: string;
+  genre: string | null;
+  submissions: SubmissionSummary[];
+  bestLevel: 'A' | 'B' | 'C' | 'D' | null;
+  bestScore: number | null;
+  lastSubmittedAt: string;
+}
+
 interface SubmissionsTableProps {
   submissions: SubmissionSummary[];
 }
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
-  // UTC固定でフォーマットしてサーバー/クライアントの不一致を防ぐ
   return date.toLocaleDateString('ja-JP', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
-    timeZone: 'Asia/Tokyo', // JST固定
+    timeZone: 'Asia/Tokyo',
   });
 }
 
-// ソート可能なヘッダーコンポーネント
-function SortableHeader({
-  label,
-  sortKey,
-  currentSort,
-  onSort,
-  align = 'left',
-}: {
-  label: string;
-  sortKey: SortColumn;
-  currentSort: { column: SortColumn; direction: SortDirection };
-  onSort: (column: SortColumn) => void;
-  align?: 'left' | 'center' | 'right';
-}) {
-  const isActive = currentSort.column === sortKey;
-  const alignClass = align === 'center' ? 'justify-center' : align === 'right' ? 'justify-end' : 'justify-start';
-
-  return (
-    <th
-      className={`py-4 px-4 text-sm font-medium text-slate-400 cursor-pointer hover:text-slate-200 transition-colors select-none ${
-        align === 'left' ? 'text-left' : align === 'center' ? 'text-center' : 'text-right'
-      }`}
-      onClick={() => onSort(sortKey)}
-    >
-      <div className={`flex items-center gap-1 ${alignClass}`}>
-        {label}
-        {isActive ? (
-          currentSort.direction === 'asc' ? (
-            <ArrowUp className="w-3 h-3" />
-          ) : (
-            <ArrowDown className="w-3 h-3" />
-          )
-        ) : (
-          <ArrowUpDown className="w-3 h-3 opacity-30" />
-        )}
-      </div>
-    </th>
-  );
-}
+// 評価レベルを数値に変換
+const levelToNumber = (level: 'A' | 'B' | 'C' | 'D' | null): number => {
+  if (level === 'A') return 4;
+  if (level === 'B') return 3;
+  if (level === 'C') return 2;
+  if (level === 'D') return 1;
+  return 0;
+};
 
 export function SubmissionsTable({ submissions }: SubmissionsTableProps) {
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
-  const [sortColumn, setSortColumn] = useState<SortColumn>('createdAt');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [expandedExercises, setExpandedExercises] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  // ソートハンドラー
-  const handleSort = (column: SortColumn) => {
-    if (sortColumn === column) {
-      // 同じカラムをクリックしたら方向を反転
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      // 新しいカラムをクリックしたらそのカラムで降順ソート
-      setSortColumn(column);
-      setSortDirection('desc');
-    }
-  };
+  // お題ごとにグループ化
+  const exerciseGroups = useMemo(() => {
+    const groupMap = new Map<string, ExerciseGroup>();
 
-  // 評価レベルを数値に変換
-  const levelToNumber = (level: 'A' | 'B' | 'C' | 'D' | null): number => {
-    if (level === 'A') return 4;
-    if (level === 'B') return 3;
-    if (level === 'C') return 2;
-    if (level === 'D') return 1;
-    return 0;
-  };
+    submissions.forEach((submission) => {
+      const exerciseId = submission.exercise.id;
+      const existing = groupMap.get(exerciseId);
 
-  // ソート済みデータ
-  const sortedSubmissions = useMemo(() => {
-    return [...submissions].sort((a, b) => {
-      let aValue: string | number;
-      let bValue: string | number;
-
-      switch (sortColumn) {
-        case 'title':
-          aValue = a.exercise.title.toLowerCase();
-          bValue = b.exercise.title.toLowerCase();
-          break;
-        case 'language':
-          aValue = a.exercise.language;
-          bValue = b.exercise.language;
-          break;
-        case 'level':
-          aValue = levelToNumber(a.overallLevel);
-          bValue = levelToNumber(b.overallLevel);
-          break;
-        case 'score':
-          aValue = a.avgScore ?? -1;
-          bValue = b.avgScore ?? -1;
-          break;
-        case 'createdAt':
-        default:
-          aValue = new Date(a.updatedAt).getTime();
-          bValue = new Date(b.updatedAt).getTime();
-          break;
+      if (existing) {
+        existing.submissions.push(submission);
+        // 最高評価を更新
+        if (levelToNumber(submission.overallLevel) > levelToNumber(existing.bestLevel)) {
+          existing.bestLevel = submission.overallLevel;
+          existing.bestScore = submission.avgScore;
+        }
+        // 最終提出日時を更新
+        if (new Date(submission.updatedAt) > new Date(existing.lastSubmittedAt)) {
+          existing.lastSubmittedAt = submission.updatedAt;
+        }
+      } else {
+        groupMap.set(exerciseId, {
+          exerciseId,
+          title: submission.exercise.title,
+          language: submission.exercise.language,
+          genre: submission.exercise.genre,
+          submissions: [submission],
+          bestLevel: submission.overallLevel,
+          bestScore: submission.avgScore,
+          lastSubmittedAt: submission.updatedAt,
+        });
       }
-
-      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-      return 0;
     });
-  }, [submissions, sortColumn, sortDirection]);
+
+    // 最終提出日時でソート（新しい順）
+    return Array.from(groupMap.values()).sort(
+      (a, b) => new Date(b.lastSubmittedAt).getTime() - new Date(a.lastSubmittedAt).getTime()
+    );
+  }, [submissions]);
+
+  const toggleExercise = (exerciseId: string) => {
+    setExpandedExercises((prev) => {
+      const next = new Set(prev);
+      if (next.has(exerciseId)) {
+        next.delete(exerciseId);
+      } else {
+        next.add(exerciseId);
+      }
+      return next;
+    });
+  };
 
   if (submissions.length === 0) {
     return (
@@ -191,151 +160,178 @@ export function SubmissionsTable({ submissions }: SubmissionsTableProps) {
           <CardTitle>評価結果一覧</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-slate-700">
-                  <SortableHeader
-                    label="問題名"
-                    sortKey="title"
-                    currentSort={{ column: sortColumn, direction: sortDirection }}
-                    onSort={handleSort}
-                  />
-                  <SortableHeader
-                    label="言語"
-                    sortKey="language"
-                    currentSort={{ column: sortColumn, direction: sortDirection }}
-                    onSort={handleSort}
-                  />
-                  <th className="text-left py-4 px-4 text-sm font-medium text-slate-400">
-                    ジャンル
-                  </th>
-                  <SortableHeader
-                    label="評価"
-                    sortKey="level"
-                    currentSort={{ column: sortColumn, direction: sortDirection }}
-                    onSort={handleSort}
-                    align="center"
-                  />
-                  <SortableHeader
-                    label="スコア"
-                    sortKey="score"
-                    currentSort={{ column: sortColumn, direction: sortDirection }}
-                    onSort={handleSort}
-                    align="center"
-                  />
-                  <SortableHeader
-                    label="提出日時"
-                    sortKey="createdAt"
-                    currentSort={{ column: sortColumn, direction: sortDirection }}
-                    onSort={handleSort}
-                  />
-                  <th className="text-right py-4 px-6 text-sm font-medium text-slate-400">
-                    操作
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedSubmissions.map((submission) => (
-                  <tr
-                    key={submission.id}
-                    className="border-b border-slate-700/50 hover:bg-slate-800/30 transition-colors cursor-pointer"
-                    onClick={() => setSelectedSubmissionId(submission.id)}
+          <div className="divide-y divide-slate-700">
+            {exerciseGroups.map((group) => {
+              const isExpanded = expandedExercises.has(group.exerciseId);
+
+              return (
+                <div key={group.exerciseId}>
+                  {/* アコーディオンヘッダー */}
+                  <div
+                    className="flex items-center gap-4 px-6 py-4 cursor-pointer hover:bg-slate-800/50 transition-colors"
+                    onClick={() => toggleExercise(group.exerciseId)}
                   >
-                    {/* 問題名 */}
-                    <td className="py-4 px-4">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-2 h-2 rounded-full ${
-                            submission.overallLevel === 'A'
-                              ? 'bg-emerald-400'
-                              : submission.overallLevel === 'B'
-                              ? 'bg-cyan-400'
-                              : submission.overallLevel === 'C'
-                              ? 'bg-amber-400'
-                              : 'bg-red-400'
-                          }`}
-                        />
-                        <span className="text-white font-medium truncate max-w-[250px]">
-                          {submission.exercise.title}
-                        </span>
-                      </div>
-                    </td>
-
-                    {/* 言語 */}
-                    <td className="py-4 px-4">
-                      <Badge variant="primary" className="text-xs">
-                        {getLanguageLabel(submission.exercise.language)}
-                      </Badge>
-                    </td>
-
-                    {/* ジャンル */}
-                    <td className="py-4 px-4">
-                      {submission.exercise.genre ? (
-                        <span className="text-sm text-slate-400">
-                          {getGenreLabel(submission.exercise.genre)}
-                        </span>
+                    {/* 展開アイコン */}
+                    <div className="text-slate-400">
+                      {isExpanded ? (
+                        <ChevronDown className="w-5 h-5" />
                       ) : (
-                        <span className="text-sm text-slate-600">-</span>
+                        <ChevronRight className="w-5 h-5" />
                       )}
-                    </td>
+                    </div>
 
-                    {/* 評価 */}
-                    <td className="py-4 px-4 text-center">
-                      {submission.overallLevel ? (
+                    {/* 評価インジケーター */}
+                    <div
+                      className={`w-2 h-2 rounded-full shrink-0 ${
+                        group.bestLevel === 'A'
+                          ? 'bg-emerald-400'
+                          : group.bestLevel === 'B'
+                          ? 'bg-cyan-400'
+                          : group.bestLevel === 'C'
+                          ? 'bg-amber-400'
+                          : 'bg-red-400'
+                      }`}
+                    />
+
+                    {/* 問題タイトル */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-white font-medium truncate">
+                        {group.title}
+                      </h3>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="primary" className="text-xs">
+                          {getLanguageLabel(group.language)}
+                        </Badge>
+                        {group.genre && (
+                          <span className="text-xs text-slate-500">
+                            {getGenreLabel(group.genre)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* 最高評価 */}
+                    <div className="flex items-center gap-2">
+                      <Trophy className="w-4 h-4 text-amber-400" />
+                      {group.bestLevel ? (
                         <Badge
-                          className={`${getScoreLevelBgColor(
-                            submission.overallLevel
-                          )} ${getScoreLevelColor(submission.overallLevel)}`}
+                          className={`${getScoreLevelBgColor(group.bestLevel)} ${getScoreLevelColor(group.bestLevel)}`}
                         >
-                          {submission.overallLevel}
+                          {group.bestLevel}
+                          {group.bestScore !== null && ` (${group.bestScore}点)`}
                         </Badge>
                       ) : (
                         <span className="text-slate-600">-</span>
                       )}
-                    </td>
+                    </div>
 
-                    {/* スコア */}
-                    <td className="py-4 px-4 text-center">
-                      <span
-                        className={`font-medium ${
-                          submission.avgScore !== null
-                            ? getScoreLevelColor(submission.overallLevel || 'D')
-                            : 'text-slate-600'
-                        }`}
-                      >
-                        {submission.avgScore !== null
-                          ? `${submission.avgScore}点`
-                          : '-'}
-                      </span>
-                    </td>
+                    {/* 提出回数 */}
+                    <div className="text-sm text-slate-400 w-20 text-right">
+                      {group.submissions.length}回提出
+                    </div>
 
-                    {/* 提出日時 */}
-                    <td className="py-4 px-4">
-                      <div className="flex items-center gap-2 text-sm text-slate-400">
-                        <Clock className="w-4 h-4" />
-                        {isMounted ? formatDate(submission.updatedAt) : '読み込み中...'}
+                    {/* 最終提出日時 */}
+                    <div className="hidden md:flex items-center gap-1 text-sm text-slate-500 w-40">
+                      <Clock className="w-3 h-3" />
+                      {isMounted ? formatDate(group.lastSubmittedAt) : '...'}
+                    </div>
+                  </div>
+
+                  {/* 展開コンテンツ */}
+                  {isExpanded && (
+                    <div className="bg-slate-800/30 border-t border-slate-700/50">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b border-slate-700/50">
+                            <th className="py-3 px-6 text-left text-xs font-medium text-slate-500 uppercase tracking-wider w-12">
+                              #
+                            </th>
+                            <th className="py-3 px-4 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">
+                              評価
+                            </th>
+                            <th className="py-3 px-4 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">
+                              スコア
+                            </th>
+                            <th className="py-3 px-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                              提出日時
+                            </th>
+                            <th className="py-3 px-6 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
+                              操作
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {group.submissions
+                            .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+                            .map((submission, index) => (
+                              <tr
+                                key={submission.id}
+                                className="border-b border-slate-700/30 hover:bg-slate-800/50 transition-colors cursor-pointer"
+                                onClick={() => setSelectedSubmissionId(submission.id)}
+                              >
+                                <td className="py-3 px-6 text-sm text-slate-500">
+                                  {group.submissions.length - index}
+                                </td>
+                                <td className="py-3 px-4 text-center">
+                                  {submission.overallLevel ? (
+                                    <Badge
+                                      className={`${getScoreLevelBgColor(submission.overallLevel)} ${getScoreLevelColor(submission.overallLevel)}`}
+                                    >
+                                      {submission.overallLevel}
+                                    </Badge>
+                                  ) : (
+                                    <span className="text-slate-600">-</span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-4 text-center">
+                                  <span
+                                    className={`font-medium ${
+                                      submission.avgScore !== null
+                                        ? getScoreLevelColor(submission.overallLevel || 'D')
+                                        : 'text-slate-600'
+                                    }`}
+                                  >
+                                    {submission.avgScore !== null ? `${submission.avgScore}点` : '-'}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-4">
+                                  <div className="flex items-center gap-2 text-sm text-slate-400">
+                                    <Clock className="w-4 h-4" />
+                                    {isMounted ? formatDate(submission.updatedAt) : '読み込み中...'}
+                                  </div>
+                                </td>
+                                <td className="py-3 px-6 text-right">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedSubmissionId(submission.id);
+                                    }}
+                                  >
+                                    <Eye className="w-4 h-4 mr-1" />
+                                    詳細
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                      
+                      {/* お題への再挑戦リンク */}
+                      <div className="px-6 py-3 bg-slate-800/20 border-t border-slate-700/30">
+                        <Link href={`/exercises/${group.exerciseId}`}>
+                          <Button variant="secondary" size="sm">
+                            このお題にもう一度挑戦
+                            <ArrowRight className="w-4 h-4 ml-2" />
+                          </Button>
+                        </Link>
                       </div>
-                    </td>
-
-                    {/* 操作 */}
-                    <td className="py-4 px-6 text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedSubmissionId(submission.id);
-                        }}
-                      >
-                        <Eye className="w-4 h-4 mr-1" />
-                        結果を見る
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
