@@ -186,9 +186,9 @@ export function WritingSubmissionsTable({ submissions }: WritingSubmissionsTable
   }
 
   return (
-    <div className="flex gap-6">
+    <>
       {/* Main Table */}
-      <Card className={`flex-1 transition-all duration-300 ${selectedSubmission ? 'w-1/2' : 'w-full'}`}>
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <PenTool className="w-5 h-5 text-violet-400" />
@@ -306,12 +306,10 @@ export function WritingSubmissionsTable({ submissions }: WritingSubmissionsTable
       </Card>
 
       {/* Side Panel */}
-      {selectedSubmission && (
-        <WritingSubmissionSidePanel
-          submission={selectedSubmission}
-          onClose={() => setSelectedSubmission(null)}
-        />
-      )}
-    </div>
+      <WritingSubmissionSidePanel
+        submission={selectedSubmission}
+        onClose={() => setSelectedSubmission(null)}
+      />
+    </>
   );
 }
