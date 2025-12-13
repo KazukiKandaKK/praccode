@@ -194,7 +194,7 @@ export function WritingSubmissionsTable({ submissions }: WritingSubmissionsTable
                     <div className="flex-1 min-w-0">
                       <h3 className="text-white font-medium truncate">{group.title}</h3>
                       <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="default" className="text-xs">
                           {getLanguageLabel(group.language)}
                         </Badge>
                         <Badge className={`${getDifficultyColor(group.difficulty)} text-xs`}>
@@ -274,7 +274,7 @@ export function WritingSubmissionsTable({ submissions }: WritingSubmissionsTable
                                   {group.submissions.length - index}
                                 </td>
                                 <td className="py-3 px-4">
-                                  <Badge variant="outline" className="text-xs">
+                                  <Badge variant="default" className="text-xs">
                                     {getLanguageLabel(submission.language)}
                                   </Badge>
                                 </td>

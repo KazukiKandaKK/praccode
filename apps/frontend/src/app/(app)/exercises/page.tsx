@@ -125,7 +125,7 @@ function ExerciseCard({ exercise }: { exercise: Exercise }) {
           <Badge className={getDifficultyColor(exercise.difficulty)}>
             {getDifficultyLabel(exercise.difficulty)}
           </Badge>
-          {exercise.genre && <Badge variant="secondary">{getGenreLabel(exercise.genre)}</Badge>}
+          {exercise.genre && <Badge variant="default">{getGenreLabel(exercise.genre)}</Badge>}
         </div>
 
         {/* Title */}

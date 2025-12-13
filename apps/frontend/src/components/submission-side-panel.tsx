@@ -131,7 +131,7 @@ export function SubmissionSidePanel({ submissionId, onClose }: SubmissionSidePan
                 <div className="flex flex-wrap gap-2">
                   <Badge variant="primary">{getLanguageLabel(submission.exercise.language)}</Badge>
                   {submission.exercise.genre && (
-                    <Badge variant="secondary">{getGenreLabel(submission.exercise.genre)}</Badge>
+                    <Badge variant="default">{getGenreLabel(submission.exercise.genre)}</Badge>
                   )}
                 </div>
               </div>

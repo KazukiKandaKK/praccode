@@ -177,6 +177,86 @@ const dashboardRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   /**
+   * 学習活動カレンダー用データ取得（直近365日の日次提出件数）
+   */
+  fastify.get<{ Querystring: StatsQuery }>('/dashboard/activity', async (request, reply) => {
+    const { userId } = request.query;
+
+    if (!userId) {
+      return reply.status(400).send({ error: 'userId is required' });
+    }
+
+    try {
+      // 直近365日の開始日時を計算
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 365);
+
+      // リーディング提出（EVALUATED）を日付でグループ化
+      const readingSubmissions = await prisma.submission.findMany({
+        where: {
+          userId,
+          status: 'EVALUATED',
+          updatedAt: {
+            gte: startDate,
+            lte: endDate,
+          },
+        },
+        select: {
+          updatedAt: true,
+        },
+      });
+
+      // ライティング提出（COMPLETED）を日付でグループ化
+      const writingSubmissions = await prisma.writingSubmission.findMany({
+        where: {
+          userId,
+          status: 'COMPLETED',
+          createdAt: {
+            gte: startDate,
+            lte: endDate,
+          },
+        },
+        select: {
+          createdAt: true,
+        },
+      });
+
+      // 日付文字列（YYYY-MM-DD）でグループ化してカウント
+      const activityMap = new Map<string, number>();
+
+      // リーディング提出を日付で集計
+      for (const sub of readingSubmissions) {
+        const dateStr = sub.updatedAt.toISOString().split('T')[0];
+        activityMap.set(dateStr, (activityMap.get(dateStr) || 0) + 1);
+      }
+
+      // ライティング提出を日付で集計（合算）
+      for (const sub of writingSubmissions) {
+        const dateStr = sub.createdAt.toISOString().split('T')[0];
+        activityMap.set(dateStr, (activityMap.get(dateStr) || 0) + 1);
+      }
+
+      // 直近365日分の日付配列を生成（提出がない日は0件）
+      const activityData: Array<{ date: string; count: number }> = [];
+      const currentDate = new Date(startDate);
+      while (currentDate <= endDate) {
+        const dateStr = currentDate.toISOString().split('T')[0];
+        activityData.push({
+          date: dateStr,
+          count: activityMap.get(dateStr) || 0,
+        });
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      return reply.send({ activity: activityData });
+    } catch (error) {
+      console.error('Dashboard activity error:', error);
+      return reply.status(500).send({ error: 'Failed to fetch dashboard activity' });
+    }
+  });
+
+  /**
    * 学習分析結果取得（キャッシュ済み or 新規生成）
    */
   fastify.get<{ Querystring: StatsQuery }>('/dashboard/analysis', async (request, reply) => {

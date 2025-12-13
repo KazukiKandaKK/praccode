@@ -129,7 +129,7 @@ export function SettingsForm({ me }: { me: MeResponse }) {
               <div className="text-sm text-slate-300 font-mono break-all">{me.id}</div>
             </div>
             <div className="flex items-center gap-2 justify-start md:justify-end">
-              <Badge variant="secondary">{me.role}</Badge>
+              <Badge variant="default">{me.role}</Badge>
               {me.oauthProviders?.map((p) => (
                 <Badge key={p} variant="default">
                   {p}

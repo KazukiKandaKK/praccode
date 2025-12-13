@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { getLearningGoalLabel } from '@/lib/utils';
 import { GenerateRecommendationButton } from '@/components/generate-recommendation-button';
+import { DashboardActivityHeatmap } from '@/components/dashboard-activity-heatmap';
 
 interface DashboardStats {
   totalReadingSubmissions: number;
@@ -76,15 +77,37 @@ async function getLearningAnalysis(userId: string): Promise<LearningAnalysis | n
   }
 }
 
+interface ActivityResponse {
+  activity: Array<{
+    date: string;
+    count: number;
+  }>;
+}
+
+async function getDashboardActivity(userId: string): Promise<ActivityResponse | null> {
+  try {
+    const apiUrl = process.env.API_URL || 'http://localhost:3001';
+    const response = await fetch(`${apiUrl}/dashboard/activity?userId=${userId}`, {
+      cache: 'no-store',
+    });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching dashboard activity:', error);
+    return null;
+  }
+}
+
 export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user?.id) {
     redirect('/login');
   }
 
-  const [stats, analysis] = await Promise.all([
+  const [stats, analysis, activity] = await Promise.all([
     getDashboardStats(session.user.id),
     getLearningAnalysis(session.user.id),
+    getDashboardActivity(session.user.id),
   ]);
 
   const totalSubmissions =
@@ -129,6 +152,13 @@ export default async function DashboardPage() {
           color="amber"
         />
       </div>
+
+      {/* Activity Heatmap */}
+      {activity && activity.activity.length > 0 && (
+        <div className="mb-6">
+          <DashboardActivityHeatmap activity={activity.activity} />
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Aspect Scores */}
