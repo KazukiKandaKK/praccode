@@ -344,7 +344,7 @@ export async function generateWritingChallenge(
   let parsed: unknown;
   try {
     parsed = JSON.parse(response);
-  } catch (e) {
+  } catch {
     // マークダウンブロックを除去して再試行
     const jsonMatch = response.match(/```(?:json)?\s*([\s\S]*?)```/);
     if (jsonMatch) {

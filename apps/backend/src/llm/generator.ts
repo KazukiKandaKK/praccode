@@ -121,7 +121,7 @@ export async function generateExercise(input: GenerateExerciseInput): Promise<Ge
   let parsed: unknown;
   try {
     parsed = JSON.parse(response);
-  } catch (e) {
+  } catch {
     // JSONパースに失敗した場合、コードブロックを除去して再試行
     const jsonMatch = response.match(/```(?:json)?\s*([\s\S]*?)```/);
     if (jsonMatch) {

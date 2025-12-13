@@ -22,6 +22,26 @@ const outputSchema = z.object({
   aspects: z.record(z.string(), z.number()).optional(),
 });
 
+/**
+ * スコアからレベルを判定
+ * A: 90-100, B: 70-89, C: 50-69, D: 0-49
+ */
+export function scoreToLevel(score: number): 'A' | 'B' | 'C' | 'D' {
+  if (score >= 90) return 'A';
+  if (score >= 70) return 'B';
+  if (score >= 50) return 'C';
+  return 'D';
+}
+
+/**
+ * スコアを0-100の範囲に正規化
+ */
+export function normalizeScore(score: number): number {
+  if (score < 0) return 0;
+  if (score > 100) return 100;
+  return Math.round(score);
+}
+
 function buildPrompt(input: EvaluateAnswerInput): string {
   return `あなたは熟練したソフトウェアエンジニアです。
 以下のコードを前提に、ユーザーの回答を評価してください。

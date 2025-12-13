@@ -24,7 +24,7 @@ export function SettingsForm({ me }: { me: MeResponse }) {
   const userId = session?.user?.id || me.id;
 
   const [name, setName] = useState(me.name || '');
-  const [email, setEmail] = useState(me.email);
+  const [email] = useState(me.email);
   const [newEmail, setNewEmail] = useState('');
 
   const [currentPassword, setCurrentPassword] = useState('');

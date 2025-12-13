@@ -146,7 +146,7 @@ export default function WritingChallengePage() {
         } else {
           setCode(generateStarterCode(data.language, data.testCode || ''));
         }
-      } catch (err) {
+      } catch {
         toast.error('お題の取得に失敗しました');
       } finally {
         setIsLoading(false);

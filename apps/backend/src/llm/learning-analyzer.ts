@@ -73,7 +73,7 @@ export async function analyzeLearningProgress(
   }
 }
 
-interface Stats {
+export interface Stats {
   totalReadingSubmissions: number;
   totalWritingSubmissions: number;
   avgReadingScore: number;
@@ -83,7 +83,7 @@ interface Stats {
   genreStats: Record<string, { count: number; avgScore: number }>;
 }
 
-function calculateStats(
+export function calculateStats(
   readingSubmissions: SubmissionData[],
   writingSubmissions: WritingSubmissionData[]
 ): Stats {
@@ -155,8 +155,8 @@ function calculateStats(
 
 function buildAnalysisPrompt(
   stats: Stats,
-  readingSubmissions: SubmissionData[],
-  writingSubmissions: WritingSubmissionData[]
+  _readingSubmissions: SubmissionData[],
+  _writingSubmissions: WritingSubmissionData[]
 ): string {
   const aspectSummary = Object.entries(stats.aspectScores)
     .map(([aspect, data]) => `${aspect}: ${Math.round(data.total / data.count)}点`)
@@ -188,7 +188,7 @@ function buildAnalysisPrompt(
 各項目は1-3個程度、簡潔に。データが少ない場合は控えめに分析。`;
 }
 
-function generateFallbackAnalysis(stats: Stats): AnalysisResult {
+export function generateFallbackAnalysis(stats: Stats): AnalysisResult {
   const strengths: string[] = [];
   const weaknesses: string[] = [];
   const recommendations: string[] = [];

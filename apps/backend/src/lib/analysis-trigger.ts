@@ -40,7 +40,7 @@ export async function triggerLearningAnalysis(userId: string): Promise<void> {
       return;
     }
 
-    console.log(`Triggering learning analysis for user ${userId} (${totalSubmissions} submissions)`);
+    console.info(`Triggering learning analysis for user ${userId} (${totalSubmissions} submissions)`);
 
     // 提出データを取得
     const readingSubmissions = await prisma.submission.findMany({
@@ -119,7 +119,7 @@ export async function triggerLearningAnalysis(userId: string): Promise<void> {
       },
     });
 
-    console.log(`Learning analysis completed for user ${userId}`);
+    console.info(`Learning analysis completed for user ${userId}`);
   } catch (error) {
     console.error('Learning analysis trigger failed:', error);
     // エラーは握りつぶして、メイン処理には影響を与えない

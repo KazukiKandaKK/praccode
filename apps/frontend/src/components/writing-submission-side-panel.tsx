@@ -12,9 +12,7 @@ import {
   Terminal, 
   MessageSquare,
   ExternalLink,
-  Clock,
-  Trophy,
-  Target
+  Clock
 } from 'lucide-react';
 
 interface WritingSubmissionSummary {

@@ -357,7 +357,7 @@ async function generateReadingExercise(exerciseId: string, language: string, dif
       })),
     });
 
-    console.log(`Reading exercise generated: ${exerciseId}`);
+    console.info(`Reading exercise generated: ${exerciseId}`);
   } catch (error) {
     console.error('Reading exercise generation failed:', error);
     await prisma.exercise.update({

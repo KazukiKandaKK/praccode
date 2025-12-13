@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { ChevronDown, ChevronRight, Copy, Check } from 'lucide-react';
+import { Copy, Check } from 'lucide-react';
 
 interface CodeViewerProps {
   code: string;
@@ -117,9 +117,9 @@ interface CollapsibleRange {
 }
 
 function CollapsibleIndicator({
-  range,
-  isCollapsed,
-  onToggle,
+  range: _range,
+  isCollapsed: _isCollapsed,
+  onToggle: _onToggle,
 }: {
   range: CollapsibleRange;
   isCollapsed: boolean;
@@ -172,8 +172,8 @@ function detectCollapsibleRanges(lines: string[], language: string): Collapsible
 
 function getVisibleLines(
   lines: string[],
-  collapsedRanges: Set<number>,
-  collapsibleRanges: CollapsibleRange[]
+  _collapsedRanges: Set<number>,
+  _collapsibleRanges: CollapsibleRange[]
 ): { code: string; lineMapping: number[] } {
   // For MVP, just return all lines
   return {

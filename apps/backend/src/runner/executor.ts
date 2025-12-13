@@ -41,7 +41,7 @@ const LANGUAGE_CONFIG: Record<string, {
     image: 'golang:1.22-alpine',
     extension: '.go',
     testExtension: '_test.go',
-    command: (userFile, testFile) => ['go', 'test', '-v', '.'],
+    command: (_userFile, _testFile) => ['go', 'test', '-v', '.'],
   },
 };
 
