@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +12,10 @@ import {
   getScoreLevelBgColor,
   getGenreLabel,
 } from '@/lib/utils';
-import { FileText, ArrowRight, Clock, Eye } from 'lucide-react';
+import { FileText, ArrowRight, Clock, Eye, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
+
+type SortColumn = 'title' | 'language' | 'level' | 'score' | 'createdAt';
+type SortDirection = 'asc' | 'desc';
 
 interface SubmissionSummary {
   id: string;
@@ -48,13 +51,112 @@ function formatDate(dateString: string): string {
   });
 }
 
+// ソート可能なヘッダーコンポーネント
+function SortableHeader({
+  label,
+  sortKey,
+  currentSort,
+  onSort,
+  align = 'left',
+}: {
+  label: string;
+  sortKey: SortColumn;
+  currentSort: { column: SortColumn; direction: SortDirection };
+  onSort: (column: SortColumn) => void;
+  align?: 'left' | 'center' | 'right';
+}) {
+  const isActive = currentSort.column === sortKey;
+  const alignClass = align === 'center' ? 'justify-center' : align === 'right' ? 'justify-end' : 'justify-start';
+
+  return (
+    <th
+      className={`py-4 px-4 text-sm font-medium text-slate-400 cursor-pointer hover:text-slate-200 transition-colors select-none ${
+        align === 'left' ? 'text-left' : align === 'center' ? 'text-center' : 'text-right'
+      }`}
+      onClick={() => onSort(sortKey)}
+    >
+      <div className={`flex items-center gap-1 ${alignClass}`}>
+        {label}
+        {isActive ? (
+          currentSort.direction === 'asc' ? (
+            <ArrowUp className="w-3 h-3" />
+          ) : (
+            <ArrowDown className="w-3 h-3" />
+          )
+        ) : (
+          <ArrowUpDown className="w-3 h-3 opacity-30" />
+        )}
+      </div>
+    </th>
+  );
+}
+
 export function SubmissionsTable({ submissions }: SubmissionsTableProps) {
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const [sortColumn, setSortColumn] = useState<SortColumn>('createdAt');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // ソートハンドラー
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      // 同じカラムをクリックしたら方向を反転
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // 新しいカラムをクリックしたらそのカラムで降順ソート
+      setSortColumn(column);
+      setSortDirection('desc');
+    }
+  };
+
+  // 評価レベルを数値に変換
+  const levelToNumber = (level: 'A' | 'B' | 'C' | 'D' | null): number => {
+    if (level === 'A') return 4;
+    if (level === 'B') return 3;
+    if (level === 'C') return 2;
+    if (level === 'D') return 1;
+    return 0;
+  };
+
+  // ソート済みデータ
+  const sortedSubmissions = useMemo(() => {
+    return [...submissions].sort((a, b) => {
+      let aValue: string | number;
+      let bValue: string | number;
+
+      switch (sortColumn) {
+        case 'title':
+          aValue = a.exercise.title.toLowerCase();
+          bValue = b.exercise.title.toLowerCase();
+          break;
+        case 'language':
+          aValue = a.exercise.language;
+          bValue = b.exercise.language;
+          break;
+        case 'level':
+          aValue = levelToNumber(a.overallLevel);
+          bValue = levelToNumber(b.overallLevel);
+          break;
+        case 'score':
+          aValue = a.avgScore ?? -1;
+          bValue = b.avgScore ?? -1;
+          break;
+        case 'createdAt':
+        default:
+          aValue = new Date(a.updatedAt).getTime();
+          bValue = new Date(b.updatedAt).getTime();
+          break;
+      }
+
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [submissions, sortColumn, sortDirection]);
 
   if (submissions.length === 0) {
     return (
@@ -93,38 +195,55 @@ export function SubmissionsTable({ submissions }: SubmissionsTableProps) {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-slate-700">
-                  <th className="text-left py-4 px-6 text-sm font-medium text-slate-400">
-                    問題名
-                  </th>
-                  <th className="text-left py-4 px-4 text-sm font-medium text-slate-400">
-                    言語
-                  </th>
+                  <SortableHeader
+                    label="問題名"
+                    sortKey="title"
+                    currentSort={{ column: sortColumn, direction: sortDirection }}
+                    onSort={handleSort}
+                  />
+                  <SortableHeader
+                    label="言語"
+                    sortKey="language"
+                    currentSort={{ column: sortColumn, direction: sortDirection }}
+                    onSort={handleSort}
+                  />
                   <th className="text-left py-4 px-4 text-sm font-medium text-slate-400">
                     ジャンル
                   </th>
-                  <th className="text-center py-4 px-4 text-sm font-medium text-slate-400">
-                    評価
-                  </th>
-                  <th className="text-center py-4 px-4 text-sm font-medium text-slate-400">
-                    スコア
-                  </th>
-                  <th className="text-left py-4 px-4 text-sm font-medium text-slate-400">
-                    提出日時
-                  </th>
+                  <SortableHeader
+                    label="評価"
+                    sortKey="level"
+                    currentSort={{ column: sortColumn, direction: sortDirection }}
+                    onSort={handleSort}
+                    align="center"
+                  />
+                  <SortableHeader
+                    label="スコア"
+                    sortKey="score"
+                    currentSort={{ column: sortColumn, direction: sortDirection }}
+                    onSort={handleSort}
+                    align="center"
+                  />
+                  <SortableHeader
+                    label="提出日時"
+                    sortKey="createdAt"
+                    currentSort={{ column: sortColumn, direction: sortDirection }}
+                    onSort={handleSort}
+                  />
                   <th className="text-right py-4 px-6 text-sm font-medium text-slate-400">
                     操作
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {submissions.map((submission) => (
+                {sortedSubmissions.map((submission) => (
                   <tr
                     key={submission.id}
                     className="border-b border-slate-700/50 hover:bg-slate-800/30 transition-colors cursor-pointer"
                     onClick={() => setSelectedSubmissionId(submission.id)}
                   >
                     {/* 問題名 */}
-                    <td className="py-4 px-6">
+                    <td className="py-4 px-4">
                       <div className="flex items-center gap-3">
                         <div
                           className={`w-2 h-2 rounded-full ${
@@ -229,4 +348,3 @@ export function SubmissionsTable({ submissions }: SubmissionsTableProps) {
     </>
   );
 }
-

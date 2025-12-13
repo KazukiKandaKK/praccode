@@ -50,8 +50,9 @@ export function Navigation({ user }: NavigationProps) {
   const links = [
     { href: '/dashboard', label: 'ダッシュボード', icon: BarChart3 },
     { href: '/exercises', label: 'コードリーディング', icon: BookOpen },
-    { href: '/writing', label: 'コードライティング', icon: PenTool },
     { href: '/submissions', label: 'リーディング結果', icon: ClipboardList },
+    { href: '/writing', label: 'コードライティング', icon: PenTool },
+    { href: '/writing/submissions', label: 'ライティング結果', icon: ClipboardList },
   ];
 
   const NavLinks = ({ onNavigate }: { onNavigate?: () => void }) => (
