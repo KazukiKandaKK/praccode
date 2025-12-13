@@ -3,7 +3,7 @@
 import { createContext, useContext, useCallback, useRef, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Loader2, Sparkles, FileCheck } from 'lucide-react';
+import { Loader2, Sparkles, FileCheck, PenTool } from 'lucide-react';
 
 interface EvaluationJob {
   submissionId: string;
@@ -14,11 +14,24 @@ interface GenerationJob {
   exerciseId: string;
 }
 
+interface WritingJob {
+  submissionId: string;
+  challengeTitle: string;
+}
+
+interface WritingChallengeGenJob {
+  challengeId: string;
+}
+
 interface EvaluationContextValue {
   startEvaluationWatch: (submissionId: string, exerciseTitle: string) => void;
   startGenerationWatch: (exerciseId: string) => void;
+  startWritingWatch: (submissionId: string, challengeTitle: string) => void;
+  startWritingChallengeWatch: (challengeId: string) => void;
   pendingEvaluations: EvaluationJob[];
   pendingGenerations: GenerationJob[];
+  pendingWritings: WritingJob[];
+  pendingWritingChallenges: WritingChallengeGenJob[];
 }
 
 const EvaluationContext = createContext<EvaluationContextValue | null>(null);
@@ -35,8 +48,12 @@ export function EvaluationToastProvider({ children }: { children: React.ReactNod
   const router = useRouter();
   const [pendingEvaluations, setPendingEvaluations] = useState<EvaluationJob[]>([]);
   const [pendingGenerations, setPendingGenerations] = useState<GenerationJob[]>([]);
+  const [pendingWritings, setPendingWritings] = useState<WritingJob[]>([]);
+  const [pendingWritingChallenges, setPendingWritingChallenges] = useState<WritingChallengeGenJob[]>([]);
   const evaluationPollingRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const generationPollingRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const writingPollingRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const writingChallengePollingRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
   // ========== 評価監視 ==========
   const pollSubmission = useCallback(
@@ -152,6 +169,7 @@ export function EvaluationToastProvider({ children }: { children: React.ReactNod
               },
             },
           });
+          router.refresh(); // リスト更新
         } else if (data.status === 'FAILED') {
           const timer = generationPollingRef.current.get(job.exerciseId);
           if (timer) {
@@ -193,6 +211,159 @@ export function EvaluationToastProvider({ children }: { children: React.ReactNod
     [pollExercise]
   );
 
+  // ========== ライティング提出監視 ==========
+  const pollWritingSubmission = useCallback(
+    async (job: WritingJob) => {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+      try {
+        const res = await fetch(`${apiUrl}/writing/submissions/${job.submissionId}`, {
+          cache: 'no-store',
+        });
+
+        if (!res.ok) {
+          const timer = writingPollingRef.current.get(job.submissionId);
+          if (timer) {
+            clearInterval(timer);
+            writingPollingRef.current.delete(job.submissionId);
+          }
+          setPendingWritings((prev) => prev.filter((w) => w.submissionId !== job.submissionId));
+          toast.error('コード実行結果の取得に失敗しました');
+          return;
+        }
+
+        const data = await res.json();
+
+        if (data.status === 'COMPLETED' || data.status === 'ERROR') {
+          const timer = writingPollingRef.current.get(job.submissionId);
+          if (timer) {
+            clearInterval(timer);
+            writingPollingRef.current.delete(job.submissionId);
+          }
+
+          setPendingWritings((prev) => prev.filter((w) => w.submissionId !== job.submissionId));
+
+          if (data.passed) {
+            toast.success(`「${job.challengeTitle}」のテストに合格しました！`, {
+              duration: 10000,
+            });
+          } else {
+            toast.error(`「${job.challengeTitle}」のテストに失敗しました`, {
+              duration: 10000,
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Writing polling error:', err);
+      }
+    },
+    []
+  );
+
+  const startWritingWatch = useCallback(
+    (submissionId: string, challengeTitle: string) => {
+      if (writingPollingRef.current.has(submissionId)) {
+        return;
+      }
+
+      const job: WritingJob = { submissionId, challengeTitle };
+      setPendingWritings((prev) => [...prev, job]);
+
+      const timer = setInterval(() => {
+        pollWritingSubmission(job);
+      }, 1000);
+
+      writingPollingRef.current.set(submissionId, timer);
+
+      toast.info('コードを実行中...', {
+        duration: 3000,
+      });
+    },
+    [pollWritingSubmission]
+  );
+
+  // ========== ライティングお題生成監視 ==========
+  const pollWritingChallenge = useCallback(
+    async (job: WritingChallengeGenJob) => {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+      try {
+        const res = await fetch(`${apiUrl}/writing/challenges/${job.challengeId}`, {
+          cache: 'no-store',
+        });
+
+        if (!res.ok) {
+          const timer = writingChallengePollingRef.current.get(job.challengeId);
+          if (timer) {
+            clearInterval(timer);
+            writingChallengePollingRef.current.delete(job.challengeId);
+          }
+          setPendingWritingChallenges((prev) => prev.filter((c) => c.challengeId !== job.challengeId));
+          toast.error('お題の生成に失敗しました');
+          return;
+        }
+
+        const data = await res.json();
+
+        if (data.status === 'READY') {
+          const timer = writingChallengePollingRef.current.get(job.challengeId);
+          if (timer) {
+            clearInterval(timer);
+            writingChallengePollingRef.current.delete(job.challengeId);
+          }
+
+          setPendingWritingChallenges((prev) => prev.filter((c) => c.challengeId !== job.challengeId));
+
+          toast.success(`お題「${data.title}」が作成されました`, {
+            duration: 10000,
+            action: {
+              label: '挑戦する',
+              onClick: () => {
+                router.push(`/writing/${job.challengeId}`);
+              },
+            },
+          });
+          router.refresh(); // リスト更新
+        } else if (data.status === 'FAILED') {
+          const timer = writingChallengePollingRef.current.get(job.challengeId);
+          if (timer) {
+            clearInterval(timer);
+            writingChallengePollingRef.current.delete(job.challengeId);
+          }
+
+          setPendingWritingChallenges((prev) => prev.filter((c) => c.challengeId !== job.challengeId));
+
+          toast.error('お題の生成に失敗しました');
+        }
+      } catch (err) {
+        console.error('Writing challenge polling error:', err);
+      }
+    },
+    [router]
+  );
+
+  const startWritingChallengeWatch = useCallback(
+    (challengeId: string) => {
+      if (writingChallengePollingRef.current.has(challengeId)) {
+        return;
+      }
+
+      const job: WritingChallengeGenJob = { challengeId };
+      setPendingWritingChallenges((prev) => [...prev, job]);
+
+      const timer = setInterval(() => {
+        pollWritingChallenge(job);
+      }, 2000);
+
+      writingChallengePollingRef.current.set(challengeId, timer);
+
+      toast.info('ライティングお題を生成中...', {
+        duration: 3000,
+      });
+    },
+    [pollWritingChallenge]
+  );
+
   // クリーンアップ
   useEffect(() => {
     return () => {
@@ -200,18 +371,26 @@ export function EvaluationToastProvider({ children }: { children: React.ReactNod
       evaluationPollingRef.current.clear();
       generationPollingRef.current.forEach((timer) => clearInterval(timer));
       generationPollingRef.current.clear();
+      writingPollingRef.current.forEach((timer) => clearInterval(timer));
+      writingPollingRef.current.clear();
+      writingChallengePollingRef.current.forEach((timer) => clearInterval(timer));
+      writingChallengePollingRef.current.clear();
     };
   }, []);
 
-  const totalPending = pendingEvaluations.length + pendingGenerations.length;
+  const totalPending = pendingEvaluations.length + pendingGenerations.length + pendingWritings.length + pendingWritingChallenges.length;
 
   return (
     <EvaluationContext.Provider
       value={{
         startEvaluationWatch,
         startGenerationWatch,
+        startWritingWatch,
+        startWritingChallengeWatch,
         pendingEvaluations,
         pendingGenerations,
+        pendingWritings,
+        pendingWritingChallenges,
       }}
     >
       {children}
@@ -220,15 +399,31 @@ export function EvaluationToastProvider({ children }: { children: React.ReactNod
       {totalPending > 0 && (
         <div className="fixed top-4 right-4 z-40 space-y-2">
           {pendingGenerations.length > 0 && (
+            <div className="flex items-center gap-3 px-4 py-3 bg-slate-800/95 backdrop-blur border border-cyan-500/30 rounded-xl shadow-lg shadow-cyan-500/10">
+              <div className="relative">
+                <Sparkles className="w-5 h-5 text-cyan-400" />
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-cyan-400 rounded-full animate-ping" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-white">リーディング問題を生成中</p>
+                <p className="text-xs text-slate-400">
+                  {pendingGenerations.length}件のAI生成が進行中
+                </p>
+              </div>
+              <Loader2 className="w-4 h-4 text-cyan-400 animate-spin ml-2" />
+            </div>
+          )}
+
+          {pendingWritingChallenges.length > 0 && (
             <div className="flex items-center gap-3 px-4 py-3 bg-slate-800/95 backdrop-blur border border-violet-500/30 rounded-xl shadow-lg shadow-violet-500/10">
               <div className="relative">
-                <Sparkles className="w-5 h-5 text-violet-400" />
+                <PenTool className="w-5 h-5 text-violet-400" />
                 <span className="absolute -top-1 -right-1 w-2 h-2 bg-violet-400 rounded-full animate-ping" />
               </div>
               <div>
-                <p className="text-sm font-medium text-white">問題を生成中</p>
+                <p className="text-sm font-medium text-white">ライティングお題を生成中</p>
                 <p className="text-xs text-slate-400">
-                  {pendingGenerations.length}件のAI生成が進行中
+                  {pendingWritingChallenges.length}件のAI生成が進行中
                 </p>
               </div>
               <Loader2 className="w-4 h-4 text-violet-400 animate-spin ml-2" />
@@ -248,6 +443,22 @@ export function EvaluationToastProvider({ children }: { children: React.ReactNod
                 </p>
               </div>
               <Loader2 className="w-4 h-4 text-cyan-400 animate-spin ml-2" />
+            </div>
+          )}
+
+          {pendingWritings.length > 0 && (
+            <div className="flex items-center gap-3 px-4 py-3 bg-slate-800/95 backdrop-blur border border-emerald-500/30 rounded-xl shadow-lg shadow-emerald-500/10">
+              <div className="relative">
+                <PenTool className="w-5 h-5 text-emerald-400" />
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-400 rounded-full animate-ping" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-white">コード実行中</p>
+                <p className="text-xs text-slate-400">
+                  {pendingWritings.length}件のテスト実行中
+                </p>
+              </div>
+              <Loader2 className="w-4 h-4 text-emerald-400 animate-spin ml-2" />
             </div>
           )}
         </div>

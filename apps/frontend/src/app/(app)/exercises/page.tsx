@@ -101,7 +101,7 @@ export default async function ExercisesPage({ searchParams }: PageProps) {
           <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
             <Filter className="w-8 h-8 text-slate-500" />
           </div>
-          <h3 className="text-lg font-medium text-white mb-2">学習が見つかりません</h3>
+          <h3 className="text-lg font-medium text-white mb-2">問題が見つかりません</h3>
           <p className="text-slate-400">「問題を作成」ボタンから新しい問題を生成してみましょう</p>
         </div>
       )}

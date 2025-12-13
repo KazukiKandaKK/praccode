@@ -8,7 +8,7 @@ COPY llm/scripts/ /work/scripts/
 RUN chmod +x /work/scripts/*.sh
 
 ENV OLLAMA_HOST="http://host.docker.internal:11434"
-ENV OLLAMA_MODEL="qwen2.5-coder:7b"
+ENV OLLAMA_MODEL="qwen2.5-coder:14b"
 
 ENTRYPOINT ["/work/scripts/smoke_test.sh"]
 

@@ -1,7 +1,7 @@
 # Base image
 FROM node:20-alpine AS base
-# Install OpenSSL for Prisma
-RUN apk add --no-cache openssl openssl-dev
+# Install OpenSSL for Prisma and Docker CLI for code runner
+RUN apk add --no-cache openssl openssl-dev docker-cli
 RUN corepack enable && corepack prepare pnpm@9.14.2 --activate
 WORKDIR /app
 

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Code2, BookOpen, BarChart3, LogOut, Menu, X, ClipboardList, Settings, ChevronDown } from 'lucide-react';
+import { Code2, BookOpen, BarChart3, LogOut, Menu, X, ClipboardList, Settings, ChevronDown, PenTool } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { logout } from '@/app/actions/auth';
 import { cn } from '@/lib/utils';
@@ -49,8 +49,9 @@ export function Navigation({ user }: NavigationProps) {
 
   const links = [
     { href: '/dashboard', label: 'ダッシュボード', icon: BarChart3 },
-    { href: '/exercises', label: '学習', icon: BookOpen },
-    { href: '/submissions', label: '学習結果', icon: ClipboardList },
+    { href: '/exercises', label: 'コードリーディング', icon: BookOpen },
+    { href: '/writing', label: 'コードライティング', icon: PenTool },
+    { href: '/submissions', label: 'リーディング結果', icon: ClipboardList },
   ];
 
   const NavLinks = ({ onNavigate }: { onNavigate?: () => void }) => (

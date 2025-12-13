@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-MODEL="${1:-qwen2.5-coder:7b}"
+MODEL="${1:-qwen2.5-coder:14b}"
 
 if ! command -v ollama >/dev/null 2>&1; then
   echo "ollama が見つかりません。mac側で Ollama をインストールしてください。"

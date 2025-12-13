@@ -18,12 +18,14 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  submissions      Submission[]
-  hints            Hint[]
-  createdExercises Exercise[]   @relation("CreatedExercises")
-  accounts         Account[]
-  sessions         Session[]
-  emailChangeTokens EmailChangeToken[]
+  submissions               Submission[]
+  hints                     Hint[]
+  createdExercises          Exercise[]          @relation("CreatedExercises")
+  createdWritingChallenges  WritingChallenge[]  @relation("CreatedWritingChallenges")
+  accounts                  Account[]
+  sessions                  Session[]
+  emailChangeTokens         EmailChangeToken[]
+  writingSubmissions        WritingSubmission[]
 
   @@map("users")
 }
@@ -187,5 +189,65 @@ model Hint {
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("hints")
+}
+
+// ========== コードライティング ==========
+
+// ライティングお題
+model WritingChallenge {
+  id          String                  @id @default(uuid())
+  title       String                  @default("")
+  description String                  @default("") @db.Text
+  language    String                  // javascript, typescript, python, go
+  difficulty  Int                     @default(1) // 1-5
+  status      WritingChallengeStatus  @default(READY)
+  testCode    String                  @default("") @map("test_code") @db.Text // テストケース
+  starterCode String?                 @map("starter_code") @db.Text // ユーザー用の初期コード
+  sampleCode  String?                 @map("sample_code") @db.Text // 参考実装（非公開）
+  createdById String?                 @map("created_by_id")
+  createdAt   DateTime                @default(now()) @map("created_at")
+  updatedAt   DateTime                @updatedAt @map("updated_at")
+
+  createdBy   User?               @relation("CreatedWritingChallenges", fields: [createdById], references: [id])
+  submissions WritingSubmission[]
+
+  @@map("writing_challenges")
+}
+
+enum WritingChallengeStatus {
+  GENERATING
+  READY
+  FAILED
+}
+
+// ライティング提出
+model WritingSubmission {
+  id                String                 @id @default(uuid())
+  challengeId       String                 @map("challenge_id")
+  userId            String                 @map("user_id")
+  language          String                 // 使用言語
+  code              String                 @db.Text
+  status            WritingSubmissionStatus @default(PENDING)
+  stdout            String?                @db.Text
+  stderr            String?                @db.Text
+  exitCode          Int?                   @map("exit_code")
+  passed            Boolean?
+  executedAt        DateTime?              @map("executed_at")
+  llmFeedback       String?                @map("llm_feedback") @db.Text
+  llmFeedbackStatus String                 @map("llm_feedback_status") @default("NOT_STARTED") // NOT_STARTED, GENERATING, COMPLETED, FAILED
+  llmFeedbackAt     DateTime?              @map("llm_feedback_at")
+  createdAt         DateTime               @default(now()) @map("created_at")
+
+  challenge WritingChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("writing_submissions")
+}
+
+enum WritingSubmissionStatus {
+  PENDING    // 実行待ち
+  RUNNING    // 実行中
+  COMPLETED  // 完了（成功/失敗問わず）
+  ERROR      // 実行エラー（タイムアウト等）
 }
 

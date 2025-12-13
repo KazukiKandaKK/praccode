@@ -6,6 +6,7 @@ import { submissionRoutes } from './routes/submissions.js';
 import { progressRoutes } from './routes/progress.js';
 import { hintRoutes } from './routes/hints.js';
 import { userRoutes } from './routes/users.js';
+import { writingRoutes } from './routes/writing.js';
 
 const fastify = Fastify({
   logger: true,
@@ -29,6 +30,7 @@ fastify.register(submissionRoutes, { prefix: '/submissions' });
 fastify.register(progressRoutes, { prefix: '/me' });
 fastify.register(hintRoutes, { prefix: '/hints' });
 fastify.register(userRoutes, { prefix: '/users' });
+fastify.register(writingRoutes, { prefix: '/writing' });
 
 // エラーハンドリング
 fastify.setErrorHandler((error, request, reply) => {

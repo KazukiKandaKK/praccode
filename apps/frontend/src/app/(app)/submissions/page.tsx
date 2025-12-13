@@ -64,9 +64,9 @@ export default async function SubmissionsPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white mb-2">学習結果</h1>
+        <h1 className="text-2xl font-bold text-white mb-2">リーディング結果</h1>
         <p className="text-slate-400">
-          これまでに取り組んだ問題の評価結果を確認できます
+          コードリーディングの評価結果を確認できます
         </p>
       </div>
 

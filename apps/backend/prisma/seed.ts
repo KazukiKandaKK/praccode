@@ -327,6 +327,291 @@ export function getErrorMessage(error: unknown): string {
 
   console.log('Created exercise 3:', exercise3.id);
 
+  // ========== コードライティングお題 ==========
+
+  // ライティングお題1: FizzBuzz (JavaScript)
+  const writingChallenge1 = await prisma.writingChallenge.upsert({
+    where: { id: '10000000-0000-0000-0000-000000000001' },
+    update: {},
+    create: {
+      id: '10000000-0000-0000-0000-000000000001',
+      title: 'FizzBuzz を実装しよう',
+      description: `関数 fizzBuzz(n) を実装してください。
+
+1からnまでの数値について、以下のルールで文字列の配列を返します:
+- 3の倍数のとき "Fizz"
+- 5の倍数のとき "Buzz"  
+- 3と5両方の倍数のとき "FizzBuzz"
+- それ以外は数値を文字列に変換
+
+例: fizzBuzz(5) => ["1", "2", "Fizz", "4", "Buzz"]`,
+      language: 'javascript',
+      difficulty: 1,
+      status: 'READY',
+      testCode: `const { fizzBuzz } = require('./solution');
+
+// テストヘルパー
+let passed = 0, failed = 0;
+function test(name, actual, expected) {
+  const eq = JSON.stringify(actual) === JSON.stringify(expected);
+  if (eq) {
+    console.log('✓ ' + name + ': PASSED');
+    passed++;
+  } else {
+    console.log('✗ ' + name + ': FAILED');
+    console.log('  期待値:', JSON.stringify(expected));
+    console.log('  実際値:', JSON.stringify(actual));
+    failed++;
+  }
+}
+
+// テストケース
+test('fizzBuzz(1)', fizzBuzz(1), ["1"]);
+test('fizzBuzz(3)', fizzBuzz(3), ["1", "2", "Fizz"]);
+test('fizzBuzz(5)', fizzBuzz(5), ["1", "2", "Fizz", "4", "Buzz"]);
+test('fizzBuzz(15)', fizzBuzz(15), ["1", "2", "Fizz", "4", "Buzz", "Fizz", "7", "8", "Fizz", "Buzz", "11", "Fizz", "13", "14", "FizzBuzz"]);
+
+// 結果サマリ
+console.log('');
+console.log(passed + '/' + (passed + failed) + ' tests passed');
+if (failed > 0) process.exit(1);`,
+      starterCode: `// 1からnまでの数値についてFizzBuzzのルールで変換した配列を返す関数
+function fizzBuzz(n) {
+  // ここに実装を書いてください
+  const result = [];
+  // TODO: 1からnまでループして、ルールに従って配列に追加
+  return result;
+}
+
+module.exports = { fizzBuzz };`,
+      sampleCode: `function fizzBuzz(n) {
+  const result = [];
+  for (let i = 1; i <= n; i++) {
+    if (i % 15 === 0) result.push("FizzBuzz");
+    else if (i % 3 === 0) result.push("Fizz");
+    else if (i % 5 === 0) result.push("Buzz");
+    else result.push(String(i));
+  }
+  return result;
+}
+module.exports = { fizzBuzz };`,
+    },
+  });
+
+  console.log('Created writing challenge 1:', writingChallenge1.id);
+
+  // ライティングお題2: 配列の合計 (Python)
+  const writingChallenge2 = await prisma.writingChallenge.upsert({
+    where: { id: '10000000-0000-0000-0000-000000000002' },
+    update: {},
+    create: {
+      id: '10000000-0000-0000-0000-000000000002',
+      title: '配列の合計と平均を計算',
+      description: `関数 calculate_stats(numbers) を実装してください。
+
+整数のリストを受け取り、合計と平均を含む辞書を返します:
+- 空リストの場合は {"sum": 0, "average": 0} を返す
+- 平均は小数点以下2桁まで（四捨五入）
+
+例: calculate_stats([1, 2, 3, 4, 5]) => {"sum": 15, "average": 3.0}`,
+      language: 'python',
+      difficulty: 1,
+      status: 'READY',
+      testCode: `from solution import calculate_stats
+
+# テストヘルパー
+passed, failed = 0, 0
+def test(name, actual, expected):
+    global passed, failed
+    if actual == expected:
+        print(f"✓ {name}: PASSED")
+        passed += 1
+    else:
+        print(f"✗ {name}: FAILED")
+        print(f"  期待値: {repr(expected)}")
+        print(f"  実際値: {repr(actual)}")
+        failed += 1
+
+# テストケース
+test("calculate_stats([])", calculate_stats([]), {"sum": 0, "average": 0})
+test("calculate_stats([5])", calculate_stats([5]), {"sum": 5, "average": 5.0})
+test("calculate_stats([1, 2, 3, 4, 5])", calculate_stats([1, 2, 3, 4, 5]), {"sum": 15, "average": 3.0})
+test("calculate_stats([10, 20, 30])", calculate_stats([10, 20, 30]), {"sum": 60, "average": 20.0})
+
+# 結果サマリ
+print()
+print(f"{passed}/{passed + failed} tests passed")
+if failed > 0:
+    exit(1)`,
+      starterCode: `# 整数のリストを受け取り、合計と平均を含む辞書を返す関数
+def calculate_stats(numbers):
+    # ここに実装を書いてください
+    # TODO: 合計と平均を計算して辞書で返す
+    return {"sum": 0, "average": 0}`,
+      sampleCode: `def calculate_stats(numbers):
+    if not numbers:
+        return {"sum": 0, "average": 0}
+    total = sum(numbers)
+    avg = round(total / len(numbers), 2)
+    return {"sum": total, "average": avg}`,
+    },
+  });
+
+  console.log('Created writing challenge 2:', writingChallenge2.id);
+
+  // ライティングお題3: 文字列反転 (TypeScript)
+  const writingChallenge3 = await prisma.writingChallenge.upsert({
+    where: { id: '10000000-0000-0000-0000-000000000003' },
+    update: {},
+    create: {
+      id: '10000000-0000-0000-0000-000000000003',
+      title: '単語ごとに文字列を反転',
+      description: `関数 reverseWords(str: string): string を実装してください。
+
+文字列を受け取り、単語の順序は保ったまま各単語の文字を反転させます:
+- 単語はスペースで区切られる
+- 連続するスペースは1つのスペースとして扱う
+
+例: reverseWords("hello world") => "olleh dlrow"
+例: reverseWords("The quick brown fox") => "ehT kciuq nworb xof"`,
+      language: 'typescript',
+      difficulty: 2,
+      status: 'READY',
+      testCode: `import { reverseWords } from './solution';
+
+// テストヘルパー
+let passed = 0, failed = 0;
+function test(name: string, actual: unknown, expected: unknown) {
+  if (actual === expected) {
+    console.log('✓ ' + name + ': PASSED');
+    passed++;
+  } else {
+    console.log('✗ ' + name + ': FAILED');
+    console.log('  期待値:', JSON.stringify(expected));
+    console.log('  実際値:', JSON.stringify(actual));
+    failed++;
+  }
+}
+
+// テストケース
+test('reverseWords("hello")', reverseWords("hello"), "olleh");
+test('reverseWords("hello world")', reverseWords("hello world"), "olleh dlrow");
+test('reverseWords("The quick brown fox")', reverseWords("The quick brown fox"), "ehT kciuq nworb xof");
+test('reverseWords("a b c")', reverseWords("a b c"), "a b c");
+test('reverseWords("")', reverseWords(""), "");
+
+// 結果サマリ
+console.log('');
+console.log(passed + '/' + (passed + failed) + ' tests passed');
+if (failed > 0) process.exit(1);`,
+      starterCode: `// 文字列を受け取り、各単語の文字を反転させる関数
+export function reverseWords(str: string): string {
+  // ここに実装を書いてください
+  // TODO: 各単語を反転して返す
+  return "";
+}`,
+      sampleCode: `export function reverseWords(str: string): string {
+  return str
+    .split(' ')
+    .map(word => word.split('').reverse().join(''))
+    .join(' ');
+}`,
+    },
+  });
+
+  console.log('Created writing challenge 3:', writingChallenge3.id);
+
+  // ライティングお題4: 素数判定 (Go)
+  const writingChallenge4 = await prisma.writingChallenge.upsert({
+    where: { id: '10000000-0000-0000-0000-000000000004' },
+    update: {},
+    create: {
+      id: '10000000-0000-0000-0000-000000000004',
+      title: '素数判定関数を実装',
+      description: `関数 IsPrime(n int) bool を実装してください。
+
+整数を受け取り、素数かどうかを判定します:
+- 2未満の数は素数ではない
+- 2は素数
+- 効率的なアルゴリズムを心がける
+
+例: IsPrime(2) => true
+例: IsPrime(4) => false
+例: IsPrime(17) => true`,
+      language: 'go',
+      difficulty: 2,
+      status: 'READY',
+      testCode: `package solution
+
+import (
+	"fmt"
+	"testing"
+)
+
+func TestIsPrime(t *testing.T) {
+	tests := []struct {
+		name string
+		n    int
+		want bool
+	}{
+		{"IsPrime(0)", 0, false},
+		{"IsPrime(1)", 1, false},
+		{"IsPrime(2)", 2, true},
+		{"IsPrime(3)", 3, true},
+		{"IsPrime(4)", 4, false},
+		{"IsPrime(17)", 17, true},
+		{"IsPrime(18)", 18, false},
+		{"IsPrime(97)", 97, true},
+		{"IsPrime(100)", 100, false},
+	}
+
+	passed := 0
+	for _, tt := range tests {
+		got := IsPrime(tt.n)
+		if got == tt.want {
+			fmt.Printf("✓ %s: PASSED\\n", tt.name)
+			passed++
+		} else {
+			fmt.Printf("✗ %s: FAILED\\n", tt.name)
+			fmt.Printf("  期待値: %v\\n", tt.want)
+			fmt.Printf("  実際値: %v\\n", got)
+			t.Fail()
+		}
+	}
+	fmt.Printf("\\n%d/%d tests passed\\n", passed, len(tests))
+}`,
+      starterCode: `package solution
+
+// 整数を受け取り、素数かどうかを判定する関数
+func IsPrime(n int) bool {
+	// ここに実装を書いてください
+	// TODO: 素数判定のロジックを実装
+	return false
+}`,
+      sampleCode: `package solution
+
+func IsPrime(n int) bool {
+	if n < 2 {
+		return false
+	}
+	if n == 2 {
+		return true
+	}
+	if n%2 == 0 {
+		return false
+	}
+	for i := 3; i*i <= n; i += 2 {
+		if n%i == 0 {
+			return false
+		}
+	}
+	return true
+}`,
+    },
+  });
+
+  console.log('Created writing challenge 4:', writingChallenge4.id);
+
   console.log('Seeding completed!');
 }
 

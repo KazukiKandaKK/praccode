@@ -50,7 +50,7 @@ macでOllamaを起動し、Dockerコンテナから `host.docker.internal:11434`
 ollama serve
 
 # 2) モデル取得（初回のみ）
-./llm/scripts/ollama_setup.sh qwen2.5-coder:7b
+./llm/scripts/ollama_setup.sh qwen2.5-coder:14b
 
 # 3) 疎通確認（DockerコンテナからホストOllamaへ）
 docker compose -f docker-compose.dev.yml run --rm llm

@@ -16,7 +16,7 @@ export function ExercisesHeader({ userId }: ExercisesHeaderProps) {
     <>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-white">学習</h1>
+          <h1 className="text-3xl font-bold text-white">コードリーディング</h1>
           <p className="text-slate-400 mt-1">コードを読んで理解力を鍛えましょう</p>
         </div>
         <Button

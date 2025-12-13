@@ -41,6 +41,10 @@ services:
       - ./apps/backend/src:/app/apps/backend/src
       - ./apps/backend/prisma:/app/apps/backend/prisma
       - ./packages/shared/src:/app/packages/shared/src
+      # Docker-outside-of-Docker: ホストのDockerソケットをマウント
+      - /var/run/docker.sock:/var/run/docker.sock
+      # コードランナー用の一時ディレクトリをホストと共有（バインドマウント）
+      - /tmp/praccode-runner:/tmp/praccode-runner
 
   # Frontend
   frontend:
@@ -75,7 +79,7 @@ services:
       dockerfile: llm/Dockerfile
     environment:
       OLLAMA_HOST: http://host.docker.internal:11434
-      OLLAMA_MODEL: qwen2.5-coder:7b
+      OLLAMA_MODEL: qwen2.5-coder:14b
     extra_hosts:
       # Linuxでも動くように（Docker Desktopでは既に存在することが多い）
       - "host.docker.internal:host-gateway"

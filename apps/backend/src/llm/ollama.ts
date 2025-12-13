@@ -5,7 +5,8 @@
 
 // Docker内からホストのOllamaに接続
 const OLLAMA_HOST = process.env.OLLAMA_HOST || 'http://host.docker.internal:11434';
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen2.5-coder:7b';
+// 1.5bは軽量で高速、7bはより高品質だが重い
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen2.5-coder:1.5b';
 
 export interface OllamaGenerateRequest {
   model: string;
@@ -33,6 +34,7 @@ export async function generateWithOllama(
     temperature?: number;
     maxTokens?: number;
     jsonMode?: boolean;
+    timeoutMs?: number;
   }
 ): Promise<string> {
   const requestBody: OllamaGenerateRequest = {
@@ -46,21 +48,37 @@ export async function generateWithOllama(
     },
   };
 
-  const response = await fetch(`${OLLAMA_HOST}/api/generate`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(requestBody),
-  });
+  // タイムアウト設定（デフォルト60秒）
+  const timeoutMs = options?.timeoutMs ?? 60000;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Ollama API error: ${response.status} - ${errorText}`);
+  try {
+    const response = await fetch(`${OLLAMA_HOST}/api/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Ollama API error: ${response.status} - ${errorText}`);
+    }
+
+    const data = (await response.json()) as OllamaGenerateResponse;
+    return data.response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`Ollama request timed out after ${timeoutMs / 1000} seconds`);
+    }
+    throw error;
   }
-
-  const data = (await response.json()) as OllamaGenerateResponse;
-  return data.response;
 }
 
 /**

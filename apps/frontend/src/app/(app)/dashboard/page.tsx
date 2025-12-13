@@ -53,7 +53,7 @@ export default async function DashboardPage() {
       <div className="grid md:grid-cols-4 gap-4 mb-8">
         <StatCard
           icon={<BookOpen className="w-5 h-5" />}
-          label="完了した学習の数"
+          label="完了した問題数"
           value={`${progress.completedExercises}/${progress.totalExercises}`}
           color="cyan"
         />
@@ -71,7 +71,7 @@ export default async function DashboardPage() {
         />
         <StatCard
           icon={<Clock className="w-5 h-5" />}
-          label="今週完了した学習の数"
+          label="今週完了した問題数"
           value="3問"
           color="amber"
         />
@@ -114,7 +114,7 @@ export default async function DashboardPage() {
         {/* Recent Activity */}
         <Card>
           <CardHeader>
-            <CardTitle>最近の学習</CardTitle>
+            <CardTitle>最近の挑戦</CardTitle>
           </CardHeader>
           <CardContent>
             {progress.recentSubmissions.length > 0 ? (
@@ -139,12 +139,12 @@ export default async function DashboardPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-slate-400 text-sm">まだ完了した学習がありません</p>
+              <p className="text-slate-400 text-sm">まだ完了した問題がありません</p>
             )}
 
             <Link href="/exercises" className="block mt-4">
               <Button variant="secondary" className="w-full">
-                学習テーマを探す
+                コードリーディングに挑戦
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
@@ -155,7 +155,7 @@ export default async function DashboardPage() {
       {/* Recommended Exercises */}
       <Card className="mt-6">
         <CardHeader>
-          <CardTitle>おすすめの学習テーマ</CardTitle>
+          <CardTitle>おすすめのリーディング問題</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid md:grid-cols-3 gap-4">

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 HOST="${OLLAMA_HOST:-http://host.docker.internal:11434}"
-MODEL="${OLLAMA_MODEL:-qwen2.5-coder:7b}"
+MODEL="${OLLAMA_MODEL:-qwen2.5-coder:14b}"
 PROMPT="${OLLAMA_PROMPT:-次のTypeScriptコードの責務を1文で説明して: export function add(a:number,b:number){return a+b}}"
 
 echo "Ollama smoke test"
