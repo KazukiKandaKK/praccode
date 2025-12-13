@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Code2, BookOpen, BarChart3, LogOut, Menu, X, ClipboardList, Settings, ChevronDown, PenTool } from 'lucide-react';
+import { Code2, BookOpen, BarChart3, LogOut, Menu, X, ClipboardList, Settings, ChevronDown, ChevronRight, PenTool, GraduationCap } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { logout } from '@/app/actions/auth';
 import { cn } from '@/lib/utils';
@@ -15,10 +15,25 @@ interface NavigationProps {
   };
 }
 
+interface SubMenuItem {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+interface MenuItem {
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  href?: string;
+  children?: SubMenuItem[];
+}
+
 export function Navigation({ user }: NavigationProps) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [hoveredMenu, setHoveredMenu] = useState<string | null>(null);
+  const [expandedMobileMenus, setExpandedMobileMenus] = useState<Set<string>>(new Set());
   const userMenuRef = useRef<HTMLDivElement | null>(null);
   const mobileDrawerRef = useRef<HTMLDivElement | null>(null);
 
@@ -47,32 +62,198 @@ export function Navigation({ user }: NavigationProps) {
     return;
   }, [mobileMenuOpen]);
 
-  const links = [
+  const menuItems: MenuItem[] = [
     { href: '/dashboard', label: 'ダッシュボード', icon: BarChart3 },
-    { href: '/exercises', label: 'コードリーディング', icon: BookOpen },
-    { href: '/submissions', label: 'リーディング結果', icon: ClipboardList },
-    { href: '/writing', label: 'コードライティング', icon: PenTool },
-    { href: '/writing/submissions', label: 'ライティング結果', icon: ClipboardList },
+    {
+      label: '学習',
+      icon: GraduationCap,
+      children: [
+        { href: '/exercises', label: 'コードリーディング', icon: BookOpen },
+        { href: '/writing', label: 'コードライティング', icon: PenTool },
+      ],
+    },
+    {
+      label: '学習結果',
+      icon: ClipboardList,
+      children: [
+        { href: '/submissions', label: 'コードリーディング', icon: BookOpen },
+        { href: '/writing/submissions', label: 'コードライティング', icon: PenTool },
+      ],
+    },
   ];
 
-  const NavLinks = ({ onNavigate }: { onNavigate?: () => void }) => (
+  const isMenuActive = (item: MenuItem): boolean => {
+    if (item.href) {
+      return pathname.startsWith(item.href);
+    }
+    if (item.children) {
+      return item.children.some((child) => pathname.startsWith(child.href));
+    }
+    return false;
+  };
+
+  const toggleMobileMenu = (label: string) => {
+    setExpandedMobileMenus((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) {
+        next.delete(label);
+      } else {
+        next.add(label);
+      }
+      return next;
+    });
+  };
+
+  // Desktop Navigation Links
+  const DesktopNavLinks = () => (
     <div className="space-y-1">
-      {links.map((link) => {
-        const Icon = link.icon;
-        const isActive = pathname.startsWith(link.href);
+      {menuItems.map((item) => {
+        const Icon = item.icon;
+        const isActive = isMenuActive(item);
+        const hasChildren = item.children && item.children.length > 0;
+
+        if (!hasChildren && item.href) {
+          // Simple link without children
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                'flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors',
+                isActive ? 'text-cyan-400 bg-cyan-500/10' : 'text-slate-300 hover:text-white hover:bg-slate-800'
+              )}
+            >
+              <Icon className="w-5 h-5" />
+              <span className="text-sm font-medium">{item.label}</span>
+            </Link>
+          );
+        }
+
+        // Menu with children (hover flyout)
         return (
-          <Link
-            key={link.href}
-            href={link.href}
-            onClick={onNavigate}
-            className={cn(
-              'flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors',
-              isActive ? 'text-cyan-400 bg-cyan-500/10' : 'text-slate-300 hover:text-white hover:bg-slate-800'
-            )}
+          <div
+            key={item.label}
+            className="relative group"
+            onMouseEnter={() => setHoveredMenu(item.label)}
+            onMouseLeave={() => setHoveredMenu(null)}
           >
-            <Icon className="w-5 h-5" />
-            <span className="text-sm font-medium">{link.label}</span>
-          </Link>
+            <div
+              className={cn(
+                'flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer',
+                isActive ? 'text-cyan-400 bg-cyan-500/10' : 'text-slate-300 hover:text-white hover:bg-slate-800'
+              )}
+            >
+              <div className="flex items-center gap-3">
+                <Icon className="w-5 h-5" />
+                <span className="text-sm font-medium">{item.label}</span>
+              </div>
+              <ChevronRight className={cn('w-4 h-4 transition-transform', hoveredMenu === item.label && 'rotate-90')} />
+            </div>
+
+            {/* Flyout submenu with bridge area */}
+            {hoveredMenu === item.label && item.children && (
+              <>
+                {/* Invisible bridge to prevent hover gap */}
+                <div className="absolute left-full top-0 w-4 h-full" />
+                <div className="absolute left-full top-0 ml-1 pt-0 z-50">
+                  <div className="w-56 bg-slate-900 border border-slate-700 rounded-xl shadow-xl overflow-hidden">
+                    {item.children.map((child) => {
+                      const ChildIcon = child.icon;
+                      const isChildActive = pathname.startsWith(child.href);
+                      return (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          className={cn(
+                            'flex items-center gap-3 px-4 py-3 transition-colors',
+                            isChildActive
+                              ? 'text-cyan-400 bg-cyan-500/10'
+                              : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                          )}
+                        >
+                          <ChildIcon className="w-4 h-4" />
+                          <span className="text-sm">{child.label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  // Mobile Navigation Links (accordion style)
+  const MobileNavLinks = ({ onNavigate }: { onNavigate?: () => void }) => (
+    <div className="space-y-1">
+      {menuItems.map((item) => {
+        const Icon = item.icon;
+        const isActive = isMenuActive(item);
+        const hasChildren = item.children && item.children.length > 0;
+        const isExpanded = expandedMobileMenus.has(item.label);
+
+        if (!hasChildren && item.href) {
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={onNavigate}
+              className={cn(
+                'flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors',
+                isActive ? 'text-cyan-400 bg-cyan-500/10' : 'text-slate-300 hover:text-white hover:bg-slate-800'
+              )}
+            >
+              <Icon className="w-5 h-5" />
+              <span className="text-sm font-medium">{item.label}</span>
+            </Link>
+          );
+        }
+
+        return (
+          <div key={item.label}>
+            <button
+              type="button"
+              onClick={() => toggleMobileMenu(item.label)}
+              className={cn(
+                'w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-colors',
+                isActive ? 'text-cyan-400 bg-cyan-500/10' : 'text-slate-300 hover:text-white hover:bg-slate-800'
+              )}
+            >
+              <div className="flex items-center gap-3">
+                <Icon className="w-5 h-5" />
+                <span className="text-sm font-medium">{item.label}</span>
+              </div>
+              <ChevronDown className={cn('w-4 h-4 transition-transform', isExpanded && 'rotate-180')} />
+            </button>
+
+            {isExpanded && item.children && (
+              <div className="ml-4 mt-1 space-y-1 border-l border-slate-700 pl-4">
+                {item.children.map((child) => {
+                  const ChildIcon = child.icon;
+                  const isChildActive = pathname.startsWith(child.href);
+                  return (
+                    <Link
+                      key={child.href}
+                      href={child.href}
+                      onClick={onNavigate}
+                      className={cn(
+                        'flex items-center gap-3 px-3 py-2 rounded-xl transition-colors',
+                        isChildActive
+                          ? 'text-cyan-400 bg-cyan-500/10'
+                          : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                      )}
+                    >
+                      <ChildIcon className="w-4 h-4" />
+                      <span className="text-sm">{child.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         );
       })}
     </div>
@@ -90,7 +271,7 @@ export function Navigation({ user }: NavigationProps) {
         </div>
 
         <div className="flex-1 px-4 py-4">
-          <NavLinks />
+          <DesktopNavLinks />
         </div>
 
         <div className="px-4 py-4 border-t border-slate-800/50">
@@ -162,7 +343,7 @@ export function Navigation({ user }: NavigationProps) {
             ref={mobileDrawerRef}
             className="absolute left-0 top-0 h-full w-72 bg-slate-950 border-r border-slate-800/50 p-4 pt-16"
           >
-            <NavLinks onNavigate={() => setMobileMenuOpen(false)} />
+            <MobileNavLinks onNavigate={() => setMobileMenuOpen(false)} />
             <div className="mt-6 pt-4 border-t border-slate-800/50 space-y-2">
               <div className="text-sm text-slate-400 px-2">{user.name || user.email}</div>
               <Link
@@ -189,4 +370,3 @@ export function Navigation({ user }: NavigationProps) {
     </>
   );
 }
-
