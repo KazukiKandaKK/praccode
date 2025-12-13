@@ -7,6 +7,7 @@ import {
   emitEvaluationFailed,
   onEvaluationEvent,
 } from '../lib/evaluation-events.js';
+import { triggerLearningAnalysis } from '../lib/analysis-trigger.js';
 
 const answerInputSchema = z.object({
   answers: z.array(
@@ -273,6 +274,11 @@ export async function submissionRoutes(fastify: FastifyInstance) {
         // 評価完了イベントを発行（SSE通知用）
         emitEvaluationComplete(id);
         fastify.log.info(`Evaluation completed for submission ${id}`);
+
+        // 学習分析をトリガー（一定条件で実行）
+        triggerLearningAnalysis(jobSubmission.userId).catch((err) => {
+          fastify.log.error(err, 'Failed to trigger learning analysis');
+        });
       } catch (error) {
         fastify.log.error(error, `Evaluation job failed for submission ${id}`);
         // 失敗してもEVALUATEDにしてUIを進める（フィードバックは各設問に入れてある想定）

@@ -26,6 +26,7 @@ model User {
   sessions                  Session[]
   emailChangeTokens         EmailChangeToken[]
   writingSubmissions        WritingSubmission[]
+  learningAnalysis          UserLearningAnalysis?
 
   @@map("users")
 }
@@ -249,5 +250,24 @@ enum WritingSubmissionStatus {
   RUNNING    // 実行中
   COMPLETED  // 完了（成功/失敗問わず）
   ERROR      // 実行エラー（タイムアウト等）
+}
+
+// ========== 学習分析 ==========
+
+// ユーザーの学習分析結果
+model UserLearningAnalysis {
+  id              String   @id @default(uuid())
+  userId          String   @unique @map("user_id")
+  strengths       Json     @default("[]") // ["責務理解が優れている", "エラーハンドリングの意識が高い"]
+  weaknesses      Json     @default("[]") // ["データフローの追跡が弱い"]
+  recommendations Json     @default("[]") // ["データフロー系の問題に挑戦", "..."]
+  summary         String   @default("") @db.Text // LLMによる総評
+  analyzedAt      DateTime @default(now()) @map("analyzed_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_learning_analyses")
 }
 

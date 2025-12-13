@@ -5,6 +5,7 @@ import { executeCode } from '../runner/executor.js';
 import { generateWritingChallenge, GenerateWritingChallengeInput } from '../llm/writing-generator.js';
 import { generateCodeReview } from '../llm/code-reviewer.js';
 import { checkOllamaHealth } from '../llm/ollama.js';
+import { triggerLearningAnalysis } from '../lib/analysis-trigger.js';
 
 // ========== Schemas ==========
 const createChallengeSchema = z.object({
@@ -332,7 +333,7 @@ async function runCodeAsync(submissionId: string, userCode: string, testCode: st
     const result = await executeCode(userCode, testCode, language);
 
     // 結果更新
-    await prisma.writingSubmission.update({
+    const updatedSubmission = await prisma.writingSubmission.update({
       where: { id: submissionId },
       data: {
         status: 'COMPLETED',
@@ -342,6 +343,11 @@ async function runCodeAsync(submissionId: string, userCode: string, testCode: st
         passed: result.exitCode === 0,
         executedAt: new Date(),
       },
+    });
+
+    // 学習分析をトリガー
+    triggerLearningAnalysis(updatedSubmission.userId).catch((err) => {
+      console.error('Failed to trigger learning analysis:', err);
     });
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Unknown error';
