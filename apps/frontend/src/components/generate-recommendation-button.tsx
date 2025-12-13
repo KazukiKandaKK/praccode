@@ -42,7 +42,7 @@ export function GenerateRecommendationButton({ userId }: GenerateRecommendationB
       }
 
       const data = await response.json();
-      
+
       const typeLabel = type === 'reading' ? 'リーディング問題' : 'ライティング問題';
       toast.success(`${typeLabel}を生成中です`, {
         description: 'しばらくお待ちください...',
@@ -67,11 +67,7 @@ export function GenerateRecommendationButton({ userId }: GenerateRecommendationB
 
   return (
     <div className="relative">
-      <Button
-        onClick={() => setIsOpen(!isOpen)}
-        disabled={isGenerating}
-        size="sm"
-      >
+      <Button onClick={() => setIsOpen(!isOpen)} disabled={isGenerating} size="sm">
         {isGenerating ? (
           <>
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -90,17 +86,14 @@ export function GenerateRecommendationButton({ userId }: GenerateRecommendationB
       {isOpen && !isGenerating && (
         <>
           {/* Backdrop */}
-          <div 
-            className="fixed inset-0 z-40" 
-            onClick={() => setIsOpen(false)}
-          />
-          
+          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+
           {/* Menu */}
           <div className="absolute right-0 bottom-full mb-2 w-64 bg-slate-900 border border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden">
             <div className="p-3 border-b border-slate-700">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-white">問題タイプを選択</span>
-                <button 
+                <button
                   onClick={() => setIsOpen(false)}
                   className="p-1 text-slate-400 hover:text-white rounded"
                 >
@@ -108,7 +101,7 @@ export function GenerateRecommendationButton({ userId }: GenerateRecommendationB
                 </button>
               </div>
             </div>
-            
+
             <div className="p-2">
               <button
                 onClick={() => handleGenerate('reading')}
@@ -122,7 +115,7 @@ export function GenerateRecommendationButton({ userId }: GenerateRecommendationB
                   <p className="text-xs text-slate-400">コードを読んで設問に答える</p>
                 </div>
               </button>
-              
+
               <button
                 onClick={() => handleGenerate('writing')}
                 className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left hover:bg-slate-800 transition-colors mt-1"

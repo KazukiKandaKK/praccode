@@ -124,7 +124,10 @@ const dashboardRoutes: FastifyPluginAsync = async (fastify) => {
           id: s.id,
           title: s.exercise.title,
           language: s.exercise.language,
-          score: s.answers.length > 0 ? Math.round(s.answers.reduce((sum, a) => sum + (a.score || 0), 0) / s.answers.length) : null,
+          score:
+            s.answers.length > 0
+              ? Math.round(s.answers.reduce((sum, a) => sum + (a.score || 0), 0) / s.answers.length)
+              : null,
           passed: null,
           date: s.updatedAt,
         })),
@@ -184,8 +187,7 @@ const dashboardRoutes: FastifyPluginAsync = async (fastify) => {
 
       // 24時間以内の分析結果があればそれを返す
       if (cached) {
-        const hoursSinceAnalysis =
-          (Date.now() - cached.analyzedAt.getTime()) / (1000 * 60 * 60);
+        const hoursSinceAnalysis = (Date.now() - cached.analyzedAt.getTime()) / (1000 * 60 * 60);
         if (hoursSinceAnalysis < 24) {
           return {
             strengths: cached.strengths,
@@ -286,7 +288,12 @@ const dashboardRoutes: FastifyPluginAsync = async (fastify) => {
           });
 
           // バックグラウンドで問題を生成
-          generateReadingExercise(exercise.id, targetLanguage, context.difficulty, context.focusAreas[0] || 'refactoring').catch((err) => {
+          generateReadingExercise(
+            exercise.id,
+            targetLanguage,
+            context.difficulty,
+            context.focusAreas[0] || 'refactoring'
+          ).catch((err) => {
             console.error('Failed to generate reading exercise:', err);
           });
 
@@ -310,9 +317,11 @@ const dashboardRoutes: FastifyPluginAsync = async (fastify) => {
           });
 
           // バックグラウンドで問題を生成
-          generateWritingChallenge(challenge.id, targetLanguage, context.difficulty).catch((err) => {
-            console.error('Failed to generate writing challenge:', err);
-          });
+          generateWritingChallenge(challenge.id, targetLanguage, context.difficulty).catch(
+            (err) => {
+              console.error('Failed to generate writing challenge:', err);
+            }
+          );
 
           return {
             challengeId: challenge.id,
@@ -332,7 +341,12 @@ const dashboardRoutes: FastifyPluginAsync = async (fastify) => {
 /**
  * リーディング問題をLLMで生成
  */
-async function generateReadingExercise(exerciseId: string, language: string, difficulty: number, genre: string) {
+async function generateReadingExercise(
+  exerciseId: string,
+  language: string,
+  difficulty: number,
+  genre: string
+) {
   try {
     const generated = await generateExercise({ language, difficulty, genre });
 
@@ -461,4 +475,3 @@ async function generateAnalysis(userId: string) {
 }
 
 export default dashboardRoutes;
-

@@ -52,6 +52,3 @@ export interface HintRequest {
 export interface HintResponse {
   hint: string;
 }
-
-
-

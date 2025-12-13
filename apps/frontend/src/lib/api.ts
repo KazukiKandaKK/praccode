@@ -109,13 +109,19 @@ export const api = {
     }>(response);
   },
 
-  async saveAnswers(submissionId: string, answers: Array<{ questionIndex: number; answerText: string }>) {
+  async saveAnswers(
+    submissionId: string,
+    answers: Array<{ questionIndex: number; answerText: string }>
+  ) {
     const response = await fetch(`${API_BASE_URL}/submissions/${submissionId}/answers`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ answers }),
     });
-    return handleResponse<{ id: string; answers: Array<{ questionIndex: number; answerText: string }> }>(response);
+    return handleResponse<{
+      id: string;
+      answers: Array<{ questionIndex: number; answerText: string }>;
+    }>(response);
   },
 
   async evaluateSubmission(submissionId: string) {
@@ -162,4 +168,3 @@ export const api = {
     return handleResponse<{ hint: string }>(response);
   },
 };
-

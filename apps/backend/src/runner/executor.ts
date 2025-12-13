@@ -13,12 +13,15 @@ export interface ExecutionResult {
 }
 
 // 言語ごとの設定
-const LANGUAGE_CONFIG: Record<string, {
-  image: string;
-  extension: string;
-  testExtension: string;
-  command: (userFile: string, testFile: string) => string[];
-}> = {
+const LANGUAGE_CONFIG: Record<
+  string,
+  {
+    image: string;
+    extension: string;
+    testExtension: string;
+    command: (userFile: string, testFile: string) => string[];
+  }
+> = {
   javascript: {
     image: 'node:20-alpine',
     extension: '.js',
@@ -81,23 +84,26 @@ export async function executeCode(
   }
 }
 
-function runDocker(
-  workDir: string,
-  image: string,
-  command: string[]
-): Promise<ExecutionResult> {
+function runDocker(workDir: string, image: string, command: string[]): Promise<ExecutionResult> {
   return new Promise((resolve) => {
     const dockerArgs = [
       'run',
       '--rm',
-      '--network', 'none',           // ネットワーク無効
-      '--memory', '128m',            // メモリ制限
-      '--cpus', '0.5',               // CPU制限
-      '--pids-limit', '64',          // プロセス数制限
-      '--read-only',                 // 読み取り専用
-      '--tmpfs', '/tmp:size=64m',    // 一時ファイル用
-      '-v', `${workDir}:/app:ro`,    // 作業ディレクトリをマウント（読み取り専用）
-      '-w', '/app',
+      '--network',
+      'none', // ネットワーク無効
+      '--memory',
+      '128m', // メモリ制限
+      '--cpus',
+      '0.5', // CPU制限
+      '--pids-limit',
+      '64', // プロセス数制限
+      '--read-only', // 読み取り専用
+      '--tmpfs',
+      '/tmp:size=64m', // 一時ファイル用
+      '-v',
+      `${workDir}:/app:ro`, // 作業ディレクトリをマウント（読み取り専用）
+      '-w',
+      '/app',
       image,
       ...command,
     ];
@@ -153,5 +159,3 @@ function runDocker(
     });
   });
 }
-
-

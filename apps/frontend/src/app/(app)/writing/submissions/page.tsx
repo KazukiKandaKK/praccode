@@ -34,10 +34,9 @@ interface SubmissionsResponse {
 async function getSubmissions(userId: string): Promise<SubmissionsResponse> {
   try {
     const apiUrl = process.env.API_URL || 'http://localhost:3001';
-    const response = await fetch(
-      `${apiUrl}/writing/submissions?userId=${userId}`,
-      { cache: 'no-store' }
-    );
+    const response = await fetch(`${apiUrl}/writing/submissions?userId=${userId}`, {
+      cache: 'no-store',
+    });
 
     if (!response.ok) {
       console.error('Failed to fetch writing submissions:', response.status);
@@ -76,9 +75,7 @@ export default async function WritingSubmissionsPage() {
           </div>
           <h1 className="text-2xl font-bold text-white">ライティング結果</h1>
         </div>
-        <p className="text-slate-400">
-          コードライティングの提出結果を確認できます
-        </p>
+        <p className="text-slate-400">コードライティングの提出結果を確認できます</p>
       </div>
 
       {/* Stats */}
@@ -111,15 +108,7 @@ export default async function WritingSubmissionsPage() {
   );
 }
 
-function StatCard({
-  label,
-  value,
-  icon,
-}: {
-  label: string;
-  value: string;
-  icon: React.ReactNode;
-}) {
+function StatCard({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
   return (
     <Card>
       <CardContent className="p-4">
@@ -136,5 +125,3 @@ function StatCard({
     </Card>
   );
 }
-
-

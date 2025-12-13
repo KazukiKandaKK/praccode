@@ -8,15 +8,15 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { getDifficultyLabel, getDifficultyColor, getLanguageLabel } from '@/lib/utils';
 import { toast } from 'sonner';
-import { 
-  PenTool, 
-  Play, 
-  Loader2, 
-  CheckCircle2, 
-  XCircle, 
+import {
+  PenTool,
+  Play,
+  Loader2,
+  CheckCircle2,
+  XCircle,
   ArrowLeft,
   Terminal,
-  Clock
+  Clock,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -49,7 +49,7 @@ interface WritingSubmission {
  */
 function generateStarterCode(language: string, testCode: string): string {
   let functionName = 'solution';
-  
+
   // 言語ごとにテストコードから関数名を抽出
   if (language === 'python') {
     // from solution import func_name
@@ -62,7 +62,7 @@ def ${functionName}(*args):
     pass
 `;
   }
-  
+
   if (language === 'javascript') {
     // const { funcName } = require('./solution') or require('./solution').funcName
     const match = testCode.match(/(?:const|let|var)\s*\{\s*(\w+)\s*\}\s*=\s*require/);
@@ -77,7 +77,7 @@ function ${functionName}() {
 module.exports = { ${functionName} };
 `;
   }
-  
+
   if (language === 'typescript') {
     // import { funcName } from './solution'
     const match = testCode.match(/import\s*\{\s*(\w+)\s*\}\s*from/);
@@ -90,7 +90,7 @@ export function ${functionName}(...args: unknown[]): unknown {
 }
 `;
   }
-  
+
   if (language === 'go') {
     // func TestFuncName or FuncName(
     const match = testCode.match(/\b([A-Z][a-zA-Z0-9]*)\s*\(/);
@@ -108,7 +108,7 @@ func ${functionName}(args ...interface{}) interface{} {
 }
 `;
   }
-  
+
   // フォールバック
   return `// お題の説明を読んで、関数を実装してください
 `;
@@ -157,34 +157,37 @@ export default function WritingChallengePage() {
   }, [challengeId, apiUrl, router]);
 
   // 提出ポーリング
-  const pollSubmission = useCallback(async (submissionId: string) => {
-    try {
-      const res = await fetch(`${apiUrl}/writing/submissions/${submissionId}`);
-      if (!res.ok) return;
+  const pollSubmission = useCallback(
+    async (submissionId: string) => {
+      try {
+        const res = await fetch(`${apiUrl}/writing/submissions/${submissionId}`);
+        if (!res.ok) return;
 
-      const data: WritingSubmission = await res.json();
-      setSubmission(data);
+        const data: WritingSubmission = await res.json();
+        setSubmission(data);
 
-      if (data.status === 'PENDING' || data.status === 'RUNNING') {
-        setTimeout(() => pollSubmission(submissionId), 1000);
-      } else {
-        if (data.passed) {
-          toast.success('テストに合格しました！');
+        if (data.status === 'PENDING' || data.status === 'RUNNING') {
+          setTimeout(() => pollSubmission(submissionId), 1000);
         } else {
-          toast.error('テストに失敗しました');
+          if (data.passed) {
+            toast.success('テストに合格しました！');
+          } else {
+            toast.error('テストに失敗しました');
+          }
         }
-      }
 
-      // LLMフィードバックのポーリング（生成中の場合）
-      if (data.llmFeedbackStatus === 'GENERATING') {
-        setTimeout(() => pollSubmission(submissionId), 2000);
-      } else if (data.llmFeedbackStatus === 'COMPLETED' && !submission?.llmFeedback) {
-        toast.success('AIフィードバックが完成しました！');
+        // LLMフィードバックのポーリング（生成中の場合）
+        if (data.llmFeedbackStatus === 'GENERATING') {
+          setTimeout(() => pollSubmission(submissionId), 2000);
+        } else if (data.llmFeedbackStatus === 'COMPLETED' && !submission?.llmFeedback) {
+          toast.success('AIフィードバックが完成しました！');
+        }
+      } catch (err) {
+        console.error('Poll error:', err);
       }
-    } catch (err) {
-      console.error('Poll error:', err);
-    }
-  }, [apiUrl, submission]);
+    },
+    [apiUrl, submission]
+  );
 
   // LLMフィードバックをリクエスト
   const handleRequestFeedback = async () => {
@@ -283,11 +286,13 @@ export default function WritingChallengePage() {
             {getDifficultyLabel(challenge.difficulty)}
           </Badge>
         </div>
-        
+
         {/* Description with function signature highlight */}
         <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
           <h3 className="text-sm font-semibold text-violet-400 mb-2">お題</h3>
-          <p className="text-slate-300 whitespace-pre-wrap leading-relaxed">{challenge.description}</p>
+          <p className="text-slate-300 whitespace-pre-wrap leading-relaxed">
+            {challenge.description}
+          </p>
           <p className="text-xs text-amber-400 mt-3">
             💡 説明文の関数名と引数を正確に実装してください
           </p>
@@ -404,7 +409,8 @@ export default function WritingChallengePage() {
 
                 {submission.exitCode !== null && (
                   <div className="text-sm text-slate-400">
-                    終了コード: <code className="bg-slate-800 px-2 py-0.5 rounded">{submission.exitCode}</code>
+                    終了コード:{' '}
+                    <code className="bg-slate-800 px-2 py-0.5 rounded">{submission.exitCode}</code>
                   </div>
                 )}
               </CardContent>
@@ -441,14 +447,17 @@ export default function WritingChallengePage() {
 
                 {submission.llmFeedbackStatus === 'COMPLETED' && submission.llmFeedback && (
                   <div className="prose prose-invert prose-sm max-w-none">
-                    <div 
+                    <div
                       className="text-slate-300 leading-relaxed"
-                      dangerouslySetInnerHTML={{ 
+                      dangerouslySetInnerHTML={{
                         __html: submission.llmFeedback
                           .replace(/\n/g, '<br/>')
-                          .replace(/###\s*(.+?)(<br\/>|$)/g, '<h3 class="text-lg font-semibold text-white mt-4 mb-2">$1</h3>')
+                          .replace(
+                            /###\s*(.+?)(<br\/>|$)/g,
+                            '<h3 class="text-lg font-semibold text-white mt-4 mb-2">$1</h3>'
+                          )
                           .replace(/\*\*(.+?)\*\*/g, '<strong class="text-white">$1</strong>')
-                          .replace(/-\s+(.+?)(<br\/>|$)/g, '<li class="ml-4">$1</li>')
+                          .replace(/-\s+(.+?)(<br\/>|$)/g, '<li class="ml-4">$1</li>'),
                       }}
                     />
                   </div>
@@ -460,11 +469,7 @@ export default function WritingChallengePage() {
                     <p className="text-xs text-slate-400 mb-4">
                       Ollamaが起動しているか確認してください（ollama serve）
                     </p>
-                    <Button
-                      onClick={handleRequestFeedback}
-                      variant="outline"
-                      size="sm"
-                    >
+                    <Button onClick={handleRequestFeedback} variant="outline" size="sm">
                       再試行
                     </Button>
                   </div>
@@ -473,7 +478,9 @@ export default function WritingChallengePage() {
                 {submission.llmFeedbackStatus === 'NOT_STARTED' && (
                   <div className="text-center py-8 text-slate-400">
                     <p className="mb-2">AIによるコードレビューを受けることができます</p>
-                    <p className="text-xs text-slate-500">良い点や改善点について具体的なフィードバックを提供します</p>
+                    <p className="text-xs text-slate-500">
+                      良い点や改善点について具体的なフィードバックを提供します
+                    </p>
                   </div>
                 )}
               </CardContent>
@@ -484,4 +491,3 @@ export default function WritingChallengePage() {
     </div>
   );
 }
-

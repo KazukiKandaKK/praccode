@@ -65,14 +65,11 @@ export async function submissionRoutes(fastify: FastifyInstance) {
 
     // 各サブミッションの平均スコアと評価レベルを計算
     const submissionsWithStats = submissions.map((sub) => {
-      const evaluatedAnswers = sub.answers.filter(
-        (a) => a.score !== null && a.level !== null
-      );
+      const evaluatedAnswers = sub.answers.filter((a) => a.score !== null && a.level !== null);
       const avgScore =
         evaluatedAnswers.length > 0
           ? Math.round(
-              evaluatedAnswers.reduce((sum, a) => sum + (a.score || 0), 0) /
-                evaluatedAnswers.length
+              evaluatedAnswers.reduce((sum, a) => sum + (a.score || 0), 0) / evaluatedAnswers.length
             )
           : null;
       const overallLevel =
@@ -80,10 +77,10 @@ export async function submissionRoutes(fastify: FastifyInstance) {
           ? avgScore >= 90
             ? 'A'
             : avgScore >= 70
-            ? 'B'
-            : avgScore >= 50
-            ? 'C'
-            : 'D'
+              ? 'B'
+              : avgScore >= 50
+                ? 'C'
+                : 'D'
           : null;
 
       return {
@@ -317,7 +314,9 @@ export async function submissionRoutes(fastify: FastifyInstance) {
         Connection: 'keep-alive',
         'Access-Control-Allow-Origin': '*',
       });
-      reply.raw.write(`event: evaluated\ndata: ${JSON.stringify({ submissionId: id, status: 'EVALUATED' })}\n\n`);
+      reply.raw.write(
+        `event: evaluated\ndata: ${JSON.stringify({ submissionId: id, status: 'EVALUATED' })}\n\n`
+      );
       reply.raw.end();
       return;
     }
@@ -350,15 +349,19 @@ export async function submissionRoutes(fastify: FastifyInstance) {
     });
 
     // タイムアウト（5分）
-    const timeout = setTimeout(() => {
-      reply.raw.write(`event: timeout\ndata: ${JSON.stringify({ message: 'Connection timeout' })}\n\n`);
-      reply.raw.end();
-      cleanup();
-    }, 5 * 60 * 1000);
+    const timeout = setTimeout(
+      () => {
+        reply.raw.write(
+          `event: timeout\ndata: ${JSON.stringify({ message: 'Connection timeout' })}\n\n`
+        );
+        reply.raw.end();
+        cleanup();
+      },
+      5 * 60 * 1000
+    );
 
     request.raw.on('close', () => {
       clearTimeout(timeout);
     });
   });
 }
-

@@ -45,7 +45,8 @@ export async function analyzeLearningProgress(
       strengths: [],
       weaknesses: [],
       recommendations: ['まずは問題に挑戦してみましょう！'],
-      summary: 'まだ提出データがありません。問題に挑戦すると、あなたの強みや改善点を分析できるようになります。',
+      summary:
+        'まだ提出データがありません。問題に挑戦すると、あなたの強みや改善点を分析できるようになります。',
     };
   }
 
@@ -254,4 +255,3 @@ export function getRecommendedProblemContext(analysis: AnalysisResult): {
     difficulty,
   };
 }
-

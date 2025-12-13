@@ -81,26 +81,20 @@ export function SubmissionSidePanel({ submissionId, onClose }: SubmissionSidePan
   if (!submissionId) return null;
 
   // 統計計算
-  const evaluatedAnswers = submission?.answers.filter(
-    (a) => a.score !== null && a.level !== null
-  ) || [];
+  const evaluatedAnswers =
+    submission?.answers.filter((a) => a.score !== null && a.level !== null) || [];
   const avgScore =
     evaluatedAnswers.length > 0
       ? Math.round(
-          evaluatedAnswers.reduce((sum, a) => sum + (a.score || 0), 0) /
-            evaluatedAnswers.length
+          evaluatedAnswers.reduce((sum, a) => sum + (a.score || 0), 0) / evaluatedAnswers.length
         )
       : 0;
-  const overallLevel =
-    avgScore >= 90 ? 'A' : avgScore >= 70 ? 'B' : avgScore >= 50 ? 'C' : 'D';
+  const overallLevel = avgScore >= 90 ? 'A' : avgScore >= 70 ? 'B' : avgScore >= 50 ? 'C' : 'D';
 
   return (
     <>
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/50 z-40 transition-opacity"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 bg-black/50 z-40 transition-opacity" onClick={onClose} />
 
       {/* Side Panel */}
       <div className="fixed right-0 top-0 h-full w-full max-w-xl bg-slate-900 border-l border-slate-700 z-50 overflow-y-auto shadow-2xl animate-slide-in-right">
@@ -133,17 +127,11 @@ export function SubmissionSidePanel({ submissionId, onClose }: SubmissionSidePan
             <div className="space-y-6">
               {/* Exercise Info */}
               <div>
-                <h3 className="text-xl font-bold text-white mb-2">
-                  {submission.exercise.title}
-                </h3>
+                <h3 className="text-xl font-bold text-white mb-2">{submission.exercise.title}</h3>
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant="primary">
-                    {getLanguageLabel(submission.exercise.language)}
-                  </Badge>
+                  <Badge variant="primary">{getLanguageLabel(submission.exercise.language)}</Badge>
                   {submission.exercise.genre && (
-                    <Badge variant="secondary">
-                      {getGenreLabel(submission.exercise.genre)}
-                    </Badge>
+                    <Badge variant="secondary">{getGenreLabel(submission.exercise.genre)}</Badge>
                   )}
                 </div>
               </div>
@@ -168,10 +156,10 @@ export function SubmissionSidePanel({ submissionId, onClose }: SubmissionSidePan
                       {overallLevel === 'A'
                         ? '素晴らしい！'
                         : overallLevel === 'B'
-                        ? 'よくできました'
-                        : overallLevel === 'C'
-                        ? '改善の余地あり'
-                        : 'もう一度挑戦'}
+                          ? 'よくできました'
+                          : overallLevel === 'C'
+                            ? '改善の余地あり'
+                            : 'もう一度挑戦'}
                     </h4>
                     <div className="flex gap-4 text-sm">
                       <div className="flex items-center gap-1 text-slate-400">
@@ -257,5 +245,3 @@ export function SubmissionSidePanel({ submissionId, onClose }: SubmissionSidePan
     </>
   );
 }
-
-

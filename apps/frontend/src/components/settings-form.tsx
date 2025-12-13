@@ -140,7 +140,11 @@ export function SettingsForm({ me }: { me: MeResponse }) {
 
           <div>
             <label className="block text-sm text-slate-400 mb-2">表示名</label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="例: Kazuki" />
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="例: Kazuki"
+            />
           </div>
           <div className="flex justify-end">
             <Button onClick={handleSaveName} disabled={savingName || !name.trim()}>
@@ -177,7 +181,10 @@ export function SettingsForm({ me }: { me: MeResponse }) {
             </p>
           </div>
           <div className="flex justify-end">
-            <Button onClick={handleRequestEmailChange} disabled={requestingEmail || !newEmail.trim()}>
+            <Button
+              onClick={handleRequestEmailChange}
+              disabled={requestingEmail || !newEmail.trim()}
+            >
               {requestingEmail ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
               確認リンクを送る
             </Button>
@@ -218,7 +225,9 @@ export function SettingsForm({ me }: { me: MeResponse }) {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-slate-400 mb-2">新しいパスワード（確認）</label>
+                  <label className="block text-sm text-slate-400 mb-2">
+                    新しいパスワード（確認）
+                  </label>
                   <Input
                     type="password"
                     value={newPassword2}
@@ -257,5 +266,3 @@ export function SettingsForm({ me }: { me: MeResponse }) {
     </div>
   );
 }
-
-

@@ -4,15 +4,15 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { getLanguageLabel, getDifficultyLabel, getDifficultyColor } from '@/lib/utils';
-import { 
-  X, 
-  CheckCircle2, 
-  XCircle, 
-  Code2, 
-  Terminal, 
+import {
+  X,
+  CheckCircle2,
+  XCircle,
+  Code2,
+  Terminal,
   MessageSquare,
   ExternalLink,
-  Clock
+  Clock,
 } from 'lucide-react';
 
 interface WritingSubmissionSummary {
@@ -55,16 +55,16 @@ function formatDate(dateString: string): string {
   });
 }
 
-export function WritingSubmissionSidePanel({ submission, onClose }: WritingSubmissionSidePanelProps) {
+export function WritingSubmissionSidePanel({
+  submission,
+  onClose,
+}: WritingSubmissionSidePanelProps) {
   if (!submission) return null;
 
   return (
     <>
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/50 z-40 transition-opacity"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 bg-black/50 z-40 transition-opacity" onClick={onClose} />
 
       {/* Side Panel */}
       <div className="fixed right-0 top-0 h-full w-full max-w-xl bg-slate-900 border-l border-slate-700 z-50 overflow-y-auto shadow-2xl animate-slide-in-right">
@@ -84,13 +84,9 @@ export function WritingSubmissionSidePanel({ submission, onClose }: WritingSubmi
           <div className="space-y-6">
             {/* Exercise Info */}
             <div>
-              <h3 className="text-xl font-bold text-white mb-2">
-                {submission.challenge.title}
-              </h3>
+              <h3 className="text-xl font-bold text-white mb-2">{submission.challenge.title}</h3>
               <div className="flex flex-wrap gap-2">
-                <Badge variant="primary">
-                  {getLanguageLabel(submission.language)}
-                </Badge>
+                <Badge variant="primary">{getLanguageLabel(submission.language)}</Badge>
                 <Badge className={getDifficultyColor(submission.challenge.difficulty)}>
                   {getDifficultyLabel(submission.challenge.difficulty)}
                 </Badge>
@@ -98,21 +94,25 @@ export function WritingSubmissionSidePanel({ submission, onClose }: WritingSubmi
             </div>
 
             {/* Overall Status */}
-            <div className={`rounded-xl p-6 border ${
-              submission.passed === true 
-                ? 'bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border-emerald-500/30'
-                : submission.passed === false
-                ? 'bg-gradient-to-r from-red-500/10 to-orange-500/10 border-red-500/30'
-                : 'bg-gradient-to-r from-slate-500/10 to-slate-400/10 border-slate-500/30'
-            }`}>
+            <div
+              className={`rounded-xl p-6 border ${
+                submission.passed === true
+                  ? 'bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border-emerald-500/30'
+                  : submission.passed === false
+                    ? 'bg-gradient-to-r from-red-500/10 to-orange-500/10 border-red-500/30'
+                    : 'bg-gradient-to-r from-slate-500/10 to-slate-400/10 border-slate-500/30'
+              }`}
+            >
               <div className="flex items-center gap-6">
-                <div className={`w-20 h-20 rounded-xl flex items-center justify-center border ${
-                  submission.passed === true
-                    ? 'bg-emerald-500/20 border-emerald-500/50'
-                    : submission.passed === false
-                    ? 'bg-red-500/20 border-red-500/50'
-                    : 'bg-slate-500/20 border-slate-500/50'
-                }`}>
+                <div
+                  className={`w-20 h-20 rounded-xl flex items-center justify-center border ${
+                    submission.passed === true
+                      ? 'bg-emerald-500/20 border-emerald-500/50'
+                      : submission.passed === false
+                        ? 'bg-red-500/20 border-red-500/50'
+                        : 'bg-slate-500/20 border-slate-500/50'
+                  }`}
+                >
                   {submission.passed === true ? (
                     <CheckCircle2 className="w-10 h-10 text-emerald-400" />
                   ) : submission.passed === false ? (
@@ -122,18 +122,20 @@ export function WritingSubmissionSidePanel({ submission, onClose }: WritingSubmi
                   )}
                 </div>
                 <div className="flex-1">
-                  <h4 className={`text-lg font-bold mb-1 ${
-                    submission.passed === true
-                      ? 'text-emerald-400'
-                      : submission.passed === false
-                      ? 'text-red-400'
-                      : 'text-slate-400'
-                  }`}>
+                  <h4
+                    className={`text-lg font-bold mb-1 ${
+                      submission.passed === true
+                        ? 'text-emerald-400'
+                        : submission.passed === false
+                          ? 'text-red-400'
+                          : 'text-slate-400'
+                    }`}
+                  >
                     {submission.passed === true
                       ? 'テスト成功！'
                       : submission.passed === false
-                      ? 'テスト失敗'
-                      : '実行中...'}
+                        ? 'テスト失敗'
+                        : '実行中...'}
                   </h4>
                   <div className="flex gap-4 text-sm">
                     <div className="flex items-center gap-1 text-slate-400">
@@ -169,7 +171,7 @@ export function WritingSubmissionSidePanel({ submission, onClose }: WritingSubmi
                   <Terminal className="w-4 h-4 text-emerald-400" />
                   <h4 className="text-sm font-medium text-slate-300">テスト結果</h4>
                 </div>
-                
+
                 {submission.stdout && (
                   <div className="mb-2">
                     <p className="text-xs text-slate-400 mb-1">標準出力:</p>
@@ -198,14 +200,17 @@ export function WritingSubmissionSidePanel({ submission, onClose }: WritingSubmi
                   <h4 className="text-sm font-medium text-slate-300">AIフィードバック</h4>
                 </div>
                 <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
-                  <div 
+                  <div
                     className="text-sm text-slate-300 leading-relaxed prose prose-invert prose-sm max-w-none"
-                    dangerouslySetInnerHTML={{ 
+                    dangerouslySetInnerHTML={{
                       __html: submission.llmFeedback
                         .replace(/\n/g, '<br/>')
-                        .replace(/###\s*(.+?)(<br\/>|$)/g, '<h4 class="text-sm font-semibold text-white mt-3 mb-1">$1</h4>')
+                        .replace(
+                          /###\s*(.+?)(<br\/>|$)/g,
+                          '<h4 class="text-sm font-semibold text-white mt-3 mb-1">$1</h4>'
+                        )
                         .replace(/\*\*(.+?)\*\*/g, '<strong class="text-white">$1</strong>')
-                        .replace(/-\s+(.+?)(<br\/>|$)/g, '<li class="ml-2 text-slate-300">$1</li>')
+                        .replace(/-\s+(.+?)(<br\/>|$)/g, '<li class="ml-2 text-slate-300">$1</li>'),
                     }}
                   />
                 </div>

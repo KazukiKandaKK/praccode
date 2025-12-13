@@ -88,11 +88,8 @@ export function CreateExerciseDialog({ isOpen, onClose, userId }: CreateExercise
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+
       {/* Dialog */}
       <Card className="relative z-10 w-full max-w-lg mx-4 bg-slate-900 border-slate-700">
         <CardHeader className="flex flex-row items-center justify-between">
@@ -108,7 +105,7 @@ export function CreateExerciseDialog({ isOpen, onClose, userId }: CreateExercise
             <X className="w-5 h-5" />
           </button>
         </CardHeader>
-        
+
         <CardContent className="space-y-6">
           {/* 言語選択 */}
           <div>
@@ -135,9 +132,7 @@ export function CreateExerciseDialog({ isOpen, onClose, userId }: CreateExercise
 
           {/* ジャンル選択 */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              ジャンル
-            </label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">ジャンル</label>
             <div className="grid grid-cols-2 gap-2">
               {GENRES.map((g) => (
                 <button
@@ -158,9 +153,7 @@ export function CreateExerciseDialog({ isOpen, onClose, userId }: CreateExercise
 
           {/* 難易度選択 */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              難易度
-            </label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">難易度</label>
             <div className="space-y-2">
               {DIFFICULTIES.map((diff) => (
                 <button
@@ -174,9 +167,11 @@ export function CreateExerciseDialog({ isOpen, onClose, userId }: CreateExercise
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className={`font-medium ${
-                      difficulty === diff.value ? 'text-cyan-400' : 'text-white'
-                    }`}>
+                    <span
+                      className={`font-medium ${
+                        difficulty === diff.value ? 'text-cyan-400' : 'text-white'
+                      }`}
+                    >
                       Lv.{diff.value} {diff.label}
                     </span>
                     <div className="flex gap-1">
@@ -222,12 +217,9 @@ export function CreateExerciseDialog({ isOpen, onClose, userId }: CreateExercise
             )}
           </Button>
 
-          <p className="text-xs text-center text-slate-400">
-            生成完了後、右上に通知が届きます
-          </p>
+          <p className="text-xs text-center text-slate-400">生成完了後、右上に通知が届きます</p>
         </CardContent>
       </Card>
     </div>
   );
 }
-

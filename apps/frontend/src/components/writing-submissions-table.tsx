@@ -7,7 +7,17 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { WritingSubmissionSidePanel } from '@/components/writing-submission-side-panel';
 import { getLanguageLabel, getDifficultyLabel, getDifficultyColor } from '@/lib/utils';
-import { PenTool, ArrowRight, CheckCircle2, XCircle, MessageSquare, Eye, Clock, ChevronDown, ChevronRight } from 'lucide-react';
+import {
+  PenTool,
+  ArrowRight,
+  CheckCircle2,
+  XCircle,
+  MessageSquare,
+  Eye,
+  Clock,
+  ChevronDown,
+  ChevronRight,
+} from 'lucide-react';
 
 interface WritingSubmissionSummary {
   id: string;
@@ -61,7 +71,9 @@ function formatDate(dateString: string): string {
 }
 
 export function WritingSubmissionsTable({ submissions }: WritingSubmissionsTableProps) {
-  const [selectedSubmission, setSelectedSubmission] = useState<WritingSubmissionSummary | null>(null);
+  const [selectedSubmission, setSelectedSubmission] = useState<WritingSubmissionSummary | null>(
+    null
+  );
   const [isMounted, setIsMounted] = useState(false);
   const [expandedChallenges, setExpandedChallenges] = useState<Set<string>>(new Set());
 
@@ -126,12 +138,8 @@ export function WritingSubmissionsTable({ submissions }: WritingSubmissionsTable
             <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
               <PenTool className="w-8 h-8 text-slate-500" />
             </div>
-            <h3 className="text-lg font-medium text-white mb-2">
-              まだ提出履歴がありません
-            </h3>
-            <p className="text-slate-400 mb-6">
-              お題に挑戦して、コードを提出しましょう
-            </p>
+            <h3 className="text-lg font-medium text-white mb-2">まだ提出履歴がありません</h3>
+            <p className="text-slate-400 mb-6">お題に挑戦して、コードを提出しましょう</p>
             <Link href="/writing">
               <Button>
                 お題一覧へ
@@ -184,9 +192,7 @@ export function WritingSubmissionsTable({ submissions }: WritingSubmissionsTable
 
                     {/* 問題タイトル */}
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-white font-medium truncate">
-                        {group.title}
-                      </h3>
+                      <h3 className="text-white font-medium truncate">{group.title}</h3>
                       <div className="flex items-center gap-2 mt-1">
                         <Badge variant="outline" className="text-xs">
                           {getLanguageLabel(group.language)}
@@ -211,9 +217,7 @@ export function WritingSubmissionsTable({ submissions }: WritingSubmissionsTable
                           <span className="text-sm">{group.failedCount}</span>
                         </div>
                       )}
-                      {group.hasFeedback && (
-                        <MessageSquare className="w-4 h-4 text-cyan-400" />
-                      )}
+                      {group.hasFeedback && <MessageSquare className="w-4 h-4 text-cyan-400" />}
                     </div>
 
                     {/* 提出回数 */}
@@ -256,7 +260,10 @@ export function WritingSubmissionsTable({ submissions }: WritingSubmissionsTable
                         </thead>
                         <tbody>
                           {group.submissions
-                            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                            .sort(
+                              (a, b) =>
+                                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                            )
                             .map((submission, index) => (
                               <tr
                                 key={submission.id}
@@ -319,7 +326,7 @@ export function WritingSubmissionsTable({ submissions }: WritingSubmissionsTable
                             ))}
                         </tbody>
                       </table>
-                      
+
                       {/* お題への再挑戦リンク */}
                       <div className="px-6 py-3 bg-slate-800/20 border-t border-slate-700/30">
                         <Link href={`/writing/${group.challengeId}`}>

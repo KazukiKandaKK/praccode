@@ -22,9 +22,7 @@ export function WritingHeader({ userId }: WritingHeaderProps) {
             </div>
             <h1 className="text-2xl font-bold text-white">コードライティング</h1>
           </div>
-          <p className="text-slate-400">
-            お題に沿ってコードを書き、テストを通過させましょう。
-          </p>
+          <p className="text-slate-400">お題に沿ってコードを書き、テストを通過させましょう。</p>
         </div>
         <Button
           onClick={() => setIsDialogOpen(true)}
@@ -43,5 +41,3 @@ export function WritingHeader({ userId }: WritingHeaderProps) {
     </>
   );
 }
-
-

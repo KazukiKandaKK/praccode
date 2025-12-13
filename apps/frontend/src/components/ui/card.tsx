@@ -26,17 +26,20 @@ CardHeader.displayName = 'CardHeader';
 
 export const CardTitle = forwardRef<HTMLHeadingElement, HTMLAttributes<HTMLHeadingElement>>(
   ({ className, ...props }, ref) => {
-    return <h3 ref={ref} className={cn('text-xl font-semibold text-white', className)} {...props} />;
+    return (
+      <h3 ref={ref} className={cn('text-xl font-semibold text-white', className)} {...props} />
+    );
   }
 );
 
 CardTitle.displayName = 'CardTitle';
 
-export const CardDescription = forwardRef<HTMLParagraphElement, HTMLAttributes<HTMLParagraphElement>>(
-  ({ className, ...props }, ref) => {
-    return <p ref={ref} className={cn('text-sm text-slate-400 mt-1', className)} {...props} />;
-  }
-);
+export const CardDescription = forwardRef<
+  HTMLParagraphElement,
+  HTMLAttributes<HTMLParagraphElement>
+>(({ className, ...props }, ref) => {
+  return <p ref={ref} className={cn('text-sm text-slate-400 mt-1', className)} {...props} />;
+});
 
 CardDescription.displayName = 'CardDescription';
 
@@ -51,4 +54,3 @@ export const CardFooter = forwardRef<HTMLDivElement, CardProps>(({ className, ..
 });
 
 CardFooter.displayName = 'CardFooter';
-

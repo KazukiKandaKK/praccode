@@ -71,4 +71,3 @@ export async function loginWithGitHub() {
 export async function logout() {
   await signOut({ redirectTo: '/' });
 }
-

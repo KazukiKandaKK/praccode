@@ -23,7 +23,7 @@ function convertPythonTest(testCode: string): string {
     if (line.trim().startsWith('from ') || line.trim().startsWith('import ')) {
       imports.push(line);
     }
-    
+
     // assert func(...) == expected のパターン
     const match = line.match(/assert\s+(\w+)\((.*?)\)\s*==\s*(.+)/);
     if (match) {
@@ -39,7 +39,7 @@ function convertPythonTest(testCode: string): string {
   // 新形式のテストコードを生成
   const funcName = assertions[0].func;
   let newCode = imports.join('\n') + '\n\n';
-  
+
   newCode += `# テストヘルパー
 passed, failed = 0, 0
 def test(name, actual, expected):
@@ -86,7 +86,7 @@ function convertJavaScriptTest(testCode: string): string {
     if (line.trim().startsWith('const ') && line.includes('require')) {
       requires.push(line);
     }
-    
+
     // assert.strictEqual(func(...), expected) または assert.deepStrictEqual
     const match = line.match(/assert\.(?:strict|deepStrict)Equal\((\w+)\((.*?)\),\s*(.+?)\);?/);
     if (match) {
@@ -100,7 +100,7 @@ function convertJavaScriptTest(testCode: string): string {
   }
 
   let newCode = requires.join('\n') + '\n\n';
-  
+
   newCode += `// テストヘルパー
 let passed = 0, failed = 0;
 function test(name, actual, expected) {
@@ -148,7 +148,7 @@ function convertTypeScriptTest(testCode: string): string {
     if (line.trim().startsWith('import ')) {
       imports.push(line);
     }
-    
+
     const match = line.match(/assert\.strictEqual\((\w+)\((.*?)\),\s*(.+?)\);?/);
     if (match) {
       const [, func, args, expected] = match;
@@ -161,9 +161,9 @@ function convertTypeScriptTest(testCode: string): string {
   }
 
   // import assert from 'assert' を除去
-  const filteredImports = imports.filter(imp => !imp.includes("from 'assert'"));
+  const filteredImports = imports.filter((imp) => !imp.includes("from 'assert'"));
   let newCode = filteredImports.join('\n') + '\n\n';
-  
+
   newCode += `// テストヘルパー
 let passed = 0, failed = 0;
 function test(name: string, actual: unknown, expected: unknown) {
@@ -247,4 +247,3 @@ main().catch((err) => {
   console.error('Migration failed:', err);
   process.exit(1);
 });
-

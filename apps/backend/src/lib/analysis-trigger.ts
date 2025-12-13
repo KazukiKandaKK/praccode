@@ -33,14 +33,15 @@ export async function triggerLearningAnalysis(userId: string): Promise<void> {
     const totalSubmissions = readingCount + writingCount;
 
     // 分析がない場合、または一定間隔で分析を実行
-    const shouldAnalyze =
-      !existingAnalysis || totalSubmissions % ANALYSIS_TRIGGER_INTERVAL === 0;
+    const shouldAnalyze = !existingAnalysis || totalSubmissions % ANALYSIS_TRIGGER_INTERVAL === 0;
 
     if (!shouldAnalyze) {
       return;
     }
 
-    console.info(`Triggering learning analysis for user ${userId} (${totalSubmissions} submissions)`);
+    console.info(
+      `Triggering learning analysis for user ${userId} (${totalSubmissions} submissions)`
+    );
 
     // 提出データを取得
     const readingSubmissions = await prisma.submission.findMany({
@@ -125,4 +126,3 @@ export async function triggerLearningAnalysis(userId: string): Promise<void> {
     // エラーは握りつぶして、メイン処理には影響を与えない
   }
 }
-

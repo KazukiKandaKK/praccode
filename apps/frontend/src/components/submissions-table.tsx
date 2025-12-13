@@ -135,12 +135,8 @@ export function SubmissionsTable({ submissions }: SubmissionsTableProps) {
             <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
               <FileText className="w-8 h-8 text-slate-500" />
             </div>
-            <h3 className="text-lg font-medium text-white mb-2">
-              まだ学習結果がありません
-            </h3>
-            <p className="text-slate-400 mb-6">
-              問題に挑戦して、最初の評価を獲得しましょう
-            </p>
+            <h3 className="text-lg font-medium text-white mb-2">まだ学習結果がありません</h3>
+            <p className="text-slate-400 mb-6">問題に挑戦して、最初の評価を獲得しましょう</p>
             <Link href="/exercises">
               <Button>
                 問題一覧へ
@@ -186,18 +182,16 @@ export function SubmissionsTable({ submissions }: SubmissionsTableProps) {
                         group.bestLevel === 'A'
                           ? 'bg-emerald-400'
                           : group.bestLevel === 'B'
-                          ? 'bg-cyan-400'
-                          : group.bestLevel === 'C'
-                          ? 'bg-amber-400'
-                          : 'bg-red-400'
+                            ? 'bg-cyan-400'
+                            : group.bestLevel === 'C'
+                              ? 'bg-amber-400'
+                              : 'bg-red-400'
                       }`}
                     />
 
                     {/* 問題タイトル */}
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-white font-medium truncate">
-                        {group.title}
-                      </h3>
+                      <h3 className="text-white font-medium truncate">{group.title}</h3>
                       <div className="flex items-center gap-2 mt-1">
                         <Badge variant="primary" className="text-xs">
                           {getLanguageLabel(group.language)}
@@ -262,7 +256,10 @@ export function SubmissionsTable({ submissions }: SubmissionsTableProps) {
                         </thead>
                         <tbody>
                           {group.submissions
-                            .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+                            .sort(
+                              (a, b) =>
+                                new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+                            )
                             .map((submission, index) => (
                               <tr
                                 key={submission.id}
@@ -291,7 +288,9 @@ export function SubmissionsTable({ submissions }: SubmissionsTableProps) {
                                         : 'text-slate-600'
                                     }`}
                                   >
-                                    {submission.avgScore !== null ? `${submission.avgScore}点` : '-'}
+                                    {submission.avgScore !== null
+                                      ? `${submission.avgScore}点`
+                                      : '-'}
                                   </span>
                                 </td>
                                 <td className="py-3 px-4">
@@ -317,7 +316,7 @@ export function SubmissionsTable({ submissions }: SubmissionsTableProps) {
                             ))}
                         </tbody>
                       </table>
-                      
+
                       {/* お題への再挑戦リンク */}
                       <div className="px-6 py-3 bg-slate-800/20 border-t border-slate-700/30">
                         <Link href={`/exercises/${group.exerciseId}`}>

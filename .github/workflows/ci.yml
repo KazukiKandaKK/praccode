@@ -145,4 +145,3 @@ jobs:
           # Next.js build requires these environment variables
           NEXTAUTH_SECRET: ci-build-secret
           NEXTAUTH_URL: http://localhost:3000
-

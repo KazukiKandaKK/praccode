@@ -57,4 +57,3 @@ export async function hintRoutes(fastify: FastifyInstance) {
     }
   });
 }
-

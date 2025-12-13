@@ -110,4 +110,3 @@ export async function listOllamaModels(): Promise<string[]> {
   const data = (await response.json()) as { models: Array<{ name: string }> };
   return data.models.map((m) => m.name);
 }
-

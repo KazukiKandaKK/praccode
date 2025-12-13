@@ -89,13 +89,14 @@ function ChallengeCard({ challenge }: { challenge: WritingChallenge }) {
         </h3>
 
         {/* Description */}
-        <p className="text-sm text-slate-400 mb-4 line-clamp-3">
-          {challenge.description}
-        </p>
+        <p className="text-sm text-slate-400 mb-4 line-clamp-3">{challenge.description}</p>
 
         {/* Action */}
         <Link href={`/writing/${challenge.id}`}>
-          <Button variant="secondary" className="w-full group-hover:bg-violet-500 group-hover:text-white transition-colors">
+          <Button
+            variant="secondary"
+            className="w-full group-hover:bg-violet-500 group-hover:text-white transition-colors"
+          >
             挑戦する
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
@@ -104,4 +105,3 @@ function ChallengeCard({ challenge }: { challenge: WritingChallenge }) {
     </Card>
   );
 }
-

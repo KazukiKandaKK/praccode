@@ -8,11 +8,11 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: praccode
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
       interval: 5s
       timeout: 5s
       retries: 5
@@ -24,7 +24,7 @@ services:
     container_name: praccode-backend
     restart: unless-stopped
     ports:
-      - "3001:3001"
+      - '3001:3001'
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/praccode?schema=public
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
@@ -42,7 +42,7 @@ services:
     container_name: praccode-frontend
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       NEXTAUTH_URL: http://localhost:3000
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-change-me}
@@ -56,6 +56,3 @@ services:
 
 volumes:
   postgres_data:
-
-
-

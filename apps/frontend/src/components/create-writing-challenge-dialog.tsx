@@ -27,9 +27,15 @@ const DIFFICULTIES = [
   { value: 5, label: 'エキスパート', description: '高度なアルゴリズム' },
 ];
 
-export function CreateWritingChallengeDialog({ isOpen, onClose, userId }: CreateWritingChallengeDialogProps) {
+export function CreateWritingChallengeDialog({
+  isOpen,
+  onClose,
+  userId,
+}: CreateWritingChallengeDialogProps) {
   const { startWritingChallengeWatch } = useEvaluationToast();
-  const [language, setLanguage] = useState<'javascript' | 'typescript' | 'python' | 'go'>('javascript');
+  const [language, setLanguage] = useState<'javascript' | 'typescript' | 'python' | 'go'>(
+    'javascript'
+  );
   const [difficulty, setDifficulty] = useState(2);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -74,11 +80,8 @@ export function CreateWritingChallengeDialog({ isOpen, onClose, userId }: Create
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+
       {/* Dialog */}
       <Card className="relative z-10 w-full max-w-lg mx-4 bg-slate-900 border-slate-700">
         <CardHeader className="flex flex-row items-center justify-between">
@@ -94,7 +97,7 @@ export function CreateWritingChallengeDialog({ isOpen, onClose, userId }: Create
             <X className="w-5 h-5" />
           </button>
         </CardHeader>
-        
+
         <CardContent className="space-y-6">
           {/* 言語選択 */}
           <div>
@@ -121,9 +124,7 @@ export function CreateWritingChallengeDialog({ isOpen, onClose, userId }: Create
 
           {/* 難易度選択 */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              難易度
-            </label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">難易度</label>
             <div className="space-y-2">
               {DIFFICULTIES.map((diff) => (
                 <button
@@ -137,9 +138,11 @@ export function CreateWritingChallengeDialog({ isOpen, onClose, userId }: Create
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className={`font-medium ${
-                      difficulty === diff.value ? 'text-violet-400' : 'text-white'
-                    }`}>
+                    <span
+                      className={`font-medium ${
+                        difficulty === diff.value ? 'text-violet-400' : 'text-white'
+                      }`}
+                    >
                       Lv.{diff.value} {diff.label}
                     </span>
                     <div className="flex gap-1">
@@ -185,13 +188,9 @@ export function CreateWritingChallengeDialog({ isOpen, onClose, userId }: Create
             )}
           </Button>
 
-          <p className="text-xs text-center text-slate-400">
-            生成完了後、右上に通知が届きます
-          </p>
+          <p className="text-xs text-center text-slate-400">生成完了後、右上に通知が届きます</p>
         </CardContent>
       </Card>
     </div>
   );
 }
-
-

@@ -4,7 +4,20 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Target, TrendingUp, Clock, ArrowRight, PenTool, CheckCircle2, XCircle, Sparkles, AlertTriangle, Lightbulb, Zap } from 'lucide-react';
+import {
+  BookOpen,
+  Target,
+  TrendingUp,
+  Clock,
+  ArrowRight,
+  PenTool,
+  CheckCircle2,
+  XCircle,
+  Sparkles,
+  AlertTriangle,
+  Lightbulb,
+  Zap,
+} from 'lucide-react';
 import { getLearningGoalLabel } from '@/lib/utils';
 import { GenerateRecommendationButton } from '@/components/generate-recommendation-button';
 
@@ -74,7 +87,8 @@ export default async function DashboardPage() {
     getLearningAnalysis(session.user.id),
   ]);
 
-  const totalSubmissions = (stats?.totalReadingSubmissions || 0) + (stats?.totalWritingSubmissions || 0);
+  const totalSubmissions =
+    (stats?.totalReadingSubmissions || 0) + (stats?.totalWritingSubmissions || 0);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -83,7 +97,9 @@ export default async function DashboardPage() {
         <h1 className="text-3xl font-bold text-white">
           おかえりなさい、{session.user.name || 'ユーザー'}さん
         </h1>
-        <p className="text-slate-400 mt-2">今日もコードリーディング・ライティングを頑張りましょう！</p>
+        <p className="text-slate-400 mt-2">
+          今日もコードリーディング・ライティングを頑張りましょう！
+        </p>
       </div>
 
       {/* Stats Grid */}
@@ -149,7 +165,9 @@ export default async function DashboardPage() {
               <div className="mt-6 pt-4 border-t border-slate-700">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-slate-400">ライティング成功率</span>
-                  <span className="text-lg font-bold text-emerald-400">{stats.writingPassRate}%</span>
+                  <span className="text-lg font-bold text-emerald-400">
+                    {stats.writingPassRate}%
+                  </span>
                 </div>
                 <div className="h-2 bg-slate-700 rounded-full overflow-hidden mt-2">
                   <div
@@ -185,9 +203,7 @@ export default async function DashboardPage() {
                         {activity.type === 'reading' ? 'リーディング' : 'ライティング'}
                       </span>
                     </div>
-                    <p className="text-white font-medium text-sm line-clamp-2">
-                      {activity.title}
-                    </p>
+                    <p className="text-white font-medium text-sm line-clamp-2">{activity.title}</p>
                     <div className="flex items-center justify-between mt-2">
                       <span className="text-xs text-slate-400">
                         {new Date(activity.date).toLocaleDateString('ja-JP')}
@@ -197,8 +213,9 @@ export default async function DashboardPage() {
                           {activity.score}点
                         </Badge>
                       )}
-                      {activity.type === 'writing' && activity.passed !== null && (
-                        activity.passed ? (
+                      {activity.type === 'writing' &&
+                        activity.passed !== null &&
+                        (activity.passed ? (
                           <Badge className="bg-emerald-500/20 text-emerald-400">
                             <CheckCircle2 className="w-3 h-3 mr-1" />
                             成功
@@ -208,8 +225,7 @@ export default async function DashboardPage() {
                             <XCircle className="w-3 h-3 mr-1" />
                             失敗
                           </Badge>
-                        )
-                      )}
+                        ))}
                     </div>
                   </div>
                 ))}
@@ -258,9 +274,7 @@ export default async function DashboardPage() {
                   ))}
                 </ul>
               ) : (
-                <p className="text-slate-400 text-sm">
-                  まだ分析データがありません
-                </p>
+                <p className="text-slate-400 text-sm">まだ分析データがありません</p>
               )}
             </CardContent>
           </Card>
@@ -284,9 +298,7 @@ export default async function DashboardPage() {
                   ))}
                 </ul>
               ) : (
-                <p className="text-slate-400 text-sm">
-                  現時点では特に改善点は見つかりません
-                </p>
+                <p className="text-slate-400 text-sm">現時点では特に改善点は見つかりません</p>
               )}
             </CardContent>
           </Card>
@@ -310,9 +322,7 @@ export default async function DashboardPage() {
                   ))}
                 </ul>
               ) : (
-                <p className="text-slate-400 text-sm">
-                  問題に挑戦するとおすすめが表示されます
-                </p>
+                <p className="text-slate-400 text-sm">問題に挑戦するとおすすめが表示されます</p>
               )}
             </CardContent>
           </Card>
@@ -330,7 +340,7 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             <p className="text-slate-300 mb-4">{analysis.summary}</p>
-            
+
             <div className="flex items-center justify-between pt-4 border-t border-slate-700">
               <span className="text-xs text-slate-500">
                 最終分析: {new Date(analysis.analyzedAt).toLocaleString('ja-JP')}
@@ -349,12 +359,9 @@ export default async function DashboardPage() {
               <div className="w-16 h-16 bg-gradient-to-r from-cyan-500/10 to-violet-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <TrendingUp className="w-8 h-8 text-cyan-400" />
               </div>
-              <h3 className="text-lg font-medium text-white mb-2">
-                さあ、学習を始めましょう！
-              </h3>
+              <h3 className="text-lg font-medium text-white mb-2">さあ、学習を始めましょう！</h3>
               <p className="text-slate-400 mb-6 max-w-md mx-auto">
-                問題に挑戦すると、あなたの強みや改善点をAIが分析し、
-                最適な学習プランを提案します。
+                問題に挑戦すると、あなたの強みや改善点をAIが分析し、 最適な学習プランを提案します。
               </p>
               <div className="flex gap-3 justify-center">
                 <Link href="/exercises">

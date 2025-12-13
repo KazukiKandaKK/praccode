@@ -6,7 +6,12 @@ import { CodeViewer } from '@/components/code-viewer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { getDifficultyLabel, getDifficultyColor, getLanguageLabel, getLearningGoalLabel } from '@/lib/utils';
+import {
+  getDifficultyLabel,
+  getDifficultyColor,
+  getLanguageLabel,
+  getLearningGoalLabel,
+} from '@/lib/utils';
 import { Lightbulb, Send, Loader2, ChevronLeft, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
@@ -95,7 +100,8 @@ export default function ExerciseDetailPage() {
     await new Promise((resolve) => setTimeout(resolve, 1500));
     setHints((prev) => ({
       ...prev,
-      [questionIndex]: 'コードの構造に注目してみましょう。このクラスがどのようなメソッドを持っているか、それぞれのメソッドが何を行っているかを整理してみてください。',
+      [questionIndex]:
+        'コードの構造に注目してみましょう。このクラスがどのようなメソッドを持っているか、それぞれのメソッドが何を行っているかを整理してみてください。',
     }));
     setLoadingHint(null);
   };
@@ -236,9 +242,7 @@ export default function ExerciseDetailPage() {
           {exercise.questions.map((question, index) => (
             <Card key={question.id || String(question.questionIndex)}>
               <CardHeader>
-                <CardTitle className="text-lg">
-                  問題 {index + 1}
-                </CardTitle>
+                <CardTitle className="text-lg">問題 {index + 1}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-slate-300">{question.questionText}</p>
@@ -357,4 +361,3 @@ export default function ExerciseDetailPage() {
     </div>
   );
 }
-

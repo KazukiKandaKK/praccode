@@ -84,4 +84,3 @@ export function getGenreLabel(genre: string): string {
   };
   return labels[genre] || genre;
 }
-

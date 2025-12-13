@@ -7,11 +7,7 @@ import { CodeViewer } from '@/components/code-viewer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  getScoreLevelColor,
-  getScoreLevelBgColor,
-  getLearningGoalLabel,
-} from '@/lib/utils';
+import { getScoreLevelColor, getScoreLevelBgColor, getLearningGoalLabel } from '@/lib/utils';
 import { ChevronLeft, Trophy, Target, TrendingUp, ArrowRight, Loader2 } from 'lucide-react';
 
 type ScoreLevel = 'A' | 'B' | 'C' | 'D';
@@ -262,13 +258,14 @@ export default function SubmissionResultPage() {
                   {overallLevel === 'A'
                     ? '素晴らしい！'
                     : overallLevel === 'B'
-                    ? 'よくできました！'
-                    : overallLevel === 'C'
-                    ? '改善の余地があります'
-                    : 'もう一度挑戦しましょう'}
+                      ? 'よくできました！'
+                      : overallLevel === 'C'
+                        ? '改善の余地があります'
+                        : 'もう一度挑戦しましょう'}
                 </h2>
                 <p className="text-slate-400">
-                  {submission.answers.length}問中{evaluatedAnswers.filter((a) => a.score >= 70).length}
+                  {submission.answers.length}問中
+                  {evaluatedAnswers.filter((a) => a.score >= 70).length}
                   問で良好な評価を獲得
                 </p>
               </div>
@@ -351,7 +348,9 @@ export default function SubmissionResultPage() {
                   {/* Question */}
                   <div>
                     <h4 className="text-sm font-medium text-slate-400 mb-1">問題</h4>
-                    <p className="text-white">{question?.questionText ?? '（問題文を取得できませんでした）'}</p>
+                    <p className="text-white">
+                      {question?.questionText ?? '（問題文を取得できませんでした）'}
+                    </p>
                   </div>
 
                   {/* Your Answer */}
@@ -432,4 +431,3 @@ function QuickStat({
     </div>
   );
 }
-

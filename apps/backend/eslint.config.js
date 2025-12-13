@@ -17,7 +17,7 @@ export default tseslint.config(
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-non-null-assertion': 'warn',
-      
+
       // General
       'no-console': ['warn', { allow: ['warn', 'error', 'info'] }],
       'prefer-const': 'error',
@@ -28,4 +28,3 @@ export default tseslint.config(
     ignores: ['dist/**', 'node_modules/**', '*.test.ts', 'vitest.config.ts'],
   }
 );
-

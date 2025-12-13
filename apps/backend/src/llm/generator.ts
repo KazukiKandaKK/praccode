@@ -136,4 +136,3 @@ export async function generateExercise(input: GenerateExerciseInput): Promise<Ge
 
   return validated;
 }
-

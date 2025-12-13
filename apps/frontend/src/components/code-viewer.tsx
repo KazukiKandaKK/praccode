@@ -193,4 +193,3 @@ function getHighlighterLanguage(language: string): string {
   };
   return mapping[language] || 'javascript';
 }
-

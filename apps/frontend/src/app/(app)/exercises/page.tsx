@@ -6,7 +6,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ExercisesHeader } from '@/components/exercises-header';
 import { ExerciseFilters } from '@/components/exercise-filters';
-import { getDifficultyLabel, getDifficultyColor, getLanguageLabel, getLearningGoalLabel, getGenreLabel } from '@/lib/utils';
+import {
+  getDifficultyLabel,
+  getDifficultyColor,
+  getLanguageLabel,
+  getLearningGoalLabel,
+  getGenreLabel,
+} from '@/lib/utils';
 import { Filter, ArrowRight } from 'lucide-react';
 
 interface Exercise {
@@ -28,16 +34,16 @@ interface FilterParams {
 async function getExercises(filters: FilterParams): Promise<{ exercises: Exercise[] }> {
   try {
     const apiUrl = process.env.API_URL || 'http://localhost:3001';
-    
+
     // クエリパラメータを構築
     const params = new URLSearchParams();
     if (filters.language) params.set('language', filters.language);
     if (filters.difficulty) params.set('difficulty', filters.difficulty);
     if (filters.genre) params.set('genre', filters.genre);
-    
+
     const queryString = params.toString();
     const url = queryString ? `${apiUrl}/exercises?${queryString}` : `${apiUrl}/exercises`;
-    
+
     const response = await fetch(url, {
       cache: 'no-store',
     });
@@ -66,7 +72,7 @@ interface PageProps {
 
 export default async function ExercisesPage({ searchParams }: PageProps) {
   const session = await auth();
-  
+
   if (!session?.user?.id) {
     redirect('/login');
   }
@@ -109,11 +115,7 @@ export default async function ExercisesPage({ searchParams }: PageProps) {
   );
 }
 
-function ExerciseCard({
-  exercise,
-}: {
-  exercise: Exercise;
-}) {
+function ExerciseCard({ exercise }: { exercise: Exercise }) {
   return (
     <Card className="group hover:border-cyan-500/30 transition-colors">
       <CardContent className="p-6">
@@ -123,9 +125,7 @@ function ExerciseCard({
           <Badge className={getDifficultyColor(exercise.difficulty)}>
             {getDifficultyLabel(exercise.difficulty)}
           </Badge>
-          {exercise.genre && (
-            <Badge variant="secondary">{getGenreLabel(exercise.genre)}</Badge>
-          )}
+          {exercise.genre && <Badge variant="secondary">{getGenreLabel(exercise.genre)}</Badge>}
         </div>
 
         {/* Title */}
@@ -136,10 +136,7 @@ function ExerciseCard({
         {/* Learning Goals */}
         <div className="flex flex-wrap gap-1.5 mb-4">
           {exercise.learningGoals.slice(0, 3).map((goal) => (
-            <span
-              key={goal}
-              className="text-xs px-2 py-1 bg-slate-700/50 text-slate-300 rounded"
-            >
+            <span key={goal} className="text-xs px-2 py-1 bg-slate-700/50 text-slate-300 rounded">
               {getLearningGoalLabel(goal)}
             </span>
           ))}
@@ -147,7 +144,10 @@ function ExerciseCard({
 
         {/* Action */}
         <Link href={`/exercises/${exercise.id}`}>
-          <Button variant="secondary" className="w-full group-hover:bg-cyan-500 group-hover:text-slate-900 transition-colors">
+          <Button
+            variant="secondary"
+            className="w-full group-hover:bg-cyan-500 group-hover:text-slate-900 transition-colors"
+          >
             挑戦する
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>

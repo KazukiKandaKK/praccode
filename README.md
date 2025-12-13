@@ -11,15 +11,15 @@
 
 ## 技術スタック
 
-| 領域 | 技術 |
-|------|------|
-| パッケージ管理 | pnpm + Turborepo |
+| 領域           | 技術                                         |
+| -------------- | -------------------------------------------- |
+| パッケージ管理 | pnpm + Turborepo                             |
 | フロントエンド | Next.js 14 (App Router), React, Tailwind CSS |
-| バックエンド | Fastify |
-| ORM | Prisma |
-| 認証 | NextAuth.js v5 |
-| LLM | OpenAI (GPT-4o-mini) |
-| データベース | PostgreSQL |
+| バックエンド   | Fastify                                      |
+| ORM            | Prisma                                       |
+| 認証           | NextAuth.js v5                               |
+| LLM            | OpenAI (GPT-4o-mini)                         |
+| データベース   | PostgreSQL                                   |
 
 ## ディレクトリ構成
 
@@ -72,10 +72,10 @@ chmod +x scripts/setup.sh
 
 ### サンプルユーザー
 
-| 種別 | メールアドレス | パスワード |
-|------|---------------|-----------|
-| 一般ユーザー | user@example.com | user |
-| 管理者 | admin@example.com | admin |
+| 種別         | メールアドレス    | パスワード |
+| ------------ | ----------------- | ---------- |
+| 一般ユーザー | user@example.com  | user       |
+| 管理者       | admin@example.com | admin      |
 
 ### アクセス URL
 
@@ -190,4 +190,3 @@ make clean      # クリーンアップ
 ## ライセンス
 
 Apache-2.0
-

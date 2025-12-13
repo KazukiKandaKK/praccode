@@ -2,7 +2,10 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { prisma } from '../lib/prisma.js';
 import { z } from 'zod';
 import { executeCode } from '../runner/executor.js';
-import { generateWritingChallenge, GenerateWritingChallengeInput } from '../llm/writing-generator.js';
+import {
+  generateWritingChallenge,
+  GenerateWritingChallengeInput,
+} from '../llm/writing-generator.js';
 import { generateCodeReview } from '../llm/code-reviewer.js';
 import { checkOllamaHealth } from '../llm/ollama.js';
 import { triggerLearningAnalysis } from '../lib/analysis-trigger.js';
@@ -51,30 +54,33 @@ export async function writingRoutes(fastify: FastifyInstance) {
   });
 
   // GET /writing/challenges/:id - お題詳細
-  fastify.get('/challenges/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    const { id } = request.params;
+  fastify.get(
+    '/challenges/:id',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const { id } = request.params;
 
-    const challenge = await prisma.writingChallenge.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        language: true,
-        difficulty: true,
-        status: true,
-        testCode: true,
-        starterCode: true,
-        createdAt: true,
-      },
-    });
+      const challenge = await prisma.writingChallenge.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          language: true,
+          difficulty: true,
+          status: true,
+          testCode: true,
+          starterCode: true,
+          createdAt: true,
+        },
+      });
 
-    if (!challenge) {
-      return reply.status(404).send({ error: 'Challenge not found' });
+      if (!challenge) {
+        return reply.status(404).send({ error: 'Challenge not found' });
+      }
+
+      return reply.send(challenge);
     }
-
-    return reply.send(challenge);
-  });
+  );
 
   // POST /writing/challenges - お題作成（管理者用）
   fastify.post('/challenges', async (request: FastifyRequest, reply: FastifyReply) => {
@@ -170,116 +176,125 @@ export async function writingRoutes(fastify: FastifyInstance) {
   });
 
   // GET /writing/submissions/:id - 提出結果取得
-  fastify.get('/submissions/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    const { id } = request.params;
+  fastify.get(
+    '/submissions/:id',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const { id } = request.params;
 
-    const submission = await prisma.writingSubmission.findUnique({
-      where: { id },
-      include: {
-        challenge: {
-          select: {
-            id: true,
-            title: true,
-            language: true,
+      const submission = await prisma.writingSubmission.findUnique({
+        where: { id },
+        include: {
+          challenge: {
+            select: {
+              id: true,
+              title: true,
+              language: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    if (!submission) {
-      return reply.status(404).send({ error: 'Submission not found' });
+      if (!submission) {
+        return reply.status(404).send({ error: 'Submission not found' });
+      }
+
+      return reply.send(submission);
     }
-
-    return reply.send(submission);
-  });
+  );
 
   // GET /writing/submissions - ユーザーの提出履歴
-  fastify.get('/submissions', async (request: FastifyRequest<{ Querystring: { userId?: string } }>, reply: FastifyReply) => {
-    const { userId } = request.query;
+  fastify.get(
+    '/submissions',
+    async (request: FastifyRequest<{ Querystring: { userId?: string } }>, reply: FastifyReply) => {
+      const { userId } = request.query;
 
-    if (!userId) {
-      return reply.status(400).send({ error: 'userId is required' });
-    }
+      if (!userId) {
+        return reply.status(400).send({ error: 'userId is required' });
+      }
 
-    const submissions = await prisma.writingSubmission.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
-      include: {
-        challenge: {
-          select: {
-            id: true,
-            title: true,
-            language: true,
-            difficulty: true,
+      const submissions = await prisma.writingSubmission.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          challenge: {
+            select: {
+              id: true,
+              title: true,
+              language: true,
+              difficulty: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    return reply.send({ submissions });
-  });
+      return reply.send({ submissions });
+    }
+  );
 
   // POST /writing/submissions/:id/feedback - LLMフィードバックをリクエスト
-  fastify.post('/submissions/:id/feedback', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    const { id } = request.params;
+  fastify.post(
+    '/submissions/:id/feedback',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const { id } = request.params;
 
-    // Ollamaの接続確認
-    const isHealthy = await checkOllamaHealth();
-    if (!isHealthy) {
-      return reply.status(503).send({ 
-        error: 'LLM service is not available. Please ensure Ollama is running.',
-        hint: 'Run "ollama serve" and ensure the model is loaded.'
-      });
-    }
+      // Ollamaの接続確認
+      const isHealthy = await checkOllamaHealth();
+      if (!isHealthy) {
+        return reply.status(503).send({
+          error: 'LLM service is not available. Please ensure Ollama is running.',
+          hint: 'Run "ollama serve" and ensure the model is loaded.',
+        });
+      }
 
-    const submission = await prisma.writingSubmission.findUnique({
-      where: { id },
-      include: {
-        challenge: {
-          select: {
-            title: true,
-            description: true,
-            testCode: true,
+      const submission = await prisma.writingSubmission.findUnique({
+        where: { id },
+        include: {
+          challenge: {
+            select: {
+              title: true,
+              description: true,
+              testCode: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    if (!submission) {
-      return reply.status(404).send({ error: 'Submission not found' });
-    }
+      if (!submission) {
+        return reply.status(404).send({ error: 'Submission not found' });
+      }
 
-    // すでに実行されている必要がある
-    if (!submission.executedAt) {
-      return reply.status(400).send({ error: 'Please run the code first' });
-    }
+      // すでに実行されている必要がある
+      if (!submission.executedAt) {
+        return reply.status(400).send({ error: 'Please run the code first' });
+      }
 
-    // すでに生成中の場合はそのまま返す
-    if (submission.llmFeedbackStatus === 'GENERATING') {
+      // すでに生成中の場合はそのまま返す
+      if (submission.llmFeedbackStatus === 'GENERATING') {
+        return reply.status(202).send({
+          id: submission.id,
+          status: 'GENERATING',
+          message: 'Feedback generation already in progress',
+        });
+      }
+
+      // ステータスを GENERATING に更新
+      await prisma.writingSubmission.update({
+        where: { id },
+        data: { llmFeedbackStatus: 'GENERATING' },
+      });
+
+      // 非同期でフィードバック生成
+      generateFeedbackAsync(fastify, submission).catch((err) => {
+        fastify.log.error({ submissionId: id, err }, 'Feedback generation failed');
+      });
+
       return reply.status(202).send({
         id: submission.id,
         status: 'GENERATING',
-        message: 'Feedback generation already in progress',
+        message: 'Feedback generation started',
       });
     }
-
-    // ステータスを GENERATING に更新
-    await prisma.writingSubmission.update({
-      where: { id },
-      data: { llmFeedbackStatus: 'GENERATING' },
-    });
-
-    // 非同期でフィードバック生成
-    generateFeedbackAsync(fastify, submission).catch((err) => {
-      fastify.log.error({ submissionId: id, err }, 'Feedback generation failed');
-    });
-
-    return reply.status(202).send({
-      id: submission.id,
-      status: 'GENERATING',
-      message: 'Feedback generation started',
-    });
-  });
+  );
 }
 
 // 非同期でLLMお題生成
@@ -308,7 +323,10 @@ async function generateChallengeAsync(
       },
     });
 
-    fastify.log.info({ challengeId, title: generated.title }, 'Writing challenge generation completed');
+    fastify.log.info(
+      { challengeId, title: generated.title },
+      'Writing challenge generation completed'
+    );
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Unknown error';
     fastify.log.error({ challengeId, err: errorMessage }, 'Writing challenge generation failed');
@@ -321,7 +339,12 @@ async function generateChallengeAsync(
 }
 
 // 非同期コード実行
-async function runCodeAsync(submissionId: string, userCode: string, testCode: string, language: string) {
+async function runCodeAsync(
+  submissionId: string,
+  userCode: string,
+  testCode: string,
+  language: string
+) {
   try {
     // RUNNINGに更新
     await prisma.writingSubmission.update({
@@ -364,10 +387,7 @@ async function runCodeAsync(submissionId: string, userCode: string, testCode: st
 }
 
 // 非同期でLLMフィードバック生成
-async function generateFeedbackAsync(
-  fastify: FastifyInstance,
-  submission: any
-) {
+async function generateFeedbackAsync(fastify: FastifyInstance, submission: any) {
   try {
     fastify.log.info({ submissionId: submission.id }, 'Starting feedback generation');
 
@@ -396,15 +416,18 @@ async function generateFeedbackAsync(
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Unknown error';
     const errorStack = err instanceof Error ? err.stack : '';
-    
-    fastify.log.error({ 
-      submissionId: submission.id, 
-      error: errorMessage,
-      stack: errorStack,
-      ollamaHost: process.env.OLLAMA_HOST || 'http://host.docker.internal:11434',
-      language: submission.language,
-      codeLength: submission.code?.length || 0,
-    }, 'Feedback generation failed');
+
+    fastify.log.error(
+      {
+        submissionId: submission.id,
+        error: errorMessage,
+        stack: errorStack,
+        ollamaHost: process.env.OLLAMA_HOST || 'http://host.docker.internal:11434',
+        language: submission.language,
+        codeLength: submission.code?.length || 0,
+      },
+      'Feedback generation failed'
+    );
 
     await prisma.writingSubmission.update({
       where: { id: submission.id },
@@ -412,4 +435,3 @@ async function generateFeedbackAsync(
     });
   }
 }
-

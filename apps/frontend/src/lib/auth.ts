@@ -54,7 +54,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           // Call API to authenticate
           const apiUrl = API_URL;
           const loginUrl = `${apiUrl}/auth/login`;
-          
+
           const response = await fetch(loginUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -97,4 +97,3 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
 });
-

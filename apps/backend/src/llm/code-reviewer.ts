@@ -18,14 +18,13 @@ export interface CodeReviewInput {
  * コードレビュー用のプロンプトを構築
  */
 function buildCodeReviewPrompt(input: CodeReviewInput): string {
-  const passedText = input.passed 
-    ? 'テスト結果: 全て通過' 
-    : 'テスト結果: 一部失敗';
+  const passedText = input.passed ? 'テスト結果: 全て通過' : 'テスト結果: 一部失敗';
 
   // テスト出力が長すぎる場合は切り詰める
-  const trimmedOutput = input.testOutput.length > 500 
-    ? input.testOutput.slice(0, 500) + '\n... (省略)'
-    : input.testOutput;
+  const trimmedOutput =
+    input.testOutput.length > 500
+      ? input.testOutput.slice(0, 500) + '\n... (省略)'
+      : input.testOutput;
 
   return `You are a programming instructor. Review this code and give feedback in Japanese.
 
@@ -68,4 +67,3 @@ export async function generateCodeReview(input: CodeReviewInput): Promise<string
 
   return feedback.trim();
 }
-

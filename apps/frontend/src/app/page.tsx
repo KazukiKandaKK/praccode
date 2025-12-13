@@ -48,7 +48,6 @@ export default async function HomePage() {
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-violet-400">
               コード読解力を鍛える
             </span>
-            
           </h1>
           <p className="text-xl text-slate-400 mb-8 max-w-2xl mx-auto">
             実務レベルのコードを題材に、他人のコードを読み解く力を段階的に鍛える学習サービスです。
@@ -123,4 +122,3 @@ function FeatureCard({
     </div>
   );
 }
-

@@ -71,7 +71,7 @@ export async function generateHint(input: GenerateHintInput): Promise<string> {
   }
 
   const data = (await response.json()) as {
-    choices?: Array< { message?: { content?: string } }>;
+    choices?: Array<{ message?: { content?: string } }>;
   };
   const content = data.choices?.[0]?.message?.content;
 
@@ -83,4 +83,3 @@ export async function generateHint(input: GenerateHintInput): Promise<string> {
   const result = outputSchema.parse(parsed);
   return result.hint;
 }
-

@@ -49,7 +49,9 @@ export function EvaluationToastProvider({ children }: { children: React.ReactNod
   const [pendingEvaluations, setPendingEvaluations] = useState<EvaluationJob[]>([]);
   const [pendingGenerations, setPendingGenerations] = useState<GenerationJob[]>([]);
   const [pendingWritings, setPendingWritings] = useState<WritingJob[]>([]);
-  const [pendingWritingChallenges, setPendingWritingChallenges] = useState<WritingChallengeGenJob[]>([]);
+  const [pendingWritingChallenges, setPendingWritingChallenges] = useState<
+    WritingChallengeGenJob[]
+  >([]);
   const evaluationPollingRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const generationPollingRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const writingPollingRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
@@ -212,53 +214,50 @@ export function EvaluationToastProvider({ children }: { children: React.ReactNod
   );
 
   // ========== ライティング提出監視 ==========
-  const pollWritingSubmission = useCallback(
-    async (job: WritingJob) => {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const pollWritingSubmission = useCallback(async (job: WritingJob) => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
-      try {
-        const res = await fetch(`${apiUrl}/writing/submissions/${job.submissionId}`, {
-          cache: 'no-store',
-        });
+    try {
+      const res = await fetch(`${apiUrl}/writing/submissions/${job.submissionId}`, {
+        cache: 'no-store',
+      });
 
-        if (!res.ok) {
-          const timer = writingPollingRef.current.get(job.submissionId);
-          if (timer) {
-            clearInterval(timer);
-            writingPollingRef.current.delete(job.submissionId);
-          }
-          setPendingWritings((prev) => prev.filter((w) => w.submissionId !== job.submissionId));
-          toast.error('コード実行結果の取得に失敗しました');
-          return;
+      if (!res.ok) {
+        const timer = writingPollingRef.current.get(job.submissionId);
+        if (timer) {
+          clearInterval(timer);
+          writingPollingRef.current.delete(job.submissionId);
         }
-
-        const data = await res.json();
-
-        if (data.status === 'COMPLETED' || data.status === 'ERROR') {
-          const timer = writingPollingRef.current.get(job.submissionId);
-          if (timer) {
-            clearInterval(timer);
-            writingPollingRef.current.delete(job.submissionId);
-          }
-
-          setPendingWritings((prev) => prev.filter((w) => w.submissionId !== job.submissionId));
-
-          if (data.passed) {
-            toast.success(`「${job.challengeTitle}」のテストに合格しました！`, {
-              duration: 10000,
-            });
-          } else {
-            toast.error(`「${job.challengeTitle}」のテストに失敗しました`, {
-              duration: 10000,
-            });
-          }
-        }
-      } catch (err) {
-        console.error('Writing polling error:', err);
+        setPendingWritings((prev) => prev.filter((w) => w.submissionId !== job.submissionId));
+        toast.error('コード実行結果の取得に失敗しました');
+        return;
       }
-    },
-    []
-  );
+
+      const data = await res.json();
+
+      if (data.status === 'COMPLETED' || data.status === 'ERROR') {
+        const timer = writingPollingRef.current.get(job.submissionId);
+        if (timer) {
+          clearInterval(timer);
+          writingPollingRef.current.delete(job.submissionId);
+        }
+
+        setPendingWritings((prev) => prev.filter((w) => w.submissionId !== job.submissionId));
+
+        if (data.passed) {
+          toast.success(`「${job.challengeTitle}」のテストに合格しました！`, {
+            duration: 10000,
+          });
+        } else {
+          toast.error(`「${job.challengeTitle}」のテストに失敗しました`, {
+            duration: 10000,
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Writing polling error:', err);
+    }
+  }, []);
 
   const startWritingWatch = useCallback(
     (submissionId: string, challengeTitle: string) => {
@@ -298,7 +297,9 @@ export function EvaluationToastProvider({ children }: { children: React.ReactNod
             clearInterval(timer);
             writingChallengePollingRef.current.delete(job.challengeId);
           }
-          setPendingWritingChallenges((prev) => prev.filter((c) => c.challengeId !== job.challengeId));
+          setPendingWritingChallenges((prev) =>
+            prev.filter((c) => c.challengeId !== job.challengeId)
+          );
           toast.error('お題の生成に失敗しました');
           return;
         }
@@ -312,7 +313,9 @@ export function EvaluationToastProvider({ children }: { children: React.ReactNod
             writingChallengePollingRef.current.delete(job.challengeId);
           }
 
-          setPendingWritingChallenges((prev) => prev.filter((c) => c.challengeId !== job.challengeId));
+          setPendingWritingChallenges((prev) =>
+            prev.filter((c) => c.challengeId !== job.challengeId)
+          );
 
           toast.success(`お題「${data.title}」が作成されました`, {
             duration: 10000,
@@ -331,7 +334,9 @@ export function EvaluationToastProvider({ children }: { children: React.ReactNod
             writingChallengePollingRef.current.delete(job.challengeId);
           }
 
-          setPendingWritingChallenges((prev) => prev.filter((c) => c.challengeId !== job.challengeId));
+          setPendingWritingChallenges((prev) =>
+            prev.filter((c) => c.challengeId !== job.challengeId)
+          );
 
           toast.error('お題の生成に失敗しました');
         }
@@ -378,7 +383,11 @@ export function EvaluationToastProvider({ children }: { children: React.ReactNod
     };
   }, []);
 
-  const totalPending = pendingEvaluations.length + pendingGenerations.length + pendingWritings.length + pendingWritingChallenges.length;
+  const totalPending =
+    pendingEvaluations.length +
+    pendingGenerations.length +
+    pendingWritings.length +
+    pendingWritingChallenges.length;
 
   return (
     <EvaluationContext.Provider
@@ -454,9 +463,7 @@ export function EvaluationToastProvider({ children }: { children: React.ReactNod
               </div>
               <div>
                 <p className="text-sm font-medium text-white">コード実行中</p>
-                <p className="text-xs text-slate-400">
-                  {pendingWritings.length}件のテスト実行中
-                </p>
+                <p className="text-xs text-slate-400">{pendingWritings.length}件のテスト実行中</p>
               </div>
               <Loader2 className="w-4 h-4 text-emerald-400 animate-spin ml-2" />
             </div>
@@ -466,4 +473,3 @@ export function EvaluationToastProvider({ children }: { children: React.ReactNod
     </EvaluationContext.Provider>
   );
 }
-

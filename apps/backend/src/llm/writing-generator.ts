@@ -48,7 +48,7 @@ export interface GenerateWritingChallengeInput {
 
 function buildJavaScriptTestCode(funcName: string, testCases: LLMOutput['testCases']): string {
   const tests = testCases
-    .map(tc => `test('${funcName}(${tc.input})', ${funcName}(${tc.input}), ${tc.expected});`)
+    .map((tc) => `test('${funcName}(${tc.input})', ${funcName}(${tc.input}), ${tc.expected});`)
     .join('\n');
 
   return `const { ${funcName} } = require('./solution');
@@ -89,7 +89,10 @@ module.exports = { ${funcName} };`;
 
 function buildJavaScriptSampleCode(funcName: string, params: string, impl: string): string {
   return `function ${funcName}(${params}) {
-${impl.split('\n').map(line => '  ' + line).join('\n')}
+${impl
+  .split('\n')
+  .map((line) => '  ' + line)
+  .join('\n')}
 }
 
 module.exports = { ${funcName} };`;
@@ -97,7 +100,7 @@ module.exports = { ${funcName} };`;
 
 function buildTypeScriptTestCode(funcName: string, testCases: LLMOutput['testCases']): string {
   const tests = testCases
-    .map(tc => `test('${funcName}(${tc.input})', ${funcName}(${tc.input}), ${tc.expected});`)
+    .map((tc) => `test('${funcName}(${tc.input})', ${funcName}(${tc.input}), ${tc.expected});`)
     .join('\n');
 
   return `import { ${funcName} } from './solution';
@@ -126,7 +129,11 @@ console.log(passed + '/' + (passed + failed) + ' tests passed');
 if (failed > 0) process.exit(1);`;
 }
 
-function buildTypeScriptStarterCode(funcName: string, paramTypes: string, returnType: string): string {
+function buildTypeScriptStarterCode(
+  funcName: string,
+  paramTypes: string,
+  returnType: string
+): string {
   return `// 関数を実装してください
 export function ${funcName}(${paramTypes}): ${returnType} {
   // ここに実装を書いてください
@@ -134,15 +141,23 @@ export function ${funcName}(${paramTypes}): ${returnType} {
 }`;
 }
 
-function buildTypeScriptSampleCode(funcName: string, paramTypes: string, returnType: string, impl: string): string {
+function buildTypeScriptSampleCode(
+  funcName: string,
+  paramTypes: string,
+  returnType: string,
+  impl: string
+): string {
   return `export function ${funcName}(${paramTypes}): ${returnType} {
-${impl.split('\n').map(line => '  ' + line).join('\n')}
+${impl
+  .split('\n')
+  .map((line) => '  ' + line)
+  .join('\n')}
 }`;
 }
 
 function buildPythonTestCode(funcName: string, testCases: LLMOutput['testCases']): string {
   const tests = testCases
-    .map(tc => `test("${funcName}(${tc.input})", ${funcName}(${tc.input}), ${tc.expected})`)
+    .map((tc) => `test("${funcName}(${tc.input})", ${funcName}(${tc.input}), ${tc.expected})`)
     .join('\n');
 
   return `from solution import ${funcName}
@@ -179,12 +194,17 @@ def ${funcName}(${params}):
 
 function buildPythonSampleCode(funcName: string, params: string, impl: string): string {
   return `def ${funcName}(${params}):
-${impl.split('\n').map(line => '    ' + line).join('\n')}`;
+${impl
+  .split('\n')
+  .map((line) => '    ' + line)
+  .join('\n')}`;
 }
 
 function buildGoTestCode(funcName: string, testCases: LLMOutput['testCases']): string {
   const testStructs = testCases
-    .map(tc => `\t\t{"${funcName}(${tc.input.replace(/"/g, '\\"')})", ${tc.input}, ${tc.expected}},`)
+    .map(
+      (tc) => `\t\t{"${funcName}(${tc.input.replace(/"/g, '\\"')})", ${tc.input}, ${tc.expected}},`
+    )
     .join('\n');
 
   return `package solution
@@ -229,22 +249,34 @@ func ${funcName}(${paramTypes}) ${returnType} {
 }`;
 }
 
-function buildGoSampleCode(funcName: string, paramTypes: string, returnType: string, impl: string): string {
+function buildGoSampleCode(
+  funcName: string,
+  paramTypes: string,
+  returnType: string,
+  impl: string
+): string {
   return `package solution
 
 func ${funcName}(${paramTypes}) ${returnType} {
-${impl.split('\n').map(line => '\t' + line).join('\n')}
+${impl
+  .split('\n')
+  .map((line) => '\t' + line)
+  .join('\n')}
 }`;
 }
 
 // ========== コード生成 ==========
 
-function buildChallengeCode(language: string, llmOutput: LLMOutput): {
+function buildChallengeCode(
+  language: string,
+  llmOutput: LLMOutput
+): {
   testCode: string;
   starterCode: string;
   sampleCode: string;
 } {
-  const { functionName, parameters, parameterTypes, returnType, testCases, sampleImplementation } = llmOutput;
+  const { functionName, parameters, parameterTypes, returnType, testCases, sampleImplementation } =
+    llmOutput;
 
   switch (language) {
     case 'javascript':
@@ -256,8 +288,17 @@ function buildChallengeCode(language: string, llmOutput: LLMOutput): {
     case 'typescript':
       return {
         testCode: buildTypeScriptTestCode(functionName, testCases),
-        starterCode: buildTypeScriptStarterCode(functionName, parameterTypes || parameters, returnType || 'unknown'),
-        sampleCode: buildTypeScriptSampleCode(functionName, parameterTypes || parameters, returnType || 'unknown', sampleImplementation),
+        starterCode: buildTypeScriptStarterCode(
+          functionName,
+          parameterTypes || parameters,
+          returnType || 'unknown'
+        ),
+        sampleCode: buildTypeScriptSampleCode(
+          functionName,
+          parameterTypes || parameters,
+          returnType || 'unknown',
+          sampleImplementation
+        ),
       };
     case 'python':
       return {
@@ -268,8 +309,17 @@ function buildChallengeCode(language: string, llmOutput: LLMOutput): {
     case 'go':
       return {
         testCode: buildGoTestCode(functionName, testCases),
-        starterCode: buildGoStarterCode(functionName, parameterTypes || 'input interface{}', returnType || 'interface{}'),
-        sampleCode: buildGoSampleCode(functionName, parameterTypes || 'input interface{}', returnType || 'interface{}', sampleImplementation),
+        starterCode: buildGoStarterCode(
+          functionName,
+          parameterTypes || 'input interface{}',
+          returnType || 'interface{}'
+        ),
+        sampleCode: buildGoSampleCode(
+          functionName,
+          parameterTypes || 'input interface{}',
+          returnType || 'interface{}',
+          sampleImplementation
+        ),
       };
     default:
       throw new Error(`Unsupported language: ${language}`);

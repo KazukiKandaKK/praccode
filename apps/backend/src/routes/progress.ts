@@ -14,7 +14,7 @@ export async function progressRoutes(fastify: FastifyInstance) {
     const totalExercises = await prisma.exercise.count();
 
     // 完了したサブミッション
-    const completedSubmissions = await prisma.submission.findMany({
+    const completedSubmissions = (await prisma.submission.findMany({
       where: {
         userId,
         status: 'EVALUATED',
@@ -29,7 +29,7 @@ export async function progressRoutes(fastify: FastifyInstance) {
         },
       },
       orderBy: { updatedAt: 'desc' },
-    }) as Array<{
+    })) as Array<{
       id: string;
       exerciseId: string;
       userId: string;
@@ -72,7 +72,9 @@ export async function progressRoutes(fastify: FastifyInstance) {
     }
 
     const averageScore =
-      allScores.length > 0 ? Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length) : 0;
+      allScores.length > 0
+        ? Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length)
+        : 0;
 
     const aspectScores: Record<string, number> = {};
     for (const [aspect, data] of Object.entries(aspectScoresMap)) {
@@ -85,7 +87,9 @@ export async function progressRoutes(fastify: FastifyInstance) {
         .filter((a: { score: number | null }) => a.score !== null)
         .map((a: { score: number | null }) => a.score!);
       const avgScore =
-        scores.length > 0 ? Math.round(scores.reduce((a: number, b: number) => a + b, 0) / scores.length) : 0;
+        scores.length > 0
+          ? Math.round(scores.reduce((a: number, b: number) => a + b, 0) / scores.length)
+          : 0;
 
       return {
         exerciseId: s.exerciseId,
@@ -105,4 +109,3 @@ export async function progressRoutes(fastify: FastifyInstance) {
     });
   });
 }
-

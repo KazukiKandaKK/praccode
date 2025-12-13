@@ -196,7 +196,8 @@ export function useFetch<T>(url: string): FetchState<T> & { refetch: () => void 
           },
           {
             questionIndex: 1,
-            questionText: 'useCallback と useEffect の依存配列について、なぜこの構成になっているか説明してください。',
+            questionText:
+              'useCallback と useEffect の依存配列について、なぜこの構成になっているか説明してください。',
             idealAnswerPoints: [
               'useCallback は url が変わった時のみ関数を再生成する',
               'useEffect は fetchData が変わった時に実行される',
@@ -623,4 +624,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-
