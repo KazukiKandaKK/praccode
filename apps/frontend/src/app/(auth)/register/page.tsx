@@ -3,18 +3,22 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { registerUser, loginWithGitHub } from '@/app/actions/auth';
-import { Code2, Github, Mail, Lock, User, AlertCircle } from 'lucide-react';
+import { Code2, Github, Mail, Lock, User, AlertCircle, CheckCircle } from 'lucide-react';
 
 export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   async function handleSubmit(formData: FormData) {
     setIsLoading(true);
     setError(null);
+    setSuccess(null);
     const result = await registerUser(formData);
     if (result?.error) {
       setError(result.error);
+    } else if (result?.success) {
+      setSuccess(result.success);
     }
     setIsLoading(false);
   }
@@ -30,40 +34,56 @@ export default function RegisterPage() {
 
         {/* Card */}
         <div className="bg-slate-800/50 backdrop-blur-lg rounded-2xl border border-slate-700/50 p-8">
-          <h1 className="text-2xl font-bold text-white text-center mb-2">アカウント作成</h1>
-          <p className="text-slate-400 text-center mb-6">無料でコードリーディングを始めましょう</p>
+          {success ? (
+            <>
+              <h1 className="text-2xl font-bold text-white text-center mb-2">登録完了</h1>
+              <p className="text-slate-400 text-center mb-6">メールアドレスの確認をお願いします</p>
 
-          {/* Error message */}
-          {error && (
-            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center gap-3">
-              <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
-              <p className="text-sm text-red-300">{error}</p>
-            </div>
-          )}
+              {/* Success message */}
+              <div className="p-6 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-center">
+                <CheckCircle className="w-12 h-12 text-emerald-400 mx-auto mb-4" />
+                <p className="text-emerald-300 font-medium mb-2">{success}</p>
+                <p className="text-sm text-emerald-400">
+                  メールが届かない場合は、迷惑メールフォルダをご確認ください。
+                </p>
+              </div>
+            </>
+          ) : (
+            <>
+              <h1 className="text-2xl font-bold text-white text-center mb-2">アカウント作成</h1>
+              <p className="text-slate-400 text-center mb-6">無料でコードリーディングを始めましょう</p>
 
-          {/* GitHub Register */}
-          <form action={loginWithGitHub}>
-            <button
-              type="submit"
-              className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-xl transition-colors mb-4"
-            >
-              <Github className="w-5 h-5" />
-              GitHub で登録
-            </button>
-          </form>
+              {/* Error message */}
+              {error && (
+                <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center gap-3">
+                  <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+                  <p className="text-sm text-red-300">{error}</p>
+                </div>
+              )}
 
-          {/* Divider */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-700"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-slate-800/50 text-slate-400">または</span>
-            </div>
-          </div>
+              {/* GitHub Register */}
+              <form action={loginWithGitHub}>
+                <button
+                  type="submit"
+                  className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-xl transition-colors mb-4"
+                >
+                  <Github className="w-5 h-5" />
+                  GitHub で登録
+                </button>
+              </form>
 
-          {/* Email Register Form */}
-          <form action={handleSubmit} className="space-y-4">
+              {/* Divider */}
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-slate-700"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-4 bg-slate-800/50 text-slate-400">または</span>
+                </div>
+              </div>
+
+              {/* Email Register Form */}
+              <form action={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-slate-300 mb-2">
                 ユーザー名
@@ -116,27 +136,31 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full py-3 bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-600 text-slate-900 font-semibold rounded-xl transition-colors"
-            >
-              {isLoading ? '登録中...' : 'アカウントを作成'}
-            </button>
-          </form>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full py-3 bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-600 text-slate-900 font-semibold rounded-xl transition-colors"
+                >
+                  {isLoading ? '登録中...' : 'アカウントを作成'}
+                </button>
+              </form>
 
-          <p className="text-xs text-slate-500 text-center mt-4">
-            登録することで、利用規約とプライバシーポリシーに同意したことになります。
-          </p>
+              <p className="text-xs text-slate-500 text-center mt-4">
+                登録することで、利用規約とプライバシーポリシーに同意したことになります。
+              </p>
+            </>
+          )}
         </div>
 
-        {/* Login link */}
-        <p className="text-center text-slate-400 mt-6">
-          既にアカウントをお持ちですか？{' '}
-          <Link href="/login" className="text-cyan-400 hover:text-cyan-300">
-            ログイン
-          </Link>
-        </p>
+        {/* Login link - only show when not success */}
+        {!success && (
+          <p className="text-center text-slate-400 mt-6">
+            既にアカウントをお持ちですか？{' '}
+            <Link href="/login" className="text-cyan-400 hover:text-cyan-300">
+              ログイン
+            </Link>
+          </p>
+        )}
       </div>
     </div>
   );

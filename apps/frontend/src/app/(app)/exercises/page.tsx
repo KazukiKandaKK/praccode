@@ -31,18 +31,22 @@ interface FilterParams {
 }
 
 // APIから問題一覧を取得
-async function getExercises(filters: FilterParams): Promise<{ exercises: Exercise[] }> {
+async function getExercises(
+  userId: string,
+  filters: FilterParams
+): Promise<{ exercises: Exercise[] }> {
   try {
     const apiUrl = process.env.API_URL || 'http://localhost:3001';
 
     // クエリパラメータを構築
     const params = new URLSearchParams();
+    params.set('userId', userId); // 必須パラメータ
     if (filters.language) params.set('language', filters.language);
     if (filters.difficulty) params.set('difficulty', filters.difficulty);
     if (filters.genre) params.set('genre', filters.genre);
 
     const queryString = params.toString();
-    const url = queryString ? `${apiUrl}/exercises?${queryString}` : `${apiUrl}/exercises`;
+    const url = `${apiUrl}/exercises?${queryString}`;
 
     const response = await fetch(url, {
       cache: 'no-store',
@@ -84,7 +88,7 @@ export default async function ExercisesPage({ searchParams }: PageProps) {
     genre: typeof params.genre === 'string' ? params.genre : undefined,
   };
 
-  const { exercises } = await getExercises(filters);
+  const { exercises } = await getExercises(session.user.id, filters);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

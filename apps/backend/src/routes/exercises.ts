@@ -5,6 +5,7 @@ import { generateExercise } from '../llm/generator.js';
 import { checkOllamaHealth } from '../llm/ollama.js';
 
 const exerciseFiltersSchema = z.object({
+  userId: z.string().uuid(),
   language: z.string().optional(),
   difficulty: z.coerce.number().min(1).max(5).optional(),
   genre: z.string().optional(),
@@ -16,9 +17,10 @@ export async function exerciseRoutes(fastify: FastifyInstance) {
   // GET /exercises - 学習一覧
   fastify.get('/', async (request, reply) => {
     const query = exerciseFiltersSchema.parse(request.query);
-    const { language, difficulty, genre, page, limit } = query;
+    const { userId, language, difficulty, genre, page, limit } = query;
 
     const where = {
+      assignedToId: userId, // このユーザーに割り当てられた問題のみ
       ...(language && { language }),
       ...(difficulty && { difficulty }),
       ...(genre && { genre }),
@@ -58,6 +60,11 @@ export async function exerciseRoutes(fastify: FastifyInstance) {
   // GET /exercises/:id - 学習詳細
   fastify.get('/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
+    const userId = (request.query as { userId?: string })?.userId;
+
+    if (!userId) {
+      return reply.status(400).send({ error: 'userId is required' });
+    }
 
     const exercise = await prisma.exercise.findUnique({
       where: { id },
@@ -75,6 +82,11 @@ export async function exerciseRoutes(fastify: FastifyInstance) {
 
     if (!exercise) {
       return reply.status(404).send({ error: 'Exercise not found' });
+    }
+
+    // この問題がこのユーザーに割り当てられているか確認
+    if (exercise.assignedToId !== userId) {
+      return reply.status(403).send({ error: 'You do not have access to this exercise' });
     }
 
     return reply.send(exercise);
@@ -156,6 +168,7 @@ export async function exerciseRoutes(fastify: FastifyInstance) {
         code: '',
         learningGoals: [],
         createdById: userId,
+        assignedToId: userId, // 作成者に排他的に割り当て
       },
     });
 

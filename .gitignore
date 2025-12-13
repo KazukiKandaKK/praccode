@@ -119,6 +119,11 @@ next-env.d.ts
 *.pem
 *.local
 
+# ============================================
+# Mail (development)
+# ============================================
+apps/backend/tmp/mail
+
 # Turborepo
 .turbo
 

@@ -9,22 +9,26 @@ datasource db {
 
 // ユーザー
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String?
-  password  String?  // Credentials認証用（ハッシュ化）
-  image     String?
-  role      UserRole @default(LEARNER)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id            String    @id @default(uuid())
+  email         String    @unique
+  name          String?
+  password      String?   // Credentials認証用（ハッシュ化）
+  image         String?
+  role          UserRole  @default(LEARNER)
+  emailVerified DateTime? @map("email_verified") // メール認証済み日時
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
 
   submissions               Submission[]
   hints                     Hint[]
-  createdExercises          Exercise[]          @relation("CreatedExercises")
-  createdWritingChallenges  WritingChallenge[]  @relation("CreatedWritingChallenges")
+  createdExercises          Exercise[]                @relation("CreatedExercises")
+  assignedExercises         Exercise[]                @relation("AssignedExercises")
+  createdWritingChallenges  WritingChallenge[]        @relation("CreatedWritingChallenges")
+  assignedWritingChallenges WritingChallenge[]        @relation("AssignedWritingChallenges")
   accounts                  Account[]
   sessions                  Session[]
   emailChangeTokens         EmailChangeToken[]
+  emailVerificationTokens   EmailVerificationToken[]
   writingSubmissions        WritingSubmission[]
   learningAnalysis          UserLearningAnalysis?
 
@@ -92,27 +96,44 @@ model EmailChangeToken {
   @@map("email_change_tokens")
 }
 
+// メール認証（登録確認用）
+model EmailVerificationToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("email_verification_tokens")
+}
+
 // 学習（問題）
 model Exercise {
-  id            String         @id @default(uuid())
-  title         String
-  language      String         // typescript, go, ruby, etc.
-  difficulty    Int            // 1-5
-  genre         String?        // auth, database, error_handling, ...
-  status        ExerciseStatus @default(READY) // GENERATING, READY, FAILED
-  sourceType    String         @default("embedded") @map("source_type")
-  sourceUrl     String?        @map("source_url")
-  code          String         @db.Text
-  learningGoals Json           @default("[]") @map("learning_goals")
-  createdById   String         @map("created_by_id")
-  createdAt     DateTime       @default(now()) @map("created_at")
-  updatedAt     DateTime       @updatedAt @map("updated_at")
+  id             String         @id @default(uuid())
+  title          String
+  language       String         // typescript, go, ruby, etc.
+  difficulty     Int            // 1-5
+  genre          String?        // auth, database, error_handling, ...
+  status         ExerciseStatus @default(READY) // GENERATING, READY, FAILED
+  sourceType     String         @default("embedded") @map("source_type")
+  sourceUrl      String?        @map("source_url")
+  code           String         @db.Text
+  learningGoals  Json           @default("[]") @map("learning_goals")
+  createdById    String         @map("created_by_id")
+  assignedToId   String?        @map("assigned_to_id") // 排他的に割り当てられたユーザーID
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
 
   createdBy   User                       @relation("CreatedExercises", fields: [createdById], references: [id])
+  assignedTo  User?                      @relation("AssignedExercises", fields: [assignedToId], references: [id])
   questions   ExerciseReferenceAnswer[]
   submissions Submission[]
   hints       Hint[]
 
+  @@index([assignedToId])
   @@map("exercises")
 }
 
@@ -206,12 +227,15 @@ model WritingChallenge {
   starterCode String?                 @map("starter_code") @db.Text // ユーザー用の初期コード
   sampleCode  String?                 @map("sample_code") @db.Text // 参考実装（非公開）
   createdById String?                 @map("created_by_id")
+  assignedToId String?                @map("assigned_to_id") // 排他的に割り当てられたユーザーID
   createdAt   DateTime                @default(now()) @map("created_at")
   updatedAt   DateTime                @updatedAt @map("updated_at")
 
   createdBy   User?               @relation("CreatedWritingChallenges", fields: [createdById], references: [id])
+  assignedTo  User?                @relation("AssignedWritingChallenges", fields: [assignedToId], references: [id])
   submissions WritingSubmission[]
 
+  @@index([assignedToId])
   @@map("writing_challenges")
 }
 

@@ -62,9 +62,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           });
 
           if (!response.ok) {
-            const errorText = await response.text();
-            console.error(`Auth API error: ${response.status} - ${errorText}`);
-            return null;
+            const errorData = await response.json();
+            console.error(`Auth API error: ${response.status} - ${errorData.error}`);
+            // Throw error with specific message for NextAuth.js to handle
+            throw new Error(errorData.error || 'Authentication failed');
           }
 
           const user = await response.json();

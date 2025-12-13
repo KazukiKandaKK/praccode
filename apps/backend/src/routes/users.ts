@@ -133,14 +133,20 @@ export async function userRoutes(fastify: FastifyInstance) {
     const origin = process.env.APP_ORIGIN || process.env.CORS_ORIGIN || 'http://localhost:3000';
     const confirmUrl = `${origin}/settings/email-change?token=${encodeURIComponent(token)}`;
 
+    // メール変更確認メールを送信（非同期、エラーは無視）
+    const { sendEmailChangeConfirmation } = await import('../lib/mail.js');
+    sendEmailChangeConfirmation(user.email, newEmail, confirmUrl).catch((err) => {
+      fastify.log.error({ err, userId, newEmail }, 'Failed to send email change confirmation');
+    });
+
     fastify.log.info(
       { userId, newEmail, confirmUrl },
-      'Email change requested (dev: confirmation URL logged)'
+      'Email change requested (confirmation email sent to tmp/mail)'
     );
 
     return reply.status(202).send({
       status: 'queued',
-      message: 'Confirmation link generated. Check backend logs in development.',
+      message: 'Confirmation email sent. Check backend/tmp/mail directory.',
     });
   });
 

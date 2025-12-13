@@ -47,6 +47,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       # コードランナー用の一時ディレクトリをホストと共有（バインドマウント）
       - /tmp/praccode-runner:/tmp/praccode-runner
+      # メール保存用ディレクトリをホストと共有
+      - ./apps/backend/tmp:/app/apps/backend/tmp
 
   # Frontend
   frontend:

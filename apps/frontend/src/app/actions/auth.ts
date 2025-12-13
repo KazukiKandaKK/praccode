@@ -2,7 +2,6 @@
 
 import { signIn, signOut } from '@/lib/auth';
 import { z } from 'zod';
-import { redirect } from 'next/navigation';
 
 // Server Actions run on server-side, use container-to-container communication
 const API_URL = process.env.API_URL || 'http://api:3001';
@@ -41,12 +40,15 @@ export async function registerUser(formData: FormData) {
     if (!response.ok) {
       return { error: '登録に失敗しました' };
     }
+
+    // リダイレクトせず、成功メッセージを返す
+    return {
+      success: '登録が完了しました。メールアドレスの確認リンクを送信しました。メールをご確認の上、認証を完了してください。',
+    };
   } catch (error) {
     console.error('Registration error:', error);
     return { error: '登録に失敗しました' };
   }
-
-  redirect('/login?registered=true');
 }
 
 export async function loginWithCredentials(formData: FormData) {
@@ -60,7 +62,23 @@ export async function loginWithCredentials(formData: FormData) {
     if (error instanceof Error && error.message.includes('NEXT_REDIRECT')) {
       throw error;
     }
-    return { error: 'メールアドレスまたはパスワードが正しくありません' };
+
+    // NextAuth.jsのエラーメッセージから具体的なエラーを抽出
+    if (error instanceof Error) {
+      const message = error.message.toLowerCase();
+
+      if (message.includes('email not verified')) {
+        return { error: 'メールアドレスが未認証です。メールをご確認の上、認証を完了してください。' };
+      }
+      if (message.includes('invalid credentials')) {
+        return { error: 'メールアドレスまたはパスワードが正しくありません' };
+      }
+      if (message.includes('fetch')) {
+        return { error: 'サーバーに接続できませんでした。しばらくしてからお試しください。' };
+      }
+    }
+
+    return { error: 'ログインに失敗しました。しばらくしてからお試しください。' };
   }
 }
 

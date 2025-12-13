@@ -66,7 +66,6 @@ export function DashboardActivityHeatmap({ activity }: DashboardActivityHeatmapP
     return weeksData;
   }, [activity]);
 
-
   // 最大件数を計算（ツールチップ用）
   const maxCount = useMemo(() => {
     return Math.max(...activity.map((a) => a.count), 0);
@@ -79,9 +78,7 @@ export function DashboardActivityHeatmap({ activity }: DashboardActivityHeatmapP
     <Card>
       <CardHeader>
         <CardTitle>学習アクティビティ</CardTitle>
-        <p className="text-sm text-slate-400 mt-1">
-          過去1年間のリーディング・ライティング提出回数
-        </p>
+        <p className="text-sm text-slate-400 mt-1">過去1年間のリーディング・ライティング提出回数</p>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
@@ -152,15 +149,10 @@ export function DashboardActivityHeatmap({ activity }: DashboardActivityHeatmapP
               <div className="w-3 h-3 rounded-sm bg-emerald-500/80" />
             </div>
             <span>多い</span>
-            {maxCount > 0 && (
-              <span className="ml-auto text-slate-500">
-                最大: {maxCount}件/日
-              </span>
-            )}
+            {maxCount > 0 && <span className="ml-auto text-slate-500">最大: {maxCount}件/日</span>}
           </div>
         </div>
       </CardContent>
     </Card>
   );
 }
-

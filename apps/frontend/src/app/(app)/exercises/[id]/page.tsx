@@ -54,12 +54,20 @@ export default function ExerciseDetailPage() {
         setIsLoading(true);
         setFetchError(null);
 
+        if (!session?.user?.id) {
+          setFetchError('ログインが必要です');
+          setIsLoading(false);
+          return;
+        }
+
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-        const response = await fetch(`${apiUrl}/exercises/${exerciseId}`);
+        const response = await fetch(`${apiUrl}/exercises/${exerciseId}?userId=${session.user.id}`);
 
         if (!response.ok) {
           if (response.status === 404) {
             setFetchError('問題が見つかりません');
+          } else if (response.status === 403) {
+            setFetchError('この問題にアクセスする権限がありません');
           } else {
             setFetchError('問題の読み込みに失敗しました');
           }
@@ -85,10 +93,10 @@ export default function ExerciseDetailPage() {
       }
     }
 
-    if (exerciseId) {
+    if (exerciseId && session?.user?.id) {
       fetchExercise();
     }
-  }, [exerciseId]);
+  }, [exerciseId, session?.user?.id, sessionStatus]);
 
   const handleAnswerChange = (questionIndex: number, value: string) => {
     setAnswers((prev) => ({ ...prev, [questionIndex]: value }));

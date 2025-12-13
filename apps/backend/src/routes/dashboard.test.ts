@@ -59,10 +59,7 @@ describe('Dashboard Activity API', () => {
 
       // 集計ロジック
       const activityMap = new Map<string, number>();
-      const readingSubmissions = [
-        { updatedAt: testDate },
-        { updatedAt: testDate },
-      ];
+      const readingSubmissions = [{ updatedAt: testDate }, { updatedAt: testDate }];
       const writingSubmissions = [{ createdAt: testDate }];
 
       for (const sub of readingSubmissions) {
@@ -155,4 +152,3 @@ describe('Dashboard Activity API', () => {
     });
   });
 });
-

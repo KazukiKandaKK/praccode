@@ -371,6 +371,7 @@ const dashboardRoutes: FastifyPluginAsync = async (fastify) => {
               status: 'GENERATING',
               learningGoals: [],
               createdById: userId,
+              assignedToId: userId, // 作成者に排他的に割り当て
             },
           });
 
