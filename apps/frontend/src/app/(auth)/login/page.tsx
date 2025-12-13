@@ -11,6 +11,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const searchParams = useSearchParams();
   const registered = searchParams.get('registered');
+  const passwordReset = searchParams.get('passwordReset');
 
   async function handleSubmit(formData: FormData) {
     setIsLoading(true);
@@ -41,6 +42,13 @@ export default function LoginPage() {
             <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg flex items-center gap-3">
               <CheckCircle className="w-5 h-5 text-emerald-400 flex-shrink-0" />
               <p className="text-sm text-emerald-300">登録が完了しました。ログインしてください。</p>
+            </div>
+          )}
+
+          {passwordReset && (
+            <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg flex items-center gap-3">
+              <CheckCircle className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+              <p className="text-sm text-emerald-300">パスワードがリセットされました。新しいパスワードでログインしてください。</p>
             </div>
           )}
 
@@ -93,9 +101,17 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-2">
-                パスワード
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label htmlFor="password" className="block text-sm font-medium text-slate-300">
+                  パスワード
+                </label>
+                <Link
+                  href="/forgot-password"
+                  className="text-xs text-cyan-400 hover:text-cyan-300"
+                >
+                  パスワードを忘れた場合
+                </Link>
+              </div>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input

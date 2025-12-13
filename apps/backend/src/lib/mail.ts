@@ -124,3 +124,30 @@ export async function sendEmailChangeConfirmation(
     text: `メールアドレス変更の確認\n\n現在のメールアドレス: ${to}\n新しいメールアドレス: ${newEmail}\n\n以下のリンクをクリックして、メールアドレスの変更を確定してください：\n${confirmUrl}\n\nこのリンクは1時間有効です。`,
   });
 }
+
+/**
+ * パスワードリセットメールを送信
+ */
+export async function sendPasswordResetEmail(
+  to: string,
+  name: string | undefined,
+  resetUrl: string
+): Promise<void> {
+  const displayName = name || 'ユーザー';
+  await sendEmail({
+    to,
+    subject: 'パスワードリセット',
+    html: `
+      <h1>パスワードリセット</h1>
+      <p>${displayName}さん、</p>
+      <p>パスワードリセットのリクエストを受け付けました。</p>
+      <p>以下のリンクをクリックして、新しいパスワードを設定してください：</p>
+      <p><a href="${resetUrl}" style="display: inline-block; padding: 10px 20px; background-color: #06b6d4; color: white; text-decoration: none; border-radius: 5px;">パスワードをリセット</a></p>
+      <p>または、以下のURLをブラウザにコピー＆ペーストしてください：</p>
+      <p><code>${resetUrl}</code></p>
+      <p>このリンクは1時間有効です。</p>
+      <p>もしこのリクエストをしていない場合は、このメールを無視してください。</p>
+    `,
+    text: `パスワードリセット\n\n${displayName}さん、\n\nパスワードリセットのリクエストを受け付けました。\n以下のリンクをクリックして、新しいパスワードを設定してください：\n${resetUrl}\n\nこのリンクは1時間有効です。`,
+  });
+}

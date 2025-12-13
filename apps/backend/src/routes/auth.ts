@@ -3,7 +3,7 @@ import { Prisma, prisma } from '../lib/prisma.js';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import crypto from 'node:crypto';
-import { sendEmailVerification, sendWelcomeEmail } from '../lib/mail.js';
+import { sendEmailVerification, sendWelcomeEmail, sendPasswordResetEmail } from '../lib/mail.js';
 
 function sha256Hex(value: string): string {
   return crypto.createHash('sha256').update(value).digest('hex');
@@ -22,6 +22,16 @@ const registerSchema = z.object({
 
 const verifyEmailSchema = z.object({
   token: z.string(),
+});
+
+const forgotPasswordSchema = z.object({
+  name: z.string().min(1),
+  email: z.string().email(),
+});
+
+const resetPasswordSchema = z.object({
+  token: z.string(),
+  password: z.string().min(6),
 });
 
 export async function authRoutes(fastify: FastifyInstance) {
@@ -271,6 +281,114 @@ export async function authRoutes(fastify: FastifyInstance) {
 
     return reply.send({
       message: 'Email verified successfully. You can now log in.',
+    });
+  });
+
+  // POST /auth/forgot-password - パスワードリセットリクエスト
+  fastify.post('/forgot-password', async (request, reply) => {
+    const body = forgotPasswordSchema.safeParse(request.body);
+    if (!body.success) {
+      return reply.status(400).send({ error: 'Invalid input' });
+    }
+
+    const { name, email } = body.data;
+
+    // ユーザー名とメールアドレスの両方が一致するユーザーを検索
+    const user = await prisma.user.findFirst({
+      where: {
+        email,
+        name,
+        emailVerified: { not: null }, // メール認証済みのユーザーのみ
+      },
+    });
+
+    // セキュリティのため、ユーザーが見つからない場合も成功メッセージを返す
+    if (!user) {
+      return reply.send({
+        message: 'If the name and email match a verified account, a password reset link has been sent.',
+      });
+    }
+
+    // パスワードリセットトークンを生成
+    const token = crypto.randomBytes(32).toString('base64url');
+    const tokenHash = sha256Hex(token);
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1時間
+
+    // 既存のトークンを削除
+    await prisma.passwordResetToken.deleteMany({
+      where: { userId: user.id },
+    });
+
+    // 新しいトークンを作成
+    await prisma.passwordResetToken.create({
+      data: {
+        userId: user.id,
+        tokenHash,
+        expiresAt,
+      },
+    });
+
+    // リセットメールを送信
+    const origin = process.env.APP_ORIGIN || process.env.CORS_ORIGIN || 'http://localhost:3000';
+    const resetUrl = `${origin}/reset-password?token=${encodeURIComponent(token)}`;
+
+    sendPasswordResetEmail(user.email, user.name || undefined, resetUrl).catch((err) => {
+      fastify.log.error({ err, userId: user.id }, 'Failed to send password reset email');
+    });
+
+    fastify.log.info({ userId: user.id, email: user.email }, 'Password reset requested');
+
+    return reply.send({
+      message: 'If the email exists and is verified, a password reset link has been sent.',
+    });
+  });
+
+  // POST /auth/reset-password - パスワードリセット実行
+  fastify.post('/reset-password', async (request, reply) => {
+    const body = resetPasswordSchema.safeParse(request.body);
+    if (!body.success) {
+      return reply.status(400).send({ error: 'Invalid input' });
+    }
+
+    const { token, password } = body.data;
+    const tokenHash = sha256Hex(token);
+
+    // トークンを検索
+    const resetToken = await prisma.passwordResetToken.findUnique({
+      where: { tokenHash },
+      include: { user: true },
+    });
+
+    if (!resetToken) {
+      return reply.status(404).send({ error: 'Invalid or expired token' });
+    }
+
+    // トークンの有効期限をチェック
+    if (resetToken.expiresAt < new Date()) {
+      await prisma.passwordResetToken.delete({
+        where: { id: resetToken.id },
+      });
+      return reply.status(410).send({ error: 'Token expired' });
+    }
+
+    // パスワードをハッシュ化して更新
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: resetToken.userId },
+        data: { password: hashedPassword },
+      });
+
+      // トークンを削除
+      await tx.passwordResetToken.delete({
+        where: { id: resetToken.id },
+      });
+    });
+
+    fastify.log.info({ userId: resetToken.userId }, 'Password reset successfully');
+
+    return reply.send({
+      message: 'Password has been reset successfully. You can now log in.',
     });
   });
 }
