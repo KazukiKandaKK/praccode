@@ -131,11 +131,20 @@ export default function WritingChallengePage() {
   // お題取得
   useEffect(() => {
     const fetchChallenge = async () => {
+      if (!session?.user?.id) return;
+
       try {
-        const res = await fetch(`${apiUrl}/writing/challenges/${challengeId}`);
+        const res = await fetch(
+          `${apiUrl}/writing/challenges/${challengeId}?userId=${encodeURIComponent(session.user.id)}`
+        );
         if (!res.ok) {
-          toast.error('お題が見つかりません');
-          router.push('/writing');
+          if (res.status === 403) {
+            toast.error('このお題にアクセスする権限がありません');
+            router.push('/writing');
+          } else {
+            toast.error('お題が見つかりません');
+            router.push('/writing');
+          }
           return;
         }
         const data = await res.json();
@@ -154,7 +163,7 @@ export default function WritingChallengePage() {
     };
 
     fetchChallenge();
-  }, [challengeId, apiUrl, router]);
+  }, [challengeId, apiUrl, router, session?.user?.id]);
 
   // 提出ポーリング
   const pollSubmission = useCallback(

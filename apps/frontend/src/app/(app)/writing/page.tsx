@@ -17,10 +17,10 @@ interface WritingChallenge {
   createdAt: string;
 }
 
-async function getChallenges(): Promise<{ challenges: WritingChallenge[] }> {
+async function getChallenges(userId: string): Promise<{ challenges: WritingChallenge[] }> {
   try {
     const apiUrl = process.env.API_URL || 'http://localhost:3001';
-    const response = await fetch(`${apiUrl}/writing/challenges`, {
+    const response = await fetch(`${apiUrl}/writing/challenges?userId=${encodeURIComponent(userId)}`, {
       cache: 'no-store',
     });
 
@@ -43,7 +43,7 @@ export default async function WritingPage() {
     redirect('/login');
   }
 
-  const { challenges } = await getChallenges();
+  const { challenges } = await getChallenges(session.user.id);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

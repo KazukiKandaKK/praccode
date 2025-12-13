@@ -401,6 +401,7 @@ const dashboardRoutes: FastifyPluginAsync = async (fastify) => {
               difficulty: context.difficulty,
               status: 'GENERATING',
               createdById: userId,
+              assignedToId: userId, // 作成者に割り当て
             },
           });
 

@@ -35,10 +35,19 @@ const autoGenerateChallengeSchema = z.object({
 });
 
 export async function writingRoutes(fastify: FastifyInstance) {
-  // GET /writing/challenges - お題一覧（READY状態のもののみ）
+  // GET /writing/challenges - お題一覧（READY状態のもののみ、ユーザーに割り当てられたもののみ）
   fastify.get('/challenges', async (request: FastifyRequest, reply: FastifyReply) => {
+    const userId = (request.query as { userId?: string }).userId;
+    
+    if (!userId) {
+      return reply.status(400).send({ error: 'userId is required' });
+    }
+
     const challenges = await prisma.writingChallenge.findMany({
-      where: { status: 'READY' },
+      where: {
+        status: 'READY',
+        assignedToId: userId, // このユーザーに割り当てられたお題のみ
+      },
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
@@ -58,6 +67,11 @@ export async function writingRoutes(fastify: FastifyInstance) {
     '/challenges/:id',
     async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
       const { id } = request.params;
+      const userId = (request.query as { userId?: string }).userId;
+
+      if (!userId) {
+        return reply.status(400).send({ error: 'userId is required' });
+      }
 
       const challenge = await prisma.writingChallenge.findUnique({
         where: { id },
@@ -70,6 +84,7 @@ export async function writingRoutes(fastify: FastifyInstance) {
           status: true,
           testCode: true,
           starterCode: true,
+          assignedToId: true,
           createdAt: true,
         },
       });
@@ -78,7 +93,15 @@ export async function writingRoutes(fastify: FastifyInstance) {
         return reply.status(404).send({ error: 'Challenge not found' });
       }
 
-      return reply.send(challenge);
+      // このユーザーに割り当てられたお題かどうかを確認
+      if (challenge.assignedToId !== userId) {
+        return reply.status(403).send({ error: 'Forbidden' });
+      }
+
+      // assignedToIdはレスポンスに含めない
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { assignedToId, ...challengeResponse } = challenge;
+      return reply.send(challengeResponse);
     }
   );
 
@@ -124,6 +147,7 @@ export async function writingRoutes(fastify: FastifyInstance) {
         testCode: '',
         status: 'GENERATING',
         createdById: body.userId,
+        assignedToId: body.userId, // 作成者に割り当て
       },
     });
 
@@ -150,6 +174,11 @@ export async function writingRoutes(fastify: FastifyInstance) {
 
     if (!challenge) {
       return reply.status(404).send({ error: 'Challenge not found' });
+    }
+
+    // このユーザーに割り当てられたお題かどうかを確認
+    if (challenge.assignedToId !== body.userId) {
+      return reply.status(403).send({ error: 'Forbidden' });
     }
 
     // 提出レコード作成
