@@ -387,7 +387,22 @@ async function runCodeAsync(
 }
 
 // 非同期でLLMフィードバック生成
-async function generateFeedbackAsync(fastify: FastifyInstance, submission: any) {
+async function generateFeedbackAsync(
+  fastify: FastifyInstance,
+  submission: {
+    id: string;
+    language: string;
+    code: string;
+    stdout: string | null;
+    stderr: string | null;
+    passed: boolean | null;
+    challenge: {
+      title: string;
+      description: string;
+      testCode: string;
+    };
+  }
+) {
   try {
     fastify.log.info({ submissionId: submission.id }, 'Starting feedback generation');
 

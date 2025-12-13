@@ -64,12 +64,17 @@ export async function submissionRoutes(fastify: FastifyInstance) {
     ]);
 
     // 各サブミッションの平均スコアと評価レベルを計算
-    const submissionsWithStats = submissions.map((sub) => {
-      const evaluatedAnswers = sub.answers.filter((a) => a.score !== null && a.level !== null);
+    const submissionsWithStats = submissions.map((sub: (typeof submissions)[0]) => {
+      const evaluatedAnswers = sub.answers.filter(
+        (a: (typeof sub.answers)[0]) => a.score !== null && a.level !== null
+      );
       const avgScore =
         evaluatedAnswers.length > 0
           ? Math.round(
-              evaluatedAnswers.reduce((sum, a) => sum + (a.score || 0), 0) / evaluatedAnswers.length
+              evaluatedAnswers.reduce(
+                (sum: number, a: (typeof evaluatedAnswers)[0]) => sum + (a.score || 0),
+                0
+              ) / evaluatedAnswers.length
             )
           : null;
       const overallLevel =
@@ -225,7 +230,8 @@ export async function submissionRoutes(fastify: FastifyInstance) {
 
         for (const answer of jobSubmission.answers) {
           const question = jobSubmission.exercise.questions.find(
-            (q) => q.questionIndex === answer.questionIndex
+            (q: (typeof jobSubmission.exercise.questions)[0]) =>
+              q.questionIndex === answer.questionIndex
           );
 
           if (!question || !answer.answerText) {

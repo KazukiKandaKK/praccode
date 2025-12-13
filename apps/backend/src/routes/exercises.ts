@@ -22,7 +22,7 @@ export async function exerciseRoutes(fastify: FastifyInstance) {
       ...(language && { language }),
       ...(difficulty && { difficulty }),
       ...(genre && { genre }),
-      status: 'READY', // 生成完了した問題のみ表示
+      status: 'READY' as const, // 生成完了した問題のみ表示
     };
 
     const [exercises, total] = await Promise.all([
@@ -100,7 +100,7 @@ export async function exerciseRoutes(fastify: FastifyInstance) {
         userId,
         status: 'DRAFT',
         answers: {
-          create: exercise.questions.map((q) => ({
+          create: exercise.questions.map((q: (typeof exercise.questions)[0]) => ({
             questionIndex: q.questionIndex,
             answerText: '',
           })),

@@ -60,7 +60,7 @@ export async function userRoutes(fastify: FastifyInstance) {
     }
 
     const hasPassword = Boolean(user.password);
-    const oauthProviders = user.accounts.map((a) => a.provider);
+    const oauthProviders = user.accounts.map((a: (typeof user.accounts)[0]) => a.provider);
 
     return reply.send({
       id: user.id,

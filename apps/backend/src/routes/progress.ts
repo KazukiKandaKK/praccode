@@ -85,7 +85,7 @@ export async function progressRoutes(fastify: FastifyInstance) {
     const recentSubmissions = completedSubmissions.slice(0, 5).map((s) => {
       const scores = s.answers
         .filter((a: { score: number | null }) => a.score !== null)
-        .map((a: { score: number | null }) => a.score!);
+        .map((a: { score: number | null }) => a.score ?? 0);
       const avgScore =
         scores.length > 0
           ? Math.round(scores.reduce((a: number, b: number) => a + b, 0) / scores.length)

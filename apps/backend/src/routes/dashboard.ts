@@ -1,7 +1,7 @@
 import { FastifyPluginAsync } from 'fastify';
 import { prisma } from '../lib/prisma';
 import { analyzeLearningProgress, getRecommendedProblemContext } from '../llm/learning-analyzer';
-import { generateWritingChallenge } from '../llm/writing-generator';
+import { generateWritingChallenge, GenerateWritingChallengeInput } from '../llm/writing-generator';
 import { generateExercise } from '../llm/generator';
 
 interface StatsQuery {
@@ -89,7 +89,9 @@ const dashboardRoutes: FastifyPluginAsync = async (fastify) => {
       }
 
       // ライティング成功率
-      const writingPassedCount = writingSubmissions.filter((s) => s.passed === true).length;
+      const writingPassedCount = writingSubmissions.filter(
+        (s: (typeof writingSubmissions)[0]) => s.passed === true
+      ).length;
       const writingPassRate =
         totalWritingSubmissions > 0
           ? Math.round((writingPassedCount / totalWritingSubmissions) * 100)
@@ -119,19 +121,24 @@ const dashboardRoutes: FastifyPluginAsync = async (fastify) => {
 
       // 最近の提出（リーディング + ライティング混合、最新5件）
       const recentActivity = [
-        ...readingSubmissions.slice(0, 5).map((s) => ({
+        ...readingSubmissions.slice(0, 5).map((s: (typeof readingSubmissions)[0]) => ({
           type: 'reading' as const,
           id: s.id,
           title: s.exercise.title,
           language: s.exercise.language,
           score:
             s.answers.length > 0
-              ? Math.round(s.answers.reduce((sum, a) => sum + (a.score || 0), 0) / s.answers.length)
+              ? Math.round(
+                  s.answers.reduce(
+                    (sum: number, a: (typeof s.answers)[0]) => sum + (a.score || 0),
+                    0
+                  ) / s.answers.length
+                )
               : null,
           passed: null,
           date: s.updatedAt,
         })),
-        ...writingSubmissions.slice(0, 5).map((s) => ({
+        ...writingSubmissions.slice(0, 5).map((s: (typeof writingSubmissions)[0]) => ({
           type: 'writing' as const,
           id: s.id,
           title: s.challenge.title,
@@ -148,10 +155,10 @@ const dashboardRoutes: FastifyPluginAsync = async (fastify) => {
       const oneWeekAgo = new Date();
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
       const thisWeekReadingCount = readingSubmissions.filter(
-        (s) => new Date(s.updatedAt) >= oneWeekAgo
+        (s: (typeof readingSubmissions)[0]) => new Date(s.updatedAt) >= oneWeekAgo
       ).length;
       const thisWeekWritingCount = writingSubmissions.filter(
-        (s) => new Date(s.createdAt) >= oneWeekAgo
+        (s: (typeof writingSubmissions)[0]) => new Date(s.createdAt) >= oneWeekAgo
       ).length;
 
       return {
@@ -317,11 +324,12 @@ const dashboardRoutes: FastifyPluginAsync = async (fastify) => {
           });
 
           // バックグラウンドで問題を生成
-          generateWritingChallenge(challenge.id, targetLanguage, context.difficulty).catch(
-            (err) => {
-              console.error('Failed to generate writing challenge:', err);
-            }
-          );
+          generateWritingChallengeAsync(challenge.id, {
+            language: targetLanguage as 'javascript' | 'typescript' | 'python' | 'go',
+            difficulty: context.difficulty,
+          }).catch((err) => {
+            console.error('Failed to generate writing challenge:', err);
+          });
 
           return {
             challengeId: challenge.id,
@@ -426,8 +434,8 @@ async function generateAnalysis(userId: string) {
   });
 
   // 分析用データに変換
-  const readingData = readingSubmissions.flatMap((s) =>
-    s.answers.map((a) => ({
+  const readingData = readingSubmissions.flatMap((s: (typeof readingSubmissions)[0]) =>
+    s.answers.map((a: (typeof s.answers)[0]) => ({
       exerciseTitle: s.exercise.title,
       language: s.exercise.language,
       genre: s.exercise.genre,
@@ -438,7 +446,7 @@ async function generateAnalysis(userId: string) {
     }))
   );
 
-  const writingData = writingSubmissions.map((s) => ({
+  const writingData = writingSubmissions.map((s: (typeof writingSubmissions)[0]) => ({
     challengeTitle: s.challenge.title,
     language: s.challenge.language,
     passed: s.passed === true,
@@ -472,6 +480,39 @@ async function generateAnalysis(userId: string) {
     ...analysis,
     analyzedAt: new Date(),
   };
+}
+
+/**
+ * ライティング問題をLLMで生成（非同期）
+ */
+async function generateWritingChallengeAsync(
+  challengeId: string,
+  input: GenerateWritingChallengeInput
+) {
+  try {
+    const generated = await generateWritingChallenge(input);
+
+    await prisma.writingChallenge.update({
+      where: { id: challengeId },
+      data: {
+        title: generated.title,
+        description: generated.description,
+        difficulty: generated.difficulty,
+        testCode: generated.testCode,
+        starterCode: generated.starterCode,
+        sampleCode: generated.sampleCode,
+        status: 'READY',
+      },
+    });
+
+    console.info(`Writing challenge generated: ${challengeId}`);
+  } catch (error) {
+    console.error('Writing challenge generation failed:', error);
+    await prisma.writingChallenge.update({
+      where: { id: challengeId },
+      data: { status: 'FAILED' },
+    });
+  }
 }
 
 export default dashboardRoutes;

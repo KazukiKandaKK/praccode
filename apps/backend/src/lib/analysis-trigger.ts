@@ -78,8 +78,8 @@ export async function triggerLearningAnalysis(userId: string): Promise<void> {
     });
 
     // 分析用データに変換
-    const readingData = readingSubmissions.flatMap((s) =>
-      s.answers.map((a) => ({
+    const readingData = readingSubmissions.flatMap((s: (typeof readingSubmissions)[0]) =>
+      s.answers.map((a: (typeof s.answers)[0]) => ({
         exerciseTitle: s.exercise.title,
         language: s.exercise.language,
         genre: s.exercise.genre,
@@ -90,7 +90,7 @@ export async function triggerLearningAnalysis(userId: string): Promise<void> {
       }))
     );
 
-    const writingData = writingSubmissions.map((s) => ({
+    const writingData = writingSubmissions.map((s: (typeof writingSubmissions)[0]) => ({
       challengeTitle: s.challenge.title,
       language: s.challenge.language,
       passed: s.passed === true,
