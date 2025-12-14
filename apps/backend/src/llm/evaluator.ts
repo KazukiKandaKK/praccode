@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { generateWithOllama } from './llm-client.js';
 import { loadPrompt, renderPrompt } from './prompt-loader.js';
+import { PromptSanitizer } from './prompt-sanitizer.js';
 
 export interface EvaluateAnswerInput {
   code: string;
@@ -47,11 +48,20 @@ function buildPrompt(input: EvaluateAnswerInput): string {
   const template = loadPrompt('evaluator-prompt.md');
   const idealPointsText = input.idealPoints.map((p, i) => `- (${i + 1}) ${p}`).join('\n');
   
+  // ユーザー入力をサニタイズ
+  // CODEはコード部分なので、base64検出を緩和
+  const sanitizedCode = PromptSanitizer.sanitize(input.code, 'CODE', {
+    allowBase64: true, // コード内にbase64が含まれる可能性があるため
+  });
+  const sanitizedQuestion = PromptSanitizer.sanitize(input.question, 'QUESTION');
+  const sanitizedUserAnswer = PromptSanitizer.sanitize(input.userAnswer, 'USER_ANSWER');
+  const sanitizedIdealPoints = PromptSanitizer.sanitize(idealPointsText, 'IDEAL_POINTS');
+  
   return renderPrompt(template, {
-    CODE: input.code,
-    QUESTION: input.question,
-    IDEAL_POINTS: idealPointsText,
-    USER_ANSWER: input.userAnswer,
+    CODE: sanitizedCode,
+    QUESTION: sanitizedQuestion,
+    IDEAL_POINTS: sanitizedIdealPoints,
+    USER_ANSWER: sanitizedUserAnswer,
   });
 }
 

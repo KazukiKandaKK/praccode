@@ -4,6 +4,7 @@
 
 import type { LLMProvider, LLMGenerateOptions } from './llm-provider.js';
 import { parseRetryAfter } from './retry-handler.js';
+import { PromptSanitizer } from './prompt-sanitizer.js';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_API_URL =
@@ -43,12 +44,16 @@ export class GeminiProvider implements LLMProvider {
       throw new Error('GEMINI_API_KEY environment variable is not set');
     }
 
+    // プロンプト全体をサニタイズ（既に構造化されている前提）
+    // ただし、セパレータ部分は除外してサニタイズ
+    const sanitizedPrompt = this.sanitizeStructuredPrompt(prompt);
+
     const requestBody: GeminiGenerateRequest = {
       contents: [
         {
           parts: [
             {
-              text: prompt,
+              text: sanitizedPrompt,
             },
           ],
         },
@@ -168,6 +173,61 @@ export class GeminiProvider implements LLMProvider {
     } catch {
       return false;
     }
+  }
+
+  /**
+   * 構造化されたプロンプトをサニタイズ
+   * セパレータで囲まれたユーザー入力部分のみをサニタイズ
+   */
+  private sanitizeStructuredPrompt(prompt: string): string {
+    const separatorStart = '---USER_INPUT_START---';
+    const separatorEnd = '---USER_INPUT_END---';
+    
+    // セパレータがない場合は全体をサニタイズ
+    if (!prompt.includes(separatorStart)) {
+      return PromptSanitizer.sanitize(prompt, 'prompt');
+    }
+
+    // セパレータで分割して、ユーザー入力部分のみサニタイズ
+    const parts: string[] = [];
+    const remaining = prompt;
+    let startIndex = 0;
+
+    while (true) {
+      const startPos = remaining.indexOf(separatorStart, startIndex);
+      if (startPos === -1) {
+        // 残りの部分を追加
+        if (startIndex < remaining.length) {
+          parts.push(remaining.substring(startIndex));
+        }
+        break;
+      }
+
+      // セパレータ前の部分を追加
+      parts.push(remaining.substring(startIndex, startPos + separatorStart.length));
+
+      const endPos = remaining.indexOf(separatorEnd, startPos + separatorStart.length);
+      if (endPos === -1) {
+        // 終了セパレータが見つからない場合は残りをそのまま追加
+        parts.push(remaining.substring(startPos + separatorStart.length));
+        break;
+      }
+
+      // ユーザー入力部分をサニタイズ
+      const userInput = remaining.substring(
+        startPos + separatorStart.length,
+        endPos
+      );
+      const sanitizedInput = PromptSanitizer.sanitize(userInput.trim(), 'user_input');
+      parts.push(`\n${sanitizedInput}\n`);
+
+      // 終了セパレータを追加
+      parts.push(separatorEnd);
+
+      startIndex = endPos + separatorEnd.length;
+    }
+
+    return parts.join('');
   }
 }
 

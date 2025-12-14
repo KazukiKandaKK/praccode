@@ -4,6 +4,7 @@
 
 import { generateWithOllama } from './llm-client.js';
 import { loadPrompt, renderPrompt } from './prompt-loader.js';
+import { PromptSanitizer } from './prompt-sanitizer.js';
 
 export interface CodeReviewInput {
   language: string;
@@ -33,13 +34,28 @@ function buildCodeReviewPrompt(input: CodeReviewInput): string {
 
   const template = loadPrompt('code-reviewer-prompt.md');
   
+  // ユーザー入力をサニタイズ
+  // USER_CODEはコード部分なので、base64検出を緩和
+  const sanitizedUserCode = PromptSanitizer.sanitize(input.userCode, 'USER_CODE', {
+    allowBase64: true, // コード内にbase64が含まれる可能性があるため
+  });
+  const sanitizedChallengeTitle = PromptSanitizer.sanitize(
+    input.challengeTitle,
+    'CHALLENGE_TITLE'
+  );
+  const sanitizedChallengeDescription = PromptSanitizer.sanitize(
+    input.challengeDescription,
+    'CHALLENGE_DESCRIPTION'
+  );
+  const sanitizedTestOutput = PromptSanitizer.sanitize(trimmedOutput, 'TEST_OUTPUT');
+  
   return renderPrompt(template, {
-    CHALLENGE_TITLE: input.challengeTitle,
-    CHALLENGE_DESCRIPTION: input.challengeDescription,
+    CHALLENGE_TITLE: sanitizedChallengeTitle,
+    CHALLENGE_DESCRIPTION: sanitizedChallengeDescription,
     LANGUAGE: input.language,
-    USER_CODE: input.userCode,
+    USER_CODE: sanitizedUserCode,
     TEST_RESULT: passedText,
-    TEST_OUTPUT: trimmedOutput,
+    TEST_OUTPUT: sanitizedTestOutput,
     FEEDBACK_GUIDE: feedbackGuide,
   });
 }

@@ -6,6 +6,7 @@
 import { z } from 'zod';
 import { generateWithOllama } from './llm-client.js';
 import { loadPrompt, renderPrompt } from './prompt-loader.js';
+import { PromptSanitizer } from './prompt-sanitizer.js';
 
 // テストケースのスキーマ
 const testCaseSchema = z.object({
@@ -350,11 +351,15 @@ function buildPrompt(input: GenerateWritingChallengeInput): string {
 
   const template = loadPrompt('writing-generator-prompt.md');
   
+  // ユーザー入力の可能性があるフィールドをサニタイズ
+  const sanitizedTopic = PromptSanitizer.sanitize(topic, 'TOPIC');
+  const sanitizedLanguage = PromptSanitizer.sanitize(input.language, 'LANGUAGE');
+  
   return renderPrompt(template, {
-    LANGUAGE: input.language,
+    LANGUAGE: sanitizedLanguage,
     DIFFICULTY: input.difficulty.toString(),
     DIFFICULTY_DESC: diffDesc,
-    TOPIC: topic,
+    TOPIC: sanitizedTopic,
   });
 }
 

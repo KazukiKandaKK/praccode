@@ -5,6 +5,7 @@
 import { z } from 'zod';
 import { generateWithOllama } from './llm-client.js';
 import { loadPrompt, renderPrompt } from './prompt-loader.js';
+import { PromptSanitizer } from './prompt-sanitizer.js';
 
 // 生成されるExerciseの型定義
 export const generatedExerciseSchema = z.object({
@@ -67,11 +68,15 @@ function buildGenerationPrompt(input: GenerateExerciseInput): string {
 
   const template = loadPrompt('generator-prompt.md');
   
+  // ユーザー入力の可能性があるフィールドをサニタイズ
+  const sanitizedGenre = PromptSanitizer.sanitize(input.genre, 'GENRE');
+  const sanitizedLanguage = PromptSanitizer.sanitize(input.language, 'LANGUAGE');
+  
   return renderPrompt(template, {
-    LANGUAGE: input.language,
+    LANGUAGE: sanitizedLanguage,
     DIFFICULTY: input.difficulty.toString(),
     DIFFICULTY_DESC: difficultyDesc,
-    GENRE: input.genre,
+    GENRE: sanitizedGenre,
     GENRE_DESC: genreDesc,
     LANGUAGE_HINT: languageHint,
   });

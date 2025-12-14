@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { loadPrompt, renderPrompt } from './prompt-loader.js';
+import { PromptSanitizer } from './prompt-sanitizer.js';
 
 export interface GenerateHintInput {
   code: string;
@@ -15,10 +16,21 @@ function buildPrompt(input: GenerateHintInput): string {
   const template = loadPrompt('hint-prompt.md');
   const learningGoalsText = input.learningGoals.map((g) => `- ${g}`).join('\n');
   
+  // ユーザー入力をサニタイズ
+  // CODEはコード部分なので、base64検出を緩和
+  const sanitizedCode = PromptSanitizer.sanitize(input.code, 'CODE', {
+    allowBase64: true, // コード内にbase64が含まれる可能性があるため
+  });
+  const sanitizedQuestion = PromptSanitizer.sanitize(input.question, 'QUESTION');
+  const sanitizedLearningGoals = PromptSanitizer.sanitize(
+    learningGoalsText,
+    'LEARNING_GOALS'
+  );
+  
   return renderPrompt(template, {
-    CODE: input.code,
-    QUESTION: input.question,
-    LEARNING_GOALS: learningGoalsText,
+    CODE: sanitizedCode,
+    QUESTION: sanitizedQuestion,
+    LEARNING_GOALS: sanitizedLearningGoals,
   });
 }
 

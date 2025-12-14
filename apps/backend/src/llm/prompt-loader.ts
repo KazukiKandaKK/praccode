@@ -20,13 +20,37 @@ export function loadPrompt(filename: string): string {
 
 /**
  * プロンプトテンプレートに変数を埋め込む
+ * ユーザー入力部分を明確にセパレータで囲む
  */
 export function renderPrompt(template: string, variables: Record<string, string>): string {
   let result = template;
+  
+  // ユーザー入力として扱うフィールド（セパレータで囲む）
+  const userInputFields = [
+    'USER_ANSWER',
+    'USER_CODE',
+    'CODE',
+    'QUESTION',
+    'CHALLENGE_TITLE',
+    'CHALLENGE_DESCRIPTION',
+    'TEST_OUTPUT',
+    'TOPIC',
+  ];
+  
   for (const [key, value] of Object.entries(variables)) {
     const placeholder = `{{${key}}}`;
-    result = result.replace(new RegExp(placeholder, 'g'), value);
+    const regex = new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+    
+    if (userInputFields.includes(key)) {
+      // ユーザー入力はセパレータで囲む
+      const wrappedValue = `---USER_INPUT_START---\n${value}\n---USER_INPUT_END---`;
+      result = result.replace(regex, wrappedValue);
+    } else {
+      // その他の変数はそのまま埋め込む
+      result = result.replace(regex, value);
+    }
   }
+  
   return result;
 }
 
