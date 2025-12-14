@@ -148,9 +148,13 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 flex items-center justify-center">
-      <div className="text-white">読み込み中...</div>
-    </div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 flex items-center justify-center">
+          <div className="text-white">読み込み中...</div>
+        </div>
+      }
+    >
       <LoginForm />
     </Suspense>
   );
