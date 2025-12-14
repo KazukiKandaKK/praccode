@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { loginWithCredentials, loginWithGitHub } from '@/app/actions/auth';
 import { Code2, Github, Mail, Lock, AlertCircle, CheckCircle } from 'lucide-react';
 
-export default function LoginPage() {
+function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const searchParams = useSearchParams();
@@ -143,5 +143,15 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 flex items-center justify-center">
+      <div className="text-white">読み込み中...</div>
+    </div>}>
+      <LoginForm />
+    </Suspense>
   );
 }

@@ -388,15 +388,21 @@ export function EvaluationToastProvider({ children }: { children: React.ReactNod
 
   // クリーンアップ
   useEffect(() => {
+    // refの値を変数にコピー（クリーンアップ関数で使用するため）
+    const evaluationTimers = evaluationPollingRef.current;
+    const generationTimers = generationPollingRef.current;
+    const writingTimers = writingPollingRef.current;
+    const writingChallengeTimers = writingChallengePollingRef.current;
+
     return () => {
-      evaluationPollingRef.current.forEach((timer) => clearInterval(timer));
-      evaluationPollingRef.current.clear();
-      generationPollingRef.current.forEach((timer) => clearInterval(timer));
-      generationPollingRef.current.clear();
-      writingPollingRef.current.forEach((timer) => clearInterval(timer));
-      writingPollingRef.current.clear();
-      writingChallengePollingRef.current.forEach((timer) => clearInterval(timer));
-      writingChallengePollingRef.current.clear();
+      evaluationTimers.forEach((timer) => clearInterval(timer));
+      evaluationTimers.clear();
+      generationTimers.forEach((timer) => clearInterval(timer));
+      generationTimers.clear();
+      writingTimers.forEach((timer) => clearInterval(timer));
+      writingTimers.clear();
+      writingChallengeTimers.forEach((timer) => clearInterval(timer));
+      writingChallengeTimers.clear();
     };
   }, []);
 
