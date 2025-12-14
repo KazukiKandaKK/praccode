@@ -3,6 +3,7 @@
  */
 
 import type { LLMProvider, LLMGenerateOptions } from './llm-provider.js';
+import { parseRetryAfter } from './retry-handler.js';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_API_URL =
@@ -80,6 +81,15 @@ export class GeminiProvider implements LLMProvider {
 
       if (!response.ok) {
         const errorText = await response.text();
+        
+        // 429エラーの場合、Retry-Afterヘッダーを含めてエラーをスロー
+        if (response.status === 429) {
+          const retryAfter = response.headers.get('Retry-After');
+          const retryAfterMs = parseRetryAfter(retryAfter);
+          const retryInfo = retryAfterMs ? ` (Retry after ${retryAfterMs}ms)` : '';
+          throw new Error(`Gemini API rate limit (429)${retryInfo}: ${errorText}`);
+        }
+        
         throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
       }
 

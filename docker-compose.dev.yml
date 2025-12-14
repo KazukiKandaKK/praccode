@@ -43,6 +43,10 @@ services:
       # GEMINI_API_KEY: ${GEMINI_API_KEY:-foo}
       # GEMINI_API_URL: ${GEMINI_API_URL:-hogehoge}
       # GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-pro}
+      # レート制限設定
+      LLM_RATE_LIMIT_WINDOW_MS: ${LLM_RATE_LIMIT_WINDOW_MS:-60000}  # 60秒
+      LLM_RATE_LIMIT_MAX_REQUESTS: ${LLM_RATE_LIMIT_MAX_REQUESTS:-10}  # 10リクエスト/分
+      LLM_RATE_LIMIT_MAX_RETRIES: ${LLM_RATE_LIMIT_MAX_RETRIES:-3}  # 最大3回リトライ
     depends_on:
       db:
         condition: service_healthy

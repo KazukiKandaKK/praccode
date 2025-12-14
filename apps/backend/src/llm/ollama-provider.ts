@@ -3,6 +3,7 @@
  */
 
 import type { LLMProvider, LLMGenerateOptions } from './llm-provider.js';
+import { parseRetryAfter } from './retry-handler.js';
 
 // Docker内からホストのOllamaに接続
 const OLLAMA_HOST = process.env.OLLAMA_HOST || 'http://host.docker.internal:11434';
@@ -58,6 +59,15 @@ export class OllamaProvider implements LLMProvider {
 
       if (!response.ok) {
         const errorText = await response.text();
+        
+        // 429エラーの場合、Retry-Afterヘッダーを含めてエラーをスロー
+        if (response.status === 429) {
+          const retryAfter = response.headers.get('Retry-After');
+          const retryAfterMs = parseRetryAfter(retryAfter);
+          const retryInfo = retryAfterMs ? ` (Retry after ${retryAfterMs}ms)` : '';
+          throw new Error(`Ollama API rate limit (429)${retryInfo}: ${errorText}`);
+        }
+        
         throw new Error(`Ollama API error: ${response.status} - ${errorText}`);
       }
 
