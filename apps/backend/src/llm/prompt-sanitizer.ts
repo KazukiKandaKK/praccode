@@ -5,10 +5,7 @@
 import { PromptInjectionError } from './prompt-injection-error.js';
 
 // 最大入力長（デフォルト: 100,000文字）
-const MAX_INPUT_LENGTH = parseInt(
-  process.env.LLM_MAX_INPUT_LENGTH || '100000',
-  10
-);
+const MAX_INPUT_LENGTH = parseInt(process.env.LLM_MAX_INPUT_LENGTH || '100000', 10);
 
 // base64検出の最小長（これより短い場合は検出しない）
 const BASE64_MIN_LENGTH = 20;
@@ -102,14 +99,14 @@ export class PromptSanitizer {
     // - 末尾に=または==が付く可能性
 
     const base64Pattern = /^[A-Za-z0-9+/]+={0,2}$/;
-    
+
     // 連続するbase64文字列を検出（空白や改行で区切られた部分も含む）
     const parts = input.split(/\s+/);
-    
+
     for (const part of parts) {
       // パディングを除いた長さをチェック
       const withoutPadding = part.replace(/=+$/, '');
-      
+
       // 一定の長さ以上で、base64パターンに一致する場合
       if (
         withoutPadding.length >= BASE64_MIN_LENGTH &&
@@ -159,11 +156,7 @@ export class PromptSanitizer {
   /**
    * 入力長を検証
    */
-  static validateLength(
-    input: string,
-    maxLength: number,
-    fieldName: string
-  ): void {
+  static validateLength(input: string, maxLength: number, fieldName: string): void {
     if (input.length > maxLength) {
       throw new PromptInjectionError(
         `Input too long in ${fieldName} (max: ${maxLength} characters)`,
@@ -176,14 +169,11 @@ export class PromptSanitizer {
   /**
    * 制御文字を検証
    */
-  static validateControlCharacters(
-    input: string,
-    fieldName: string
-  ): void {
+  static validateControlCharacters(input: string, fieldName: string): void {
     // 許可されない制御文字を検出（改行、タブ、復帰は許可）
     // eslint-disable-next-line no-control-regex
     const invalidControlChars = /[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/;
-    
+
     if (invalidControlChars.test(input)) {
       throw new PromptInjectionError(
         `Invalid control characters detected in ${fieldName}`,
@@ -212,4 +202,3 @@ export class PromptSanitizer {
     return sanitized;
   }
 }
-

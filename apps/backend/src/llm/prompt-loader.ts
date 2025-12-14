@@ -24,7 +24,7 @@ export function loadPrompt(filename: string): string {
  */
 export function renderPrompt(template: string, variables: Record<string, string>): string {
   let result = template;
-  
+
   // ユーザー入力として扱うフィールド（セパレータで囲む）
   const userInputFields = [
     'USER_ANSWER',
@@ -36,11 +36,11 @@ export function renderPrompt(template: string, variables: Record<string, string>
     'TEST_OUTPUT',
     'TOPIC',
   ];
-  
+
   for (const [key, value] of Object.entries(variables)) {
     const placeholder = `{{${key}}}`;
     const regex = new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
-    
+
     if (userInputFields.includes(key)) {
       // ユーザー入力はセパレータで囲む
       const wrappedValue = `---USER_INPUT_START---\n${value}\n---USER_INPUT_END---`;
@@ -50,7 +50,6 @@ export function renderPrompt(template: string, variables: Record<string, string>
       result = result.replace(regex, value);
     }
   }
-  
+
   return result;
 }
-

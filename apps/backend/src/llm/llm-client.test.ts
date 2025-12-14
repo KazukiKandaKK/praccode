@@ -27,4 +27,3 @@ describe('LLM Client', () => {
     // 実際の呼び出しはしない（Ollama/Geminiへの接続が必要なため）
   });
 });
-

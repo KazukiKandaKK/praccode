@@ -5,11 +5,13 @@
 トピックヒント: {{TOPIC}}
 
 ## 出力要件（最重要）
+
 - **マークダウンのコードブロックは禁止**。**純粋なJSONのみ**を返すこと。
 - JSONは必ずパース可能にする（ダブルクォート、末尾カンマ禁止）。
 - 指定のJSON構造以外のキーを追加しない。
 
 ## 問題設計ルール
+
 - 難易度に合った現実的な課題にする（実務で遭遇しそうな処理の縮小版が望ましい）。
 - description は日本語で約100文字、必ず以下を含める：
   - 「関数名(引数): 戻り値型 を実装してください。」
@@ -30,17 +32,18 @@
   - 短く、正しく、テストに通る実装にする
 
 ## 出力JSON構造（厳守）
+
 {
-  "title": "日本語のタイトル（15文字以内）",
-  "description": "関数名(引数): 戻り値型 を実装してください。説明と例を含む（日本語、100文字程度）",
-  "functionName": "snake_case_name",
-  "parameters": "a, b",
-  "parameterTypes": "a: number, b: number",
-  "returnType": "number",
-  "testCases": [
-    {"input": "1, 2", "expected": "3"},
-    {"input": "0, 0", "expected": "0"},
-    {"input": "-1, 1", "expected": "0"}
-  ],
-  "sampleImplementation": "return a + b;"
+"title": "日本語のタイトル（15文字以内）",
+"description": "関数名(引数): 戻り値型 を実装してください。説明と例を含む（日本語、100文字程度）",
+"functionName": "snake_case_name",
+"parameters": "a, b",
+"parameterTypes": "a: number, b: number",
+"returnType": "number",
+"testCases": [
+{"input": "1, 2", "expected": "3"},
+{"input": "0, 0", "expected": "0"},
+{"input": "-1, 1", "expected": "0"}
+],
+"sampleImplementation": "return a + b;"
 }

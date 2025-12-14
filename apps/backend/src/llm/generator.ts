@@ -67,11 +67,11 @@ function buildGenerationPrompt(input: GenerateExerciseInput): string {
   const genreDesc = genreDescriptions[input.genre] || input.genre;
 
   const template = loadPrompt('generator-prompt.md');
-  
+
   // ユーザー入力の可能性があるフィールドをサニタイズ
   const sanitizedGenre = PromptSanitizer.sanitize(input.genre, 'GENRE');
   const sanitizedLanguage = PromptSanitizer.sanitize(input.language, 'LANGUAGE');
-  
+
   return renderPrompt(template, {
     LANGUAGE: sanitizedLanguage,
     DIFFICULTY: input.difficulty.toString(),

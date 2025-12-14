@@ -113,6 +113,7 @@ docker compose -f docker-compose.dev.yml run --rm llm
 ```
 
 環境変数（オプション）:
+
 - `LLM_PROVIDER=ollama` (デフォルト)
 - `OLLAMA_HOST=http://host.docker.internal:11434` (デフォルト)
 - `OLLAMA_MODEL=qwen2.5-coder:1.5b` (デフォルト)
@@ -131,6 +132,7 @@ docker compose -f docker-compose.dev.yml up
 ```
 
 環境変数:
+
 - `LLM_PROVIDER=gemini` - Gemini APIを使用
 - `GEMINI_API_KEY` - Gemini APIキー（必須）
 - `GEMINI_API_URL` - APIエンドポイント（オプション、デフォルト: https://aiplatform.googleapis.com/v1）
@@ -148,6 +150,7 @@ export LLM_RATE_LIMIT_MAX_RETRIES=3    # 429エラー時の最大リトライ回
 ```
 
 レート制限機能:
+
 - スライディングウィンドウ方式で一定時間内のリクエスト数を制限
 - 429エラー発生時はエクスポネンシャルバックオフでリトライ
 - Retry-Afterヘッダーを尊重
@@ -265,11 +268,13 @@ pnpm --filter @praccode/web test --coverage
 ### テスト範囲
 
 **現状カバーしている層**:
+
 - ✅ LLMロジック（評価、問題生成、学習分析）
 - ✅ ユーティリティ関数（境界値・エッジケース含む）
 - ✅ APIエンドポイント（主要なルート）
 
 **今後の課題**:
+
 - ⏳ E2Eテスト（Playwright等）
 - ⏳ フロントエンドコンポーネントの統合テスト
 - ⏳ エラーハンドリングの網羅的なテスト
@@ -292,12 +297,14 @@ pnpm --filter @praccode/web test --coverage
 ### レート制限と輻輳制御
 
 **実装済みの機能**:
+
 - ✅ スライディングウィンドウ方式のレート制限
 - ✅ 429エラー時のエクスポネンシャルバックオフ
 - ✅ Retry-Afterヘッダーの処理
 - ✅ 環境変数による設定のカスタマイズ
 
 **動作**:
+
 1. すべてのLLM API呼び出しに自動的にレート制限が適用される
 2. レート制限超過時は自動的に待機してから実行
 3. 429エラー発生時は最大3回まで自動リトライ（待機時間: 1秒 → 2秒 → 4秒）

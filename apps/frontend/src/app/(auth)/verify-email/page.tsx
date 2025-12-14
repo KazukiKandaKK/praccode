@@ -52,7 +52,9 @@ function VerifyEmailContent() {
           if (response.status === 410) {
             setMessage('認証トークンの有効期限が切れています');
           } else if (response.status === 404) {
-            setMessage('無効な認証トークンです。既に認証済みか、有効期限が切れている可能性があります。');
+            setMessage(
+              '無効な認証トークンです。既に認証済みか、有効期限が切れている可能性があります。'
+            );
           } else if (response.status === 400) {
             setMessage('無効なリクエストです');
           } else {

@@ -63,7 +63,7 @@ export class OllamaProvider implements LLMProvider {
 
       if (!response.ok) {
         const errorText = await response.text();
-        
+
         // 429エラーの場合、Retry-Afterヘッダーを含めてエラーをスロー
         if (response.status === 429) {
           const retryAfter = response.headers.get('Retry-After');
@@ -71,7 +71,7 @@ export class OllamaProvider implements LLMProvider {
           const retryInfo = retryAfterMs ? ` (Retry after ${retryAfterMs}ms)` : '';
           throw new Error(`Ollama API rate limit (429)${retryInfo}: ${errorText}`);
         }
-        
+
         throw new Error(`Ollama API error: ${response.status} - ${errorText}`);
       }
 
@@ -104,7 +104,7 @@ export class OllamaProvider implements LLMProvider {
   private sanitizeStructuredPrompt(prompt: string): string {
     const separatorStart = '---USER_INPUT_START---';
     const separatorEnd = '---USER_INPUT_END---';
-    
+
     // セパレータがない場合は全体をサニタイズ
     if (!prompt.includes(separatorStart)) {
       return PromptSanitizer.sanitize(prompt, 'prompt');
@@ -136,10 +136,7 @@ export class OllamaProvider implements LLMProvider {
       }
 
       // ユーザー入力部分をサニタイズ
-      const userInput = remaining.substring(
-        startPos + separatorStart.length,
-        endPos
-      );
+      const userInput = remaining.substring(startPos + separatorStart.length, endPos);
       const sanitizedInput = PromptSanitizer.sanitize(userInput.trim(), 'user_input');
       parts.push(`\n${sanitizedInput}\n`);
 
@@ -152,4 +149,3 @@ export class OllamaProvider implements LLMProvider {
     return parts.join('');
   }
 }
-

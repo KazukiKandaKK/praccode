@@ -126,7 +126,10 @@ function ResetPasswordContent() {
               </div>
 
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-300 mb-2">
+                <label
+                  htmlFor="confirmPassword"
+                  className="block text-sm font-medium text-slate-300 mb-2"
+                >
                   パスワード（確認）
                 </label>
                 <div className="relative">
@@ -180,4 +183,3 @@ export default function ResetPasswordPage() {
     </Suspense>
   );
 }
-

@@ -169,7 +169,7 @@ function buildAnalysisPrompt(
     .join(', ');
 
   const template = loadPrompt('learning-analyzer-prompt.md');
-  
+
   return renderPrompt(template, {
     TOTAL_READING_SUBMISSIONS: stats.totalReadingSubmissions.toString(),
     AVG_READING_SCORE: stats.avgReadingScore.toString(),

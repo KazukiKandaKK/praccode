@@ -350,11 +350,11 @@ function buildPrompt(input: GenerateWritingChallengeInput): string {
   const topic = input.topic || topicExamples[Math.floor(Math.random() * topicExamples.length)];
 
   const template = loadPrompt('writing-generator-prompt.md');
-  
+
   // ユーザー入力の可能性があるフィールドをサニタイズ
   const sanitizedTopic = PromptSanitizer.sanitize(topic, 'TOPIC');
   const sanitizedLanguage = PromptSanitizer.sanitize(input.language, 'LANGUAGE');
-  
+
   return renderPrompt(template, {
     LANGUAGE: sanitizedLanguage,
     DIFFICULTY: input.difficulty.toString(),

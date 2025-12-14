@@ -2,14 +2,8 @@
  * レート制限ミドルウェア - スライディングウィンドウ方式
  */
 
-const RATE_LIMIT_WINDOW_MS = parseInt(
-  process.env.LLM_RATE_LIMIT_WINDOW_MS || '60000',
-  10
-); // デフォルト: 60秒
-const RATE_LIMIT_MAX_REQUESTS = parseInt(
-  process.env.LLM_RATE_LIMIT_MAX_REQUESTS || '10',
-  10
-); // デフォルト: 10リクエスト
+const RATE_LIMIT_WINDOW_MS = parseInt(process.env.LLM_RATE_LIMIT_WINDOW_MS || '60000', 10); // デフォルト: 60秒
+const RATE_LIMIT_MAX_REQUESTS = parseInt(process.env.LLM_RATE_LIMIT_MAX_REQUESTS || '10', 10); // デフォルト: 10リクエスト
 
 /**
  * スライディングウィンドウ方式のレート制限
@@ -20,7 +14,10 @@ export class RateLimiter {
   private readonly windowMs: number;
   private readonly maxRequests: number;
 
-  constructor(windowMs: number = RATE_LIMIT_WINDOW_MS, maxRequests: number = RATE_LIMIT_MAX_REQUESTS) {
+  constructor(
+    windowMs: number = RATE_LIMIT_WINDOW_MS,
+    maxRequests: number = RATE_LIMIT_MAX_REQUESTS
+  ) {
     this.windowMs = windowMs;
     this.maxRequests = maxRequests;
   }
@@ -94,4 +91,3 @@ export function getGlobalRateLimiter(): RateLimiter {
   }
   return globalRateLimiter;
 }
-

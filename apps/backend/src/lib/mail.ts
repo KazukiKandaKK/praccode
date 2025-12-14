@@ -45,7 +45,7 @@ export async function sendEmail(options: EmailOptions): Promise<void> {
     const filePath = join(MAIL_DIR, filename);
     await fs.writeFile(filePath, emailContent, 'utf-8');
 
-  console.log(`[Mail] Email saved to: ${filePath}`); // eslint-disable-line no-console
+    console.log(`[Mail] Email saved to: ${filePath}`); // eslint-disable-line no-console
     // eslint-disable-next-line no-console
     console.log(`[Mail] Current working directory: ${process.cwd()}`);
     // eslint-disable-next-line no-console

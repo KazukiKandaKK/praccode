@@ -47,7 +47,7 @@ export function normalizeScore(score: number): number {
 function buildPrompt(input: EvaluateAnswerInput): string {
   const template = loadPrompt('evaluator-prompt.md');
   const idealPointsText = input.idealPoints.map((p, i) => `- (${i + 1}) ${p}`).join('\n');
-  
+
   // ユーザー入力をサニタイズ
   // CODEはコード部分なので、base64検出を緩和
   const sanitizedCode = PromptSanitizer.sanitize(input.code, 'CODE', {
@@ -56,7 +56,7 @@ function buildPrompt(input: EvaluateAnswerInput): string {
   const sanitizedQuestion = PromptSanitizer.sanitize(input.question, 'QUESTION');
   const sanitizedUserAnswer = PromptSanitizer.sanitize(input.userAnswer, 'USER_ANSWER');
   const sanitizedIdealPoints = PromptSanitizer.sanitize(idealPointsText, 'IDEAL_POINTS');
-  
+
   return renderPrompt(template, {
     CODE: sanitizedCode,
     QUESTION: sanitizedQuestion,

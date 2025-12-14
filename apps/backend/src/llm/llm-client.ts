@@ -83,4 +83,3 @@ export async function checkOllamaHealth(): Promise<boolean> {
   const provider = getLLMProvider();
   return provider.checkHealth();
 }
-

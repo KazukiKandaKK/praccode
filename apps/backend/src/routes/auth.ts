@@ -249,7 +249,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
       return reply.status(200).send({
         message: 'Email already verified. You can now log in.',
-        alreadyVerified: true
+        alreadyVerified: true,
       });
     }
 
@@ -305,7 +305,8 @@ export async function authRoutes(fastify: FastifyInstance) {
     // セキュリティのため、ユーザーが見つからない場合も成功メッセージを返す
     if (!user) {
       return reply.send({
-        message: 'If the name and email match a verified account, a password reset link has been sent.',
+        message:
+          'If the name and email match a verified account, a password reset link has been sent.',
       });
     }
 

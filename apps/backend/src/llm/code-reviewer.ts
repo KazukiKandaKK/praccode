@@ -33,22 +33,19 @@ function buildCodeReviewPrompt(input: CodeReviewInput): string {
     : 'Explain why tests failed and how to fix';
 
   const template = loadPrompt('code-reviewer-prompt.md');
-  
+
   // ユーザー入力をサニタイズ
   // USER_CODEはコード部分なので、base64検出を緩和
   const sanitizedUserCode = PromptSanitizer.sanitize(input.userCode, 'USER_CODE', {
     allowBase64: true, // コード内にbase64が含まれる可能性があるため
   });
-  const sanitizedChallengeTitle = PromptSanitizer.sanitize(
-    input.challengeTitle,
-    'CHALLENGE_TITLE'
-  );
+  const sanitizedChallengeTitle = PromptSanitizer.sanitize(input.challengeTitle, 'CHALLENGE_TITLE');
   const sanitizedChallengeDescription = PromptSanitizer.sanitize(
     input.challengeDescription,
     'CHALLENGE_DESCRIPTION'
   );
   const sanitizedTestOutput = PromptSanitizer.sanitize(trimmedOutput, 'TEST_OUTPUT');
-  
+
   return renderPrompt(template, {
     CHALLENGE_TITLE: sanitizedChallengeTitle,
     CHALLENGE_DESCRIPTION: sanitizedChallengeDescription,

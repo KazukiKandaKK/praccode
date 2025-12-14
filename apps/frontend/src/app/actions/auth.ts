@@ -43,7 +43,8 @@ export async function registerUser(formData: FormData) {
 
     // リダイレクトせず、成功メッセージを返す
     return {
-      success: '登録が完了しました。メールアドレスの確認リンクを送信しました。メールをご確認の上、認証を完了してください。',
+      success:
+        '登録が完了しました。メールアドレスの確認リンクを送信しました。メールをご確認の上、認証を完了してください。',
     };
   } catch (error) {
     console.error('Registration error:', error);
@@ -68,7 +69,9 @@ export async function loginWithCredentials(formData: FormData) {
       const message = error.message.toLowerCase();
 
       if (message.includes('email not verified')) {
-        return { error: 'メールアドレスが未認証です。メールをご確認の上、認証を完了してください。' };
+        return {
+          error: 'メールアドレスが未認証です。メールをご確認の上、認証を完了してください。',
+        };
       }
       if (message.includes('invalid credentials')) {
         return { error: 'メールアドレスまたはパスワードが正しくありません' };

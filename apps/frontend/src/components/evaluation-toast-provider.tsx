@@ -301,9 +301,12 @@ export function EvaluationToastProvider({ children }: { children: React.ReactNod
       }
 
       try {
-        const res = await fetch(`${apiUrl}/writing/challenges/${job.challengeId}?userId=${userId}`, {
-          cache: 'no-store',
-        });
+        const res = await fetch(
+          `${apiUrl}/writing/challenges/${job.challengeId}?userId=${userId}`,
+          {
+            cache: 'no-store',
+          }
+        );
 
         if (!res.ok) {
           const timer = writingChallengePollingRef.current.get(job.challengeId);

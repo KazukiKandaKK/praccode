@@ -38,7 +38,7 @@ export async function writingRoutes(fastify: FastifyInstance) {
   // GET /writing/challenges - お題一覧（READY状態のもののみ、ユーザーに割り当てられたもののみ）
   fastify.get('/challenges', async (request: FastifyRequest, reply: FastifyReply) => {
     const userId = (request.query as { userId?: string }).userId;
-    
+
     if (!userId) {
       return reply.status(400).send({ error: 'userId is required' });
     }

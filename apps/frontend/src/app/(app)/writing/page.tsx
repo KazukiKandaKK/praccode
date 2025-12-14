@@ -20,9 +20,12 @@ interface WritingChallenge {
 async function getChallenges(userId: string): Promise<{ challenges: WritingChallenge[] }> {
   try {
     const apiUrl = process.env.API_URL || 'http://localhost:3001';
-    const response = await fetch(`${apiUrl}/writing/challenges?userId=${encodeURIComponent(userId)}`, {
-      cache: 'no-store',
-    });
+    const response = await fetch(
+      `${apiUrl}/writing/challenges?userId=${encodeURIComponent(userId)}`,
+      {
+        cache: 'no-store',
+      }
+    );
 
     if (!response.ok) {
       console.error('Failed to fetch challenges:', response.status);
