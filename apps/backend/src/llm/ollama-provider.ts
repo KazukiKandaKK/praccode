@@ -8,8 +8,8 @@ import { PromptSanitizer } from './prompt-sanitizer.js';
 
 // Docker内からホストのOllamaに接続
 const OLLAMA_HOST = process.env.OLLAMA_HOST || 'http://host.docker.internal:11434';
-// 1.5bは軽量で高速、7bはより高品質だが重い
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen2.5-coder:1.5b';
+// デフォルトモデル: qwen2.5-coder:14b（推奨）
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen2.5-coder:14b';
 
 interface OllamaGenerateRequest {
   model: string;

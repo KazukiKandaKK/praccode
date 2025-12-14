@@ -28,7 +28,7 @@
 ## 特徴
 
 - **実務レベルのコード教材**: TypeScript, Go, Ruby など実際の開発で使われるコードパターンを題材にした学習
-- **AI フィードバック**: OpenAI を活用した詳細なフィードバック（良い点・改善点を明確に）
+- **AI フィードバック**: LLM（Ollama / Gemini）を活用した詳細なフィードバック（良い点・改善点を明確に）
 - **スキル可視化**: 責務理解・データフロー・エラーハンドリングなど観点別にスキルを可視化
 - **ヒント機能**: 答えを出しすぎない範囲でヒントを提供
 
@@ -94,7 +94,7 @@ praccode/
 ### 必要なもの
 
 - Docker & Docker Compose
-- OpenAI API Key (オプション: AI評価機能に必要)
+- LLMプロバイダー（Ollama または Google Gemini API Key）
 
 ### LLMプロバイダーの設定
 
@@ -117,7 +117,7 @@ docker compose -f docker-compose.dev.yml run --rm llm
 
 - `LLM_PROVIDER=ollama` (デフォルト)
 - `OLLAMA_HOST=http://host.docker.internal:11434` (デフォルト)
-- `OLLAMA_MODEL=qwen2.5-coder:1.5b` (デフォルト)
+- `OLLAMA_MODEL=qwen2.5-coder:14b` (デフォルト)
 
 #### Google Gemini APIを使う場合
 
@@ -182,6 +182,16 @@ chmod +x scripts/setup.sh
 - フロントエンド: http://localhost:3000
 - API: http://localhost:3001
 
+### 開発環境でのメール送信
+
+開発環境では、メール送信機能は実際のメールサーバーを使用せず、**`apps/backend/tmp/mail/`** ディレクトリにHTMLファイルとして保存されます。
+
+- メール確認リンク（ユーザー登録時）
+- パスワードリセットリンク
+- その他の通知メール
+
+すべてのメールは `apps/backend/tmp/mail/` に保存され、ファイル名には送信日時（JST）が含まれます。メールの内容を確認するには、このディレクトリ内のHTMLファイルをブラウザで開いてください。
+
 ---
 
 ## 詳細セットアップ
@@ -189,15 +199,22 @@ chmod +x scripts/setup.sh
 ### 環境変数の設定（オプション）
 
 ```bash
-# 環境変数を設定（AI評価機能を使う場合）
+# 環境変数を設定
 cp env.example .env
-# .env ファイルを編集して OPENAI_API_KEY を設定
+# .env ファイルを編集して LLMプロバイダーの設定を行う
+# - Ollama使用時: LLM_PROVIDER=ollama（デフォルト）
+# - Gemini使用時: LLM_PROVIDER=gemini, GEMINI_API_KEY=your-api-key
 
 # 2. 開発サーバーを起動
 make dev
 # または
 docker compose -f docker-compose.dev.yml up --build
 ```
+
+**環境変数の設定場所について**:
+
+- **Docker環境**: `docker-compose.dev.yml` の `environment` セクションで設定するか、ホストの `.env` ファイルを参照（`${VARIABLE_NAME:-default}`形式）
+- **ローカル環境**: `apps/backend/.env` と `apps/frontend/.env.local` にそれぞれ設定が必要
 
 ### 方法2: ローカル環境で実行
 
@@ -212,12 +229,14 @@ docker compose -f docker-compose.dev.yml up --build
 pnpm install
 
 # 2. 環境変数の設定
-# apps/api/.env
+# apps/backend/.env
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/praccode?schema=public"
-OPENAI_API_KEY="sk-..."
+LLM_PROVIDER="ollama"  # または "gemini"
+OLLAMA_MODEL="qwen2.5-coder:14b"  # Ollama使用時
+GEMINI_API_KEY="your-api-key"  # Gemini使用時
 PORT=3001
 
-# apps/web/.env.local
+# apps/frontend/.env.local
 NEXTAUTH_URL="http://localhost:3000"
 NEXTAUTH_SECRET="your-secret-key"
 GITHUB_CLIENT_ID="your-github-client-id"

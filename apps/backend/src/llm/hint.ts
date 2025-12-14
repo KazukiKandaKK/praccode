@@ -31,6 +31,10 @@ function buildPrompt(input: GenerateHintInput): string {
   });
 }
 
+/**
+ * ヒント生成
+ * 注意: 現在はOpenAI APIを直接使用していますが、将来的にLLMプロバイダー抽象化（Ollama/Gemini）に移行予定です
+ */
 export async function generateHint(input: GenerateHintInput): Promise<string> {
   const prompt = buildPrompt(input);
 
