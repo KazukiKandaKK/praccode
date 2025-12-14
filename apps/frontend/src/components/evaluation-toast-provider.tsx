@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useCallback, useRef, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 import { Loader2, Sparkles, FileCheck, PenTool } from 'lucide-react';
 
@@ -46,6 +47,7 @@ export function useEvaluationToast() {
 
 export function EvaluationToastProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const { data: session } = useSession();
   const [pendingEvaluations, setPendingEvaluations] = useState<EvaluationJob[]>([]);
   const [pendingGenerations, setPendingGenerations] = useState<GenerationJob[]>([]);
   const [pendingWritings, setPendingWritings] = useState<WritingJob[]>([]);
@@ -134,9 +136,15 @@ export function EvaluationToastProvider({ children }: { children: React.ReactNod
   const pollExercise = useCallback(
     async (job: GenerationJob) => {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const userId = session?.user?.id;
+
+      if (!userId) {
+        toast.error('セッションが無効です');
+        return;
+      }
 
       try {
-        const res = await fetch(`${apiUrl}/exercises/${job.exerciseId}`, {
+        const res = await fetch(`${apiUrl}/exercises/${job.exerciseId}?userId=${userId}`, {
           cache: 'no-store',
         });
 
@@ -187,7 +195,7 @@ export function EvaluationToastProvider({ children }: { children: React.ReactNod
         console.error('Generation polling error:', err);
       }
     },
-    [router]
+    [router, session]
   );
 
   const startGenerationWatch = useCallback(
@@ -285,9 +293,15 @@ export function EvaluationToastProvider({ children }: { children: React.ReactNod
   const pollWritingChallenge = useCallback(
     async (job: WritingChallengeGenJob) => {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const userId = session?.user?.id;
+
+      if (!userId) {
+        toast.error('セッションが無効です');
+        return;
+      }
 
       try {
-        const res = await fetch(`${apiUrl}/writing/challenges/${job.challengeId}`, {
+        const res = await fetch(`${apiUrl}/writing/challenges/${job.challengeId}?userId=${userId}`, {
           cache: 'no-store',
         });
 
@@ -344,7 +358,7 @@ export function EvaluationToastProvider({ children }: { children: React.ReactNod
         console.error('Writing challenge polling error:', err);
       }
     },
-    [router]
+    [router, session]
   );
 
   const startWritingChallengeWatch = useCallback(

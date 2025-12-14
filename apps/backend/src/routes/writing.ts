@@ -7,7 +7,7 @@ import {
   GenerateWritingChallengeInput,
 } from '../llm/writing-generator.js';
 import { generateCodeReview } from '../llm/code-reviewer.js';
-import { checkOllamaHealth } from '../llm/ollama.js';
+import { checkOllamaHealth } from '../llm/llm-client.js';
 import { triggerLearningAnalysis } from '../lib/analysis-trigger.js';
 
 // ========== Schemas ==========

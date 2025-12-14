@@ -3,7 +3,8 @@
  * ユーザーの提出履歴からLLMで強み・弱み・おすすめを分析
  */
 
-import { generateWithOllama } from './ollama';
+import { generateWithOllama } from './llm-client.js';
+import { loadPrompt, renderPrompt } from './prompt-loader.js';
 
 interface SubmissionData {
   exerciseTitle: string;
@@ -167,26 +168,16 @@ function buildAnalysisPrompt(
     .map(([lang, data]) => `${lang}: ${data.count}回 (平均${data.avgScore}点)`)
     .join(', ');
 
-  return `あなたはプログラミング学習のアドバイザーです。
-以下のユーザーの学習データを分析し、強み・弱み・おすすめを日本語で簡潔に出力してください。
-
-## 学習データ
-- コードリーディング提出: ${stats.totalReadingSubmissions}回
-- 平均スコア: ${stats.avgReadingScore}点
-- ライティング提出: ${stats.totalWritingSubmissions}回
-- ライティング成功率: ${stats.writingPassRate}%
-- 言語別: ${languageSummary || 'なし'}
-- 観点別スコア: ${aspectSummary || 'なし'}
-
-## 出力形式 (JSON)
-{
-  "strengths": ["強み1", "強み2"],
-  "weaknesses": ["弱み1"],
-  "recommendations": ["おすすめ1", "おすすめ2"],
-  "summary": "総評（2-3文）"
-}
-
-各項目は1-3個程度、簡潔に。データが少ない場合は控えめに分析。`;
+  const template = loadPrompt('learning-analyzer-prompt.md');
+  
+  return renderPrompt(template, {
+    TOTAL_READING_SUBMISSIONS: stats.totalReadingSubmissions.toString(),
+    AVG_READING_SCORE: stats.avgReadingScore.toString(),
+    TOTAL_WRITING_SUBMISSIONS: stats.totalWritingSubmissions.toString(),
+    WRITING_PASS_RATE: stats.writingPassRate.toString(),
+    LANGUAGE_SUMMARY: languageSummary || 'なし',
+    ASPECT_SUMMARY: aspectSummary || 'なし',
+  });
 }
 
 export function generateFallbackAnalysis(stats: Stats): AnalysisResult {

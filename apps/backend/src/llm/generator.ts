@@ -3,7 +3,8 @@
  */
 
 import { z } from 'zod';
-import { generateWithOllama } from './ollama.js';
+import { generateWithOllama } from './llm-client.js';
+import { loadPrompt, renderPrompt } from './prompt-loader.js';
 
 // 生成されるExerciseの型定義
 export const generatedExerciseSchema = z.object({
@@ -64,44 +65,16 @@ function buildGenerationPrompt(input: GenerateExerciseInput): string {
   const difficultyDesc = difficultyDescriptions[input.difficulty] || '中級レベル';
   const genreDesc = genreDescriptions[input.genre] || input.genre;
 
-  return `あなたはソフトウェアエンジニア向けの教育コンテンツ作成者です。
-コードリーディング練習問題を作成してください。
-
-## 要件
-- 言語: ${input.language}
-- 難易度: ${input.difficulty}/5 (${difficultyDesc})
-- ジャンル: ${input.genre} (${genreDesc})
-- コードの種類: ${languageHint}
-
-## 出力形式
-以下のJSON形式で出力してください。マークダウンのコードブロックなしで、純粋なJSONのみを返してください。
-
-{
-  "title": "問題のタイトル（日本語、30文字以内）",
-  "code": "実際のソースコード（20-50行程度、実践的で読みやすいもの）",
-  "learningGoals": ["responsibility", "data_flow", "error_handling"] のうち関連するものを配列で,
-  "questions": [
-    {
-      "questionText": "設問1（コードの責務や役割について質問）",
-      "idealAnswerPoints": ["模範回答のポイント1", "模範回答のポイント2", "模範回答のポイント3"]
-    },
-    {
-      "questionText": "設問2（データフローや処理の流れについて質問）",
-      "idealAnswerPoints": ["模範回答のポイント1", "模範回答のポイント2", "模範回答のポイント3"]
-    },
-    {
-      "questionText": "設問3（改善点やエッジケースについて質問）",
-      "idealAnswerPoints": ["模範回答のポイント1", "模範回答のポイント2", "模範回答のポイント3"]
-    }
-  ]
-}
-
-## 注意事項
-- コードは実務で使われそうな実践的な内容にしてください
-- 設問は「このコードの〇〇を説明してください」のような形式にしてください
-- 模範回答のポイントは具体的で採点に使えるものにしてください
-- コード内のコメントは適度に入れてください
-- learningGoals は "responsibility"（責務理解）、"data_flow"（データフロー）、"error_handling"（エラーハンドリング）、"performance"（パフォーマンス）から選んでください`;
+  const template = loadPrompt('generator-prompt.md');
+  
+  return renderPrompt(template, {
+    LANGUAGE: input.language,
+    DIFFICULTY: input.difficulty.toString(),
+    DIFFICULTY_DESC: difficultyDesc,
+    GENRE: input.genre,
+    GENRE_DESC: genreDesc,
+    LANGUAGE_HINT: languageHint,
+  });
 }
 
 /**

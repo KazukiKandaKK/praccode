@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { loadPrompt, renderPrompt } from './prompt-loader.js';
 
 export interface GenerateHintInput {
   code: string;
@@ -11,32 +12,14 @@ const outputSchema = z.object({
 });
 
 function buildPrompt(input: GenerateHintInput): string {
-  return `あなたはソフトウェアエンジニアの教育者です。
-学習者がコードリーディングの問題に取り組んでいます。
-答えを直接教えずに、考える方向性を示すヒントを提供してください。
-
-# コード
-\`\`\`
-${input.code}
-\`\`\`
-
-# 問い
-${input.question}
-
-# 学習ポイント
-${input.learningGoals.map((g) => `- ${g}`).join('\n')}
-
-# ヒント生成のルール
-1. 答えそのものを言わない
-2. 特定のコード行を直接指摘しない
-3. 「何を見ればよいか」「どんな観点で読めばよいか」という方向性を示す
-4. 2〜3文程度で簡潔に
-5. 日本語で回答
-
-以下の JSON 形式で出力してください:
-{
-  "hint": "ヒントの内容"
-}`;
+  const template = loadPrompt('hint-prompt.md');
+  const learningGoalsText = input.learningGoals.map((g) => `- ${g}`).join('\n');
+  
+  return renderPrompt(template, {
+    CODE: input.code,
+    QUESTION: input.question,
+    LEARNING_GOALS: learningGoalsText,
+  });
 }
 
 export async function generateHint(input: GenerateHintInput): Promise<string> {

@@ -4,7 +4,8 @@
  */
 
 import { z } from 'zod';
-import { generateWithOllama } from './ollama.js';
+import { generateWithOllama } from './llm-client.js';
+import { loadPrompt, renderPrompt } from './prompt-loader.js';
 
 // テストケースのスキーマ
 const testCaseSchema = z.object({
@@ -347,34 +348,14 @@ function buildPrompt(input: GenerateWritingChallengeInput): string {
   const diffDesc = difficultyDescriptions[input.difficulty] || '中級';
   const topic = input.topic || topicExamples[Math.floor(Math.random() * topicExamples.length)];
 
-  return `Create a coding challenge. Output JSON only, no markdown.
-
-Language: ${input.language}
-Difficulty: ${input.difficulty}/5 (${diffDesc})
-Topic hint: ${topic}
-
-Output this JSON structure:
-{
-  "title": "日本語のタイトル（15文字以内）",
-  "description": "関数名(引数): 戻り値型 を実装してください。説明と例を含む（日本語、100文字程度）",
-  "functionName": "snake_case_name",
-  "parameters": "a, b",
-  "parameterTypes": "a: number, b: number",
-  "returnType": "number",
-  "testCases": [
-    {"input": "1, 2", "expected": "3"},
-    {"input": "0, 0", "expected": "0"},
-    {"input": "-1, 1", "expected": "0"}
-  ],
-  "sampleImplementation": "return a + b;"
-}
-
-Rules:
-- functionName: Use snake_case for Python, camelCase for JS/TS, PascalCase for Go
-- testCases: 3-5 cases including edge cases
-- input/expected: Valid ${input.language} literals (strings need quotes)
-- sampleImplementation: Function body only, no function declaration
-- All in valid JSON format`;
+  const template = loadPrompt('writing-generator-prompt.md');
+  
+  return renderPrompt(template, {
+    LANGUAGE: input.language,
+    DIFFICULTY: input.difficulty.toString(),
+    DIFFICULTY_DESC: diffDesc,
+    TOPIC: topic,
+  });
 }
 
 // ========== メイン関数 ==========

@@ -2,7 +2,8 @@
  * LLMによるコードレビュー
  */
 
-import { generateWithOllama } from './ollama.js';
+import { generateWithOllama } from './llm-client.js';
+import { loadPrompt, renderPrompt } from './prompt-loader.js';
 
 export interface CodeReviewInput {
   language: string;
@@ -26,32 +27,21 @@ function buildCodeReviewPrompt(input: CodeReviewInput): string {
       ? input.testOutput.slice(0, 500) + '\n... (省略)'
       : input.testOutput;
 
-  return `You are a programming instructor. Review this code and give feedback in Japanese.
+  const feedbackGuide = input.passed
+    ? 'Code works but suggest improvements'
+    : 'Explain why tests failed and how to fix';
 
-Task: ${input.challengeTitle}
-Description: ${input.challengeDescription}
-
-Code (${input.language}):
-${input.userCode}
-
-${passedText}
-${trimmedOutput}
-
-Give feedback in this format:
-
-### 良い点
-- (1-2 specific good points)
-
-### 改善点
-- (2-3 specific suggestions for improvement)
-
-### 学習ポイント
-- (1-2 key concepts to learn)
-
-Rules:
-- Write in Japanese
-- Be concise and specific
-- ${input.passed ? 'Code works but suggest improvements' : 'Explain why tests failed and how to fix'}`;
+  const template = loadPrompt('code-reviewer-prompt.md');
+  
+  return renderPrompt(template, {
+    CHALLENGE_TITLE: input.challengeTitle,
+    CHALLENGE_DESCRIPTION: input.challengeDescription,
+    LANGUAGE: input.language,
+    USER_CODE: input.userCode,
+    TEST_RESULT: passedText,
+    TEST_OUTPUT: trimmedOutput,
+    FEEDBACK_GUIDE: feedbackGuide,
+  });
 }
 
 /**

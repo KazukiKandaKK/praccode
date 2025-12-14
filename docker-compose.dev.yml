@@ -34,6 +34,15 @@ services:
       PORT: 3001
       HOST: 0.0.0.0
       CORS_ORIGIN: http://localhost:3000
+      # LLM Provider設定（ollama または gemini）
+      LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
+      # Ollama設定（LLM_PROVIDER=ollamaの場合）
+      OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5-coder:32b}
+      # Gemini設定（LLM_PROVIDER=geminiの場合）
+      # GEMINI_API_KEY: ${GEMINI_API_KEY:-foo}
+      # GEMINI_API_URL: ${GEMINI_API_URL:-hogehoge}
+      # GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-pro}
     depends_on:
       db:
         condition: service_healthy

@@ -2,7 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma.js';
 import { z } from 'zod';
 import { generateExercise } from '../llm/generator.js';
-import { checkOllamaHealth } from '../llm/ollama.js';
+import { checkOllamaHealth } from '../llm/llm-client.js';
 
 const exerciseFiltersSchema = z.object({
   userId: z.string().uuid(),

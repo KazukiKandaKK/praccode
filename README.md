@@ -18,7 +18,7 @@
 | バックエンド   | Fastify                                      |
 | ORM            | Prisma                                       |
 | 認証           | NextAuth.js v5                               |
-| LLM            | OpenAI (GPT-4o-mini)                         |
+| LLM            | Ollama (ローカル) / Google Gemini API        |
 | データベース   | PostgreSQL                                   |
 
 ## ディレクトリ構成
@@ -41,7 +41,9 @@ praccode/
 - Docker & Docker Compose
 - OpenAI API Key (オプション: AI評価機能に必要)
 
-### ローカルLLM（Ollama）を使う場合
+### LLMプロバイダーの設定
+
+#### Ollama（ローカルLLM）を使う場合（デフォルト）
 
 macでOllamaを起動し、Dockerコンテナから `host.docker.internal:11434` 経由で叩けるようにしています。
 
@@ -55,6 +57,30 @@ ollama serve
 # 3) 疎通確認（DockerコンテナからホストOllamaへ）
 docker compose -f docker-compose.dev.yml run --rm llm
 ```
+
+環境変数（オプション）:
+- `LLM_PROVIDER=ollama` (デフォルト)
+- `OLLAMA_HOST=http://host.docker.internal:11434` (デフォルト)
+- `OLLAMA_MODEL=qwen2.5-coder:1.5b` (デフォルト)
+
+#### Google Gemini APIを使う場合
+
+```bash
+# 環境変数を設定
+export LLM_PROVIDER=gemini
+export GEMINI_API_KEY=your-api-key-here
+export GEMINI_MODEL=gemini-2.5-flash-lite  # オプション（デフォルト: gemini-2.5-flash-lite）
+export GEMINI_API_URL=https://aiplatform.googleapis.com/v1  # オプション
+
+# Docker Composeで起動
+docker compose -f docker-compose.dev.yml up
+```
+
+環境変数:
+- `LLM_PROVIDER=gemini` - Gemini APIを使用
+- `GEMINI_API_KEY` - Gemini APIキー（必須）
+- `GEMINI_API_URL` - APIエンドポイント（オプション、デフォルト: https://aiplatform.googleapis.com/v1）
+- `GEMINI_MODEL` - 使用するモデル（オプション、デフォルト: gemini-2.5-flash-lite）
 
 ### セットアップ
 

@@ -24,6 +24,11 @@ fastify.get('/health', async () => {
   return { status: 'ok' };
 });
 
+// Chrome DevToolsの.well-knownリクエストをハンドリング（404を防ぐ）
+fastify.get('/.well-known/*', async (request, reply) => {
+  return reply.status(200).send({});
+});
+
 // ルート登録
 fastify.register(authRoutes, { prefix: '/auth' });
 fastify.register(exerciseRoutes, { prefix: '/exercises' });
