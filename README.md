@@ -368,10 +368,6 @@ pnpm --filter @praccode/web test --coverage
 - [ ] E2Eテストの追加
 - [ ] エラーハンドリングの強化
 
-## コントリビューション
-
-コントリビューションを歓迎します！詳細は [CONTRIBUTING.md](./CONTRIBUTING.md) をご覧ください。
-
 ## ライセンス
 
 Apache-2.0
