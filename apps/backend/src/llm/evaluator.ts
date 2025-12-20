@@ -65,6 +65,12 @@ function buildPrompt(input: EvaluateAnswerInput): string {
   });
 }
 
+const llmResponseSchema = z.object({
+    score: z.number(),
+    feedback: z.string(),
+    aspects: z.record(z.string(), z.number()).optional(),
+});
+
 export async function evaluateAnswer(input: EvaluateAnswerInput): Promise<EvaluateAnswerOutput> {
   const prompt = buildPrompt(input);
 
@@ -74,18 +80,17 @@ export async function evaluateAnswer(input: EvaluateAnswerInput): Promise<Evalua
     jsonMode: true,
   });
 
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(response);
-  } catch {
-    // JSONパースに失敗した場合、コードブロックを除去して再試行
-    const jsonMatch = response.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (jsonMatch) {
-      parsed = JSON.parse(jsonMatch[1]);
-    } else {
-      throw new Error(`Failed to parse LLM response as JSON: ${response.substring(0, 200)}`);
-    }
-  }
+  const parsed = JSON.parse(response);
 
-  return outputSchema.parse(parsed);
+  // First, validate the raw LLM output
+  const llmResult = llmResponseSchema.parse(parsed);
+
+  const normalizedScore = normalizeScore(llmResult.score);
+
+  return {
+    score: normalizedScore,
+    level: scoreToLevel(normalizedScore),
+    feedback: llmResult.feedback,
+    aspects: llmResult.aspects,
+  };
 }

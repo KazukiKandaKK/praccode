@@ -1,154 +1,186 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import Fastify from 'fastify';
+import dashboardRoutes from './dashboard';
 import { prisma } from '../lib/prisma';
+import * as learningAnalyzer from '../llm/learning-analyzer';
+import * as writingGenerator from '../llm/writing-generator';
+import * as generator from '../llm/generator';
 
-// Prismaモック
+// Mock Prisma
 vi.mock('../lib/prisma', () => ({
   prisma: {
-    submission: {
-      findMany: vi.fn(),
-    },
-    writingSubmission: {
-      findMany: vi.fn(),
-    },
+    submission: { findMany: vi.fn() },
+    writingSubmission: { findMany: vi.fn() },
+    userLearningAnalysis: { findUnique: vi.fn(), upsert: vi.fn() },
+    exercise: { create: vi.fn() },
+    writingChallenge: { create: vi.fn() },
   },
 }));
 
-describe('Dashboard Activity API', () => {
+// Mock LLM modules
+vi.mock('../llm/learning-analyzer');
+vi.mock('../llm/writing-generator');
+vi.mock('../llm/generator');
+
+const mockPrisma = prisma as any;
+const mockLearningAnalyzer = learningAnalyzer as any;
+
+describe('dashboardRoutes', () => {
+  let app: ReturnType<typeof Fastify>;
+
   beforeEach(() => {
+    app = Fastify();
+    app.register(dashboardRoutes);
     vi.clearAllMocks();
   });
 
-  describe('日次提出件数集計', () => {
-    it('空データの場合、全日が0件を返す', () => {
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - 365);
-      const endDate = new Date();
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
-      // モック設定
-      vi.mocked(prisma.submission.findMany).mockResolvedValue([]);
-      vi.mocked(prisma.writingSubmission.findMany).mockResolvedValue([]);
+  // ... (stats and activity tests remain the same) ...
 
-      // 365日分のデータを生成
-      const activityData: Array<{ date: string; count: number }> = [];
-      const currentDate = new Date(startDate);
-      while (currentDate <= endDate) {
-        const dateStr = currentDate.toISOString().split('T')[0];
-        activityData.push({
-          date: dateStr,
-          count: 0,
+  describe('GET /dashboard/stats', () => {
+    const userId = 'user-123';
+
+    it('正常系: ユーザーの統計情報を正しく計算して返す', async () => {
+        mockPrisma.submission.findMany.mockResolvedValue([
+            {
+                id: 'reading-sub-1',
+                exercise: { title: 'Reading 1', language: 'ts', genre: 'test'},
+                answers: [{ score: 80, aspects: { Logic: 8 } }],
+                updatedAt: new Date(),
+            }
+        ]);
+        mockPrisma.writingSubmission.findMany.mockResolvedValue([
+            {
+                id: 'writing-sub-1',
+                challenge: { title: 'Writing 1', language: 'py' },
+                passed: true,
+                createdAt: new Date(),
+            },
+            {
+                id: 'writing-sub-2',
+                challenge: { title: 'Writing 2', language: 'py' },
+                passed: false,
+                createdAt: new Date(),
+            }
+        ]);
+
+        const response = await app.inject({
+            method: 'GET',
+            url: `/dashboard/stats?userId=${userId}`,
         });
-        currentDate.setDate(currentDate.getDate() + 1);
-      }
 
-      expect(activityData.length).toBe(366); // 365日 + 1日（開始日を含む）
-      expect(activityData.every((d) => d.count === 0)).toBe(true);
+        expect(response.statusCode).toBe(200);
+        const data = JSON.parse(response.payload);
+
+        expect(data.totalReadingSubmissions).toBe(1);
+        expect(data.totalWritingSubmissions).toBe(2);
+        expect(data.avgReadingScore).toBe(80);
+        expect(data.writingPassRate).toBe(50);
+        expect(data.aspectAverages).toEqual({ Logic: 8 });
+        expect(data.recentActivity).toHaveLength(3);
+    });
+  });
+
+  describe('GET /dashboard/activity', () => {
+    const userId = 'user-123';
+    const today = new Date('2024-01-10T12:00:00Z');
+    const yesterday = new Date('2024-01-09T12:00:00Z');
+
+    beforeEach(() => {
+        vi.useFakeTimers();
+        vi.setSystemTime(today);
     });
 
-    it('単日の提出件数を正しく集計する', () => {
-      const testDate = new Date('2024-01-15');
-      const dateStr = testDate.toISOString().split('T')[0];
-
-      // モック設定: リーディング2件、ライティング1件
-      vi.mocked(prisma.submission.findMany).mockResolvedValue([
-        { updatedAt: testDate } as never,
-        { updatedAt: testDate } as never,
-      ]);
-      vi.mocked(prisma.writingSubmission.findMany).mockResolvedValue([
-        { createdAt: testDate } as never,
-      ]);
-
-      // 集計ロジック
-      const activityMap = new Map<string, number>();
-      const readingSubmissions = [{ updatedAt: testDate }, { updatedAt: testDate }];
-      const writingSubmissions = [{ createdAt: testDate }];
-
-      for (const sub of readingSubmissions) {
-        const d = sub.updatedAt.toISOString().split('T')[0];
-        activityMap.set(d, (activityMap.get(d) || 0) + 1);
-      }
-
-      for (const sub of writingSubmissions) {
-        const d = sub.createdAt.toISOString().split('T')[0];
-        activityMap.set(d, (activityMap.get(d) || 0) + 1);
-      }
-
-      expect(activityMap.get(dateStr)).toBe(3);
+    afterEach(() => {
+        vi.useRealTimers();
     });
 
-    it('複数日の提出件数を正しく集計する', () => {
-      const date1 = new Date('2024-01-15');
-      const date2 = new Date('2024-01-16');
-      const date3 = new Date('2024-01-17');
+    it('正常系: ユーザーの活動記録を日付ごとに集計して返す', async () => {
+        mockPrisma.submission.findMany.mockResolvedValue([
+            { updatedAt: today },
+            { updatedAt: yesterday },
+            { updatedAt: yesterday },
+        ]);
+        mockPrisma.writingSubmission.findMany.mockResolvedValue([
+            { createdAt: today },
+        ]);
 
-      const activityMap = new Map<string, number>();
+        const response = await app.inject({
+            method: 'GET',
+            url: `/dashboard/activity?userId=${userId}`,
+        });
 
-      // 日付1: リーディング1件、ライティング2件 = 3件
-      const d1 = date1.toISOString().split('T')[0];
-      activityMap.set(d1, (activityMap.get(d1) || 0) + 1); // リーディング
-      activityMap.set(d1, (activityMap.get(d1) || 0) + 2); // ライティング
+        expect(response.statusCode).toBe(200);
+        const { activity } = JSON.parse(response.payload);
 
-      // 日付2: リーディング3件 = 3件
-      const d2 = date2.toISOString().split('T')[0];
-      activityMap.set(d2, (activityMap.get(d2) || 0) + 3); // リーディング
+        expect(activity).toHaveLength(366);
+        
+        const todayActivity = activity.find((a: any) => a.date === '2024-01-10');
+        const yesterdayActivity = activity.find((a: any) => a.date === '2024-01-09');
 
-      // 日付3: 提出なし = 0件
-      const d3 = date3.toISOString().split('T')[0];
+        expect(todayActivity?.count).toBe(2);
+        expect(yesterdayActivity?.count).toBe(2);
+    });
+  });
 
-      expect(activityMap.get(d1)).toBe(3);
-      expect(activityMap.get(d2)).toBe(3);
-      expect(activityMap.get(d3)).toBeUndefined();
+  describe('GET /dashboard/analysis and POST /dashboard/analyze', () => {
+    const userId = 'user-123';
+    const mockAnalysis = {
+        strengths: ['a'], weaknesses: ['b'], recommendations: ['c'], summary: 'd'
+    };
+
+    beforeEach(() => {
+        mockLearningAnalyzer.analyzeLearningProgress.mockResolvedValue(mockAnalysis);
+        mockPrisma.userLearningAnalysis.upsert.mockResolvedValue(mockAnalysis);
+        mockPrisma.submission.findMany.mockResolvedValue([]);
+        mockPrisma.writingSubmission.findMany.mockResolvedValue([]);
     });
 
-    it('境界日（365日前）を含む範囲を正しく処理する', () => {
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - 365);
-
-      // 開始日の提出
-      const activityMap = new Map<string, number>();
-      const startDateStr = startDate.toISOString().split('T')[0];
-      activityMap.set(startDateStr, 1);
-
-      // 終了日の提出
-      const endDateStr = endDate.toISOString().split('T')[0];
-      activityMap.set(endDateStr, 2);
-
-      expect(activityMap.get(startDateStr)).toBe(1);
-      expect(activityMap.get(endDateStr)).toBe(2);
+    it('GET /analysis: should return new analysis if not cached', async () => {
+        mockPrisma.userLearningAnalysis.findUnique.mockResolvedValue(null);
+        const response = await app.inject({ method: 'GET', url: `/dashboard/analysis?userId=${userId}`});
+        expect(response.statusCode).toBe(200);
+        expect(JSON.parse(response.payload).cached).toBe(false);
     });
 
-    it('日付範囲外の提出は除外される', () => {
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - 365);
-      const endDate = new Date();
+    it('POST /analyze: should force a new analysis', async () => {
+        const response = await app.inject({ method: 'POST', url: '/dashboard/analyze', payload: { userId }});
+        expect(response.statusCode).toBe(200);
+        expect(JSON.parse(response.payload).summary).toBe('d');
+    });
+  });
 
-      // 範囲外の日付
-      const beforeStartDate = new Date(startDate);
-      beforeStartDate.setDate(beforeStartDate.getDate() - 1);
+  describe('POST /dashboard/generate-recommendation', () => {
+    const userId = 'user-123';
+    
+    beforeEach(() => {
+        mockLearningAnalyzer.getRecommendedProblemContext.mockReturnValue({ difficulty: 3, focusAreas: ['testing'] });
+        mockPrisma.userLearningAnalysis.findUnique.mockResolvedValue({ strengths: [], weaknesses: [], recommendations: [], summary: ''});
+    });
 
-      const afterEndDate = new Date(endDate);
-      afterEndDate.setDate(afterEndDate.getDate() + 1);
+    it('should generate a reading recommendation', async () => {
+        mockPrisma.exercise.create.mockResolvedValue({ id: 'new-reading-ex' });
+        const response = await app.inject({ 
+            method: 'POST', 
+            url: '/dashboard/generate-recommendation', 
+            payload: { userId, type: 'reading' }
+        });
+        expect(response.statusCode).toBe(200);
+        expect(mockPrisma.exercise.create).toHaveBeenCalled();
+    });
 
-      const activityMap = new Map<string, number>();
-
-      // 範囲内の日付のみを追加
-      const startDateStr = startDate.toISOString().split('T')[0];
-      const endDateStr = endDate.toISOString().split('T')[0];
-      const beforeStr = beforeStartDate.toISOString().split('T')[0];
-      const afterStr = afterEndDate.toISOString().split('T')[0];
-
-      // 範囲内のみ追加
-      if (startDate >= startDate && startDate <= endDate) {
-        activityMap.set(startDateStr, 1);
-      }
-      if (endDate >= startDate && endDate <= endDate) {
-        activityMap.set(endDateStr, 1);
-      }
-
-      expect(activityMap.has(beforeStr)).toBe(false);
-      expect(activityMap.has(afterStr)).toBe(false);
-      expect(activityMap.has(startDateStr)).toBe(true);
-      expect(activityMap.has(endDateStr)).toBe(true);
+    it('should generate a writing recommendation', async () => {
+        mockPrisma.writingChallenge.create.mockResolvedValue({ id: 'new-writing-ch' });
+        const response = await app.inject({ 
+            method: 'POST', 
+            url: '/dashboard/generate-recommendation', 
+            payload: { userId, type: 'writing' }
+        });
+        expect(response.statusCode).toBe(200);
+        expect(mockPrisma.writingChallenge.create).toHaveBeenCalled();
     });
   });
 });

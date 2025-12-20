@@ -36,8 +36,11 @@ function sha256Hex(value: string): string {
 export async function userRoutes(fastify: FastifyInstance) {
   // GET /users/me?userId=... - プロフィール取得
   fastify.get('/me', async (request, reply) => {
-    const query = getMeQuerySchema.parse(request.query);
-    const { userId } = query;
+    const query = getMeQuerySchema.safeParse(request.query);
+    if (!query.success) {
+        return reply.status(400).send({ error: 'Invalid query parameters', details: query.error.format() });
+    }
+    const { userId } = query.data;
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -75,8 +78,11 @@ export async function userRoutes(fastify: FastifyInstance) {
 
   // PATCH /users/me - 名前変更
   fastify.patch('/me', async (request, reply) => {
-    const body = updateProfileSchema.parse(request.body);
-    const { userId, name } = body;
+    const body = updateProfileSchema.safeParse(request.body);
+    if (!body.success) {
+        return reply.status(400).send({ error: 'Invalid request body', details: body.error.format() });
+    }
+    const { userId, name } = body.data;
 
     const updated = await prisma.user.update({
       where: { id: userId },

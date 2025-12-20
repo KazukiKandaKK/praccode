@@ -6,42 +6,15 @@ import type { LLMProvider, LLMGenerateOptions } from './llm-provider.js';
 import { parseRetryAfter } from './retry-handler.js';
 import { PromptSanitizer } from './prompt-sanitizer.js';
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_API_URL = process.env.GEMINI_API_URL || 'https://aiplatform.googleapis.com/v1';
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
-
-interface GeminiGenerateRequest {
-  contents: Array<{
-    parts: Array<{
-      text: string;
-    }>;
-  }>;
-  generationConfig?: {
-    temperature?: number;
-    maxOutputTokens?: number;
-    responseMimeType?: string;
-  };
-}
-
-interface GeminiGenerateResponse {
-  candidates?: Array<{
-    content: {
-      parts: Array<{
-        text: string;
-      }>;
-    };
-  }>;
-  error?: {
-    message: string;
-    code: number;
-  };
-}
-
 export class GeminiProvider implements LLMProvider {
   async generate(prompt: string, options?: LLMGenerateOptions): Promise<string> {
-    if (!GEMINI_API_KEY) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
       throw new Error('GEMINI_API_KEY environment variable is not set');
     }
+
+    const apiUrl = process.env.GEMINI_API_URL || 'https://aiplatform.googleapis.com/v1';
+    const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
 
     // プロンプト全体をサニタイズ（既に構造化されている前提）
     // ただし、セパレータ部分は除外してサニタイズ
@@ -71,7 +44,7 @@ export class GeminiProvider implements LLMProvider {
 
     try {
       // 新しいAI Platform APIエンドポイントを使用
-      const url = `${GEMINI_API_URL}/publishers/google/models/${GEMINI_MODEL}:streamGenerateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`;
+      const url = `${apiUrl}/publishers/google/models/${model}:streamGenerateContent?key=${encodeURIComponent(apiKey)}`;
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -101,56 +74,59 @@ export class GeminiProvider implements LLMProvider {
       // レスポンステキストを取得して処理
       const responseText = await response.text();
 
-      // ストリーミングレスポンスの場合、複数のJSONオブジェクトが改行区切りで返される
-      // 最後の有効なレスポンスを使用
-      const lines = responseText
-        .trim()
-        .split('\n')
-        .filter((line) => line.trim());
-      let lastValidData: GeminiGenerateResponse | null = null;
+      const allTexts: string[] = [];
+      let hasCandidates = false;
 
-      for (const line of lines) {
-        try {
-          const parsed = JSON.parse(line) as GeminiGenerateResponse;
-          if (parsed.candidates && parsed.candidates.length > 0) {
-            lastValidData = parsed;
+      // Handle both streaming and non-streaming responses
+      try {
+        const lines = responseText.trim().split('\n').filter(line => line.startsWith('[') || line.startsWith('{'));
+        
+        for (const line of lines) {
+          // Sometimes the stream response is wrapped in an array, sometimes not.
+          const items = JSON.parse(line);
+          const responses = Array.isArray(items) ? items : [items];
+
+          for (const data of responses) {
+            if (data.error) {
+              throw new Error(`Gemini API error: ${data.error.code} - ${data.error.message}`);
+            }
+            if (data.candidates && data.candidates.length > 0) {
+              hasCandidates = true;
+              const texts = data.candidates
+                .map((candidate: any) => candidate.content?.parts?.[0]?.text)
+                .filter((text: any): text is string => Boolean(text));
+              allTexts.push(...texts);
+            }
           }
-        } catch {
-          // JSONパースに失敗した行は無視
-          continue;
         }
+      } catch (e) {
+         // If parsing lines fails, try to parse the whole thing as one JSON object
+         try {
+            const data = JSON.parse(responseText);
+            if (data.error) {
+                throw new Error(`Gemini API error: ${data.error.code} - ${data.error.message}`);
+            }
+            if (data.candidates && data.candidates.length > 0) {
+                hasCandidates = true;
+                const texts = data.candidates
+                  .map((candidate: any) => candidate.content?.parts?.[0]?.text)
+                  .filter((text: any): text is string => Boolean(text));
+                allTexts.push(...texts);
+            }
+         } catch (finalError) {
+            throw new Error(`Failed to parse Gemini API response: ${responseText.substring(0, 200)}`);
+         }
       }
 
-      // ストリーミングレスポンスが空の場合、通常のJSONレスポンスとして試す
-      if (!lastValidData) {
-        try {
-          lastValidData = JSON.parse(responseText) as GeminiGenerateResponse;
-        } catch {
-          throw new Error(`Failed to parse Gemini API response: ${responseText.substring(0, 200)}`);
-        }
-      }
-
-      const data = lastValidData;
-
-      if (data.error) {
-        throw new Error(`Gemini API error: ${data.error.code} - ${data.error.message}`);
-      }
-
-      if (!data.candidates || data.candidates.length === 0) {
+      if (!hasCandidates) {
         throw new Error('Gemini API returned no candidates');
       }
 
-      // ストリーミングレスポンスの場合、すべての候補からテキストを結合
-      const texts = data.candidates
-        .map((candidate) => candidate.content?.parts?.[0]?.text)
-        .filter((text): text is string => Boolean(text));
-
-      if (texts.length === 0) {
+      if (allTexts.length === 0) {
         throw new Error('Gemini API returned empty response');
       }
 
-      // すべてのテキストを結合して返す
-      return texts.join('');
+      return allTexts.join('');
     } catch (error) {
       clearTimeout(timeoutId);
       if (error instanceof Error && error.name === 'AbortError') {
@@ -161,13 +137,17 @@ export class GeminiProvider implements LLMProvider {
   }
 
   async checkHealth(): Promise<boolean> {
-    if (!GEMINI_API_KEY) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
       return false;
     }
 
+    const apiUrl = process.env.GEMINI_API_URL || 'https://aiplatform.googleapis.com/v1';
+    const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
+
     try {
       // 簡単なリクエストでヘルスチェック（新しいAI Platform APIエンドポイント）
-      const url = `${GEMINI_API_URL}/publishers/google/models/${GEMINI_MODEL}?key=${encodeURIComponent(GEMINI_API_KEY)}`;
+      const url = `${apiUrl}/publishers/google/models/${model}?key=${encodeURIComponent(apiKey)}`;
       const response = await fetch(url, {
         method: 'GET',
       });

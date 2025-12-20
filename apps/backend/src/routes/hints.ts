@@ -12,8 +12,13 @@ const hintRequestSchema = z.object({
 export async function hintRoutes(fastify: FastifyInstance) {
   // POST /hints - ヒント生成
   fastify.post('/', async (request, reply) => {
-    const body = hintRequestSchema.parse(request.body);
-    const { exerciseId, questionIndex, userId } = body;
+    const body = hintRequestSchema.safeParse(request.body);
+
+    if (!body.success) {
+      return reply.status(400).send({ error: 'Invalid request body', details: body.error.format() });
+    }
+
+    const { exerciseId, questionIndex, userId } = body.data;
 
     const exercise = await prisma.exercise.findUnique({
       where: { id: exerciseId },

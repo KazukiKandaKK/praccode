@@ -1,10 +1,36 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
+  analyzeLearningProgress,
   calculateStats,
   generateFallbackAnalysis,
   getRecommendedProblemContext,
   Stats,
 } from './learning-analyzer';
+import * as llmClient from './llm-client';
+
+vi.mock('./llm-client');
+const mockLlmClient = llmClient as any;
+
+// ============================================
+// analyzeLearningProgress テスト
+// ============================================
+describe('analyzeLearningProgress', () => {
+    it('提出データがない場合、デフォルトの分析結果を返す', async () => {
+        const result = await analyzeLearningProgress([], []);
+        expect(result.summary).toContain('まだ提出データがありません');
+        expect(result.recommendations).toEqual(['まずは問題に挑戦してみましょう！']);
+    });
+
+    it('LLMの生成が失敗した場合、フォールバック分析を返す', async () => {
+        mockLlmClient.generateWithOllama.mockRejectedValue(new Error('LLM Error'));
+        const readingSubmissions = [{ exerciseTitle: 'Test', language: 'ts', genre: 'test', score: 50, level: 'C', aspects: null, feedback: '' }];
+        const result = await analyzeLearningProgress(readingSubmissions, []);
+        
+        // Check if it returns a fallback analysis based on stats
+        expect(result.weaknesses).toContain('コードリーディングの精度向上が必要');
+        expect(result.summary).toContain('1回の提出データを分析しました');
+    });
+});
 
 // ============================================
 // calculateStats テスト

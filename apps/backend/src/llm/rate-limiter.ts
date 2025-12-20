@@ -26,9 +26,14 @@ export class RateLimiter {
    * レート制限をチェックし、必要に応じて待機
    */
   async acquire(): Promise<void> {
+    // リクエスト数が0以下なら何もせず終了
+    if (this.maxRequests <= 0) {
+      return;
+    }
+
     this.cleanup();
 
-    const now = Date.now();
+    let now = Date.now();
 
     // ウィンドウ内のリクエスト数が上限に達している場合
     if (this.requests.length >= this.maxRequests) {
@@ -36,13 +41,14 @@ export class RateLimiter {
       const oldestRequest = this.requests[0];
       const waitTime = oldestRequest + this.windowMs - now;
 
-      if (waitTime > 0) {
+      if (waitTime > 0 && typeof oldestRequest === 'number') {
         console.info(
           `[RateLimiter] レート制限: ${this.maxRequests}リクエスト/${this.windowMs}ms に達しました。${waitTime}ms 待機します...`
         );
         await this.sleep(waitTime);
         // 待機後に再度クリーンアップ
         this.cleanup();
+        now = Date.now(); // 待機後の現在時刻を再取得
       }
     }
 

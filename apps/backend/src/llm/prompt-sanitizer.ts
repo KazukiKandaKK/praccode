@@ -110,19 +110,13 @@ export class PromptSanitizer {
       // 一定の長さ以上で、base64パターンに一致する場合
       if (
         withoutPadding.length >= BASE64_MIN_LENGTH &&
-        base64Pattern.test(part) &&
-        withoutPadding.length % 4 === 0
+        base64Pattern.test(part)
       ) {
         // 実際にbase64としてデコード可能か確認
         try {
           const decoded = Buffer.from(part, 'base64').toString('utf-8');
           // デコード結果が可読テキストでない場合（バイナリデータなど）はbase64と判断
-          // ただし、完全にASCII文字のみの場合は誤検出の可能性があるので、より厳格にチェック
           if (decoded.length > 0 && !/^[\x20-\x7E\s]*$/.test(decoded)) {
-            return true;
-          }
-          // デコード結果が非常に長い場合もbase64と判断
-          if (decoded.length > part.length * 0.8) {
             return true;
           }
         } catch {
