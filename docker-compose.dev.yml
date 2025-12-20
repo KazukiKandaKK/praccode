@@ -92,10 +92,10 @@ services:
       - ./apps/backend/prisma:/app/apps/backend/prisma
 
   # LLM smoke-test container (talks to host Ollama)
-  llm:
+  llm-tools:
     build:
       context: .
-      dockerfile: llm/Dockerfile
+      dockerfile: llm-tools/Dockerfile
     environment:
       OLLAMA_HOST: http://host.docker.internal:11434
       OLLAMA_MODEL: qwen2.5-coder:14b
