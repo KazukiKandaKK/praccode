@@ -35,6 +35,16 @@ import { LlmHealthChecker } from './infrastructure/services/LlmHealthChecker.js'
 import { LearningAnalysisScheduler } from './infrastructure/services/LearningAnalysisScheduler.js';
 import { AnswerEvaluationService } from './infrastructure/services/AnswerEvaluationService.js';
 import { EvaluationEventPublisher } from './infrastructure/services/EvaluationEventPublisher.js';
+import { PrismaWritingChallengeRepository } from './infrastructure/persistence/PrismaWritingChallengeRepository.js';
+import { PrismaWritingSubmissionRepository } from './infrastructure/persistence/PrismaWritingSubmissionRepository.js';
+import { ListWritingChallengesUseCase } from './application/usecases/writing/ListWritingChallengesUseCase.js';
+import { GetWritingChallengeUseCase } from './application/usecases/writing/GetWritingChallengeUseCase.js';
+import { AutoGenerateWritingChallengeUseCase } from './application/usecases/writing/AutoGenerateWritingChallengeUseCase.js';
+import { CreateWritingChallengeUseCase } from './application/usecases/writing/CreateWritingChallengeUseCase.js';
+import { SubmitWritingCodeUseCase } from './application/usecases/writing/SubmitWritingCodeUseCase.js';
+import { ListWritingSubmissionsUseCase } from './application/usecases/writing/ListWritingSubmissionsUseCase.js';
+import { GetWritingSubmissionUseCase } from './application/usecases/writing/GetWritingSubmissionUseCase.js';
+import { RequestWritingFeedbackUseCase } from './application/usecases/writing/RequestWritingFeedbackUseCase.js';
 
 const fastify = Fastify({
   logger: true,
@@ -91,6 +101,29 @@ const llmHealthChecker = new LlmHealthChecker();
 const learningAnalysisScheduler = new LearningAnalysisScheduler();
 const answerEvaluationService = new AnswerEvaluationService();
 const evaluationEventPublisher = new EvaluationEventPublisher();
+const writingChallengeRepository = new PrismaWritingChallengeRepository();
+const writingSubmissionRepository = new PrismaWritingSubmissionRepository();
+const listWritingChallengesUseCase = new ListWritingChallengesUseCase(writingChallengeRepository);
+const getWritingChallengeUseCase = new GetWritingChallengeUseCase(writingChallengeRepository);
+const autoGenerateWritingChallengeUseCase = new AutoGenerateWritingChallengeUseCase(
+  writingChallengeRepository,
+  writingChallengeGenerator,
+  llmHealthChecker
+);
+const createWritingChallengeUseCase = new CreateWritingChallengeUseCase(writingChallengeRepository);
+const submitWritingCodeUseCase = new SubmitWritingCodeUseCase(
+  writingChallengeRepository,
+  writingSubmissionRepository,
+  codeExecutor,
+  learningAnalysisScheduler
+);
+const listWritingSubmissionsUseCase = new ListWritingSubmissionsUseCase(writingSubmissionRepository);
+const getWritingSubmissionUseCase = new GetWritingSubmissionUseCase(writingSubmissionRepository);
+const requestWritingFeedbackUseCase = new RequestWritingFeedbackUseCase(
+  writingSubmissionRepository,
+  codeFeedbackGenerator,
+  llmHealthChecker
+);
 const generateHintUseCase = new GenerateHintUseCase(
   exerciseRepository,
   hintRepository,
@@ -138,11 +171,14 @@ fastify.register(userRoutes, { prefix: '/users' });
 fastify.register(
   (instance) =>
     writingRoutes(instance, {
-      codeExecutor,
-      writingChallengeGenerator,
-      codeFeedbackGenerator,
-      llmHealthChecker,
-      learningAnalysisScheduler,
+      listChallenges: listWritingChallengesUseCase,
+      getChallenge: getWritingChallengeUseCase,
+      autoGenerateChallenge: autoGenerateWritingChallengeUseCase,
+      createChallenge: createWritingChallengeUseCase,
+      submitCode: submitWritingCodeUseCase,
+      listSubmissions: listWritingSubmissionsUseCase,
+      getSubmission: getWritingSubmissionUseCase,
+      requestFeedback: requestWritingFeedbackUseCase,
     }),
   { prefix: '/writing' }
 );
