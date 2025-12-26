@@ -1,10 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import Fastify from 'fastify';
-import { submissionRoutes } from '@/routes/submissions';
+import Fastify, { FastifyInstance } from 'fastify';
+import { submissionRoutes, SubmissionRouteDeps } from '@/routes/submissions';
 import { prisma } from '@/lib/prisma';
-import * as evaluator from '@/llm/evaluator';
-import * as evaluationEvents from '@/lib/evaluation-events';
-import * as analysisTrigger from '@/lib/analysis-trigger';
+
+type MockFn = ReturnType<typeof vi.fn>;
 
 // Mock dependencies
 vi.mock('@/lib/prisma', () => ({
@@ -21,25 +20,30 @@ vi.mock('@/lib/prisma', () => ({
     },
   },
 }));
-vi.mock('@/llm/evaluator');
-vi.mock('@/lib/evaluation-events');
-vi.mock('@/lib/analysis-trigger');
 
 const mockPrisma = prisma as any;
-const mockEvaluator = evaluator as any;
-const mockEvaluationEvents = evaluationEvents as any;
-const mockAnalysisTrigger = analysisTrigger as any;
 
 describe('submissionRoutes', () => {
   let app: ReturnType<typeof Fastify>;
+  let deps: SubmissionRouteDeps;
 
   beforeEach(() => {
+    deps = {
+      evaluationService: { evaluate: vi.fn() },
+      evaluationEventPublisher: {
+        emitEvaluationComplete: vi.fn(),
+        emitEvaluationFailed: vi.fn(),
+        onEvaluationEvent: vi.fn().mockReturnValue(() => {}),
+      },
+      learningAnalysisScheduler: { trigger: vi.fn() },
+    };
     app = Fastify();
-    app.register(submissionRoutes, { prefix: '/submissions' });
+    app.register((instance: FastifyInstance) => submissionRoutes(instance, deps), {
+      prefix: '/submissions',
+    });
     vi.clearAllMocks();
   });
 
-  // ... (existing GET and PUT tests)
   describe('GET /submissions', () => {
     it('正常系: ユーザーのサブミッション一覧と統計情報を返す', async () => {
       mockPrisma.submission.findMany.mockResolvedValue([
@@ -131,13 +135,13 @@ describe('submissionRoutes', () => {
         },
       };
       mockPrisma.submission.findUnique.mockResolvedValue(mockSubmission);
-      mockEvaluator.evaluateAnswer.mockResolvedValue({
+      (deps.evaluationService.evaluate as MockFn).mockResolvedValue({
         score: 95,
         level: 'A',
         feedback: 'Good',
         aspects: {},
       });
-      mockAnalysisTrigger.triggerLearningAnalysis.mockResolvedValue();
+      (deps.learningAnalysisScheduler.trigger as MockFn).mockResolvedValue(undefined);
 
       const response = await app.inject({
         method: 'POST',
@@ -152,14 +156,14 @@ describe('submissionRoutes', () => {
 
       await new Promise((resolve) => setTimeout(resolve, 50)); // allow setImmediate to run
 
-      expect(mockEvaluator.evaluateAnswer).toHaveBeenCalled();
+      expect(deps.evaluationService.evaluate).toHaveBeenCalled();
       expect(mockPrisma.submissionAnswer.update).toHaveBeenCalled();
       expect(mockPrisma.submission.update).toHaveBeenCalledWith({
         where: { id: submissionId },
         data: { status: 'EVALUATED' },
       });
-      expect(mockEvaluationEvents.emitEvaluationComplete).toHaveBeenCalledWith(submissionId);
-      expect(mockAnalysisTrigger.triggerLearningAnalysis).toHaveBeenCalledWith('user-1');
+      expect(deps.evaluationEventPublisher.emitEvaluationComplete).toHaveBeenCalledWith(submissionId);
+      expect(deps.learningAnalysisScheduler.trigger).toHaveBeenCalledWith('user-1');
     });
 
     it('異常系: 評価済みのサブミッションはキューに入れない', async () => {

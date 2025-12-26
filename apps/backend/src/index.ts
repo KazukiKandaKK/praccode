@@ -28,6 +28,13 @@ import { VerifyEmailUseCase } from './application/usecases/VerifyEmailUseCase.js
 import { RequestPasswordResetUseCase } from './application/usecases/RequestPasswordResetUseCase.js';
 import { ResetPasswordUseCase } from './application/usecases/ResetPasswordUseCase.js';
 import { authRoutes } from './routes/auth.js';
+import { CodeExecutorService } from './infrastructure/services/CodeExecutorService.js';
+import { WritingChallengeGenerator } from './infrastructure/services/WritingChallengeGenerator.js';
+import { CodeWritingFeedbackGenerator } from './infrastructure/services/CodeWritingFeedbackGenerator.js';
+import { LlmHealthChecker } from './infrastructure/services/LlmHealthChecker.js';
+import { LearningAnalysisScheduler } from './infrastructure/services/LearningAnalysisScheduler.js';
+import { AnswerEvaluationService } from './infrastructure/services/AnswerEvaluationService.js';
+import { EvaluationEventPublisher } from './infrastructure/services/EvaluationEventPublisher.js';
 
 const fastify = Fastify({
   logger: true,
@@ -77,6 +84,13 @@ const resetPasswordUseCase = new ResetPasswordUseCase(
   userRepository,
   tokenService
 );
+const codeExecutor = new CodeExecutorService();
+const writingChallengeGenerator = new WritingChallengeGenerator();
+const codeFeedbackGenerator = new CodeWritingFeedbackGenerator();
+const llmHealthChecker = new LlmHealthChecker();
+const learningAnalysisScheduler = new LearningAnalysisScheduler();
+const answerEvaluationService = new AnswerEvaluationService();
+const evaluationEventPublisher = new EvaluationEventPublisher();
 const generateHintUseCase = new GenerateHintUseCase(
   exerciseRepository,
   hintRepository,
@@ -105,7 +119,15 @@ fastify.register(
     prefix: '/exercises',
   }
 );
-fastify.register(submissionRoutes, { prefix: '/submissions' });
+fastify.register(
+  (instance) =>
+    submissionRoutes(instance, {
+      evaluationService: answerEvaluationService,
+      evaluationEventPublisher,
+      learningAnalysisScheduler,
+    }),
+  { prefix: '/submissions' }
+);
 fastify.register((instance) => progressController(instance, getUserProgressUseCase), {
   prefix: '/me',
 });
@@ -113,7 +135,17 @@ fastify.register((instance) => hintController(instance, generateHintUseCase), {
   prefix: '/hints',
 });
 fastify.register(userRoutes, { prefix: '/users' });
-fastify.register(writingRoutes, { prefix: '/writing' });
+fastify.register(
+  (instance) =>
+    writingRoutes(instance, {
+      codeExecutor,
+      writingChallengeGenerator,
+      codeFeedbackGenerator,
+      llmHealthChecker,
+      learningAnalysisScheduler,
+    }),
+  { prefix: '/writing' }
+);
 fastify.register(dashboardRoutes);
 
 // エラーハンドリング

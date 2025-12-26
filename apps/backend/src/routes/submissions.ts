@@ -1,13 +1,9 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma.js';
 import { z } from 'zod';
-import { evaluateAnswer } from '../llm/evaluator.js';
-import {
-  emitEvaluationComplete,
-  emitEvaluationFailed,
-  onEvaluationEvent,
-} from '../lib/evaluation-events.js';
-import { triggerLearningAnalysis } from '../lib/analysis-trigger.js';
+import { IAnswerEvaluationService } from '../domain/ports/IAnswerEvaluationService.js';
+import { IEvaluationEventPublisher } from '../domain/ports/IEvaluationEventPublisher.js';
+import { ILearningAnalysisScheduler } from '../domain/ports/ILearningAnalysisScheduler.js';
 
 const answerInputSchema = z.object({
   answers: z.array(
@@ -25,7 +21,13 @@ const submissionListQuerySchema = z.object({
   limit: z.coerce.number().min(1).max(50).default(20),
 });
 
-export async function submissionRoutes(fastify: FastifyInstance) {
+export interface SubmissionRouteDeps {
+  evaluationService: IAnswerEvaluationService;
+  evaluationEventPublisher: IEvaluationEventPublisher;
+  learningAnalysisScheduler: ILearningAnalysisScheduler;
+}
+
+export async function submissionRoutes(fastify: FastifyInstance, deps: SubmissionRouteDeps) {
   // GET /submissions - ユーザーのサブミッション一覧
   fastify.get('/', async (request, reply) => {
     const query = submissionListQuerySchema.parse(request.query);
@@ -239,7 +241,7 @@ export async function submissionRoutes(fastify: FastifyInstance) {
           }
 
           try {
-            const result = await evaluateAnswer({
+            const result = await deps.evaluationService.evaluate({
               code: jobSubmission.exercise.code,
               question: question.questionText,
               idealPoints: question.idealAnswerPoints as string[],
@@ -275,11 +277,11 @@ export async function submissionRoutes(fastify: FastifyInstance) {
         });
 
         // 評価完了イベントを発行（SSE通知用）
-        emitEvaluationComplete(id);
+        deps.evaluationEventPublisher.emitEvaluationComplete(id);
         fastify.log.info(`Evaluation completed for submission ${id}`);
 
         // 学習分析をトリガー（一定条件で実行）
-        triggerLearningAnalysis(jobSubmission.userId).catch((err) => {
+        deps.learningAnalysisScheduler.trigger(jobSubmission.userId).catch((err) => {
           fastify.log.error(err, 'Failed to trigger learning analysis');
         });
       } catch (error) {
@@ -291,7 +293,7 @@ export async function submissionRoutes(fastify: FastifyInstance) {
         });
 
         // 評価失敗イベントを発行
-        emitEvaluationFailed(id);
+        deps.evaluationEventPublisher.emitEvaluationFailed(id);
       }
     });
 
@@ -339,7 +341,7 @@ export async function submissionRoutes(fastify: FastifyInstance) {
     reply.raw.write(': connected\n\n');
 
     // 評価イベントをリスン
-    const cleanup = onEvaluationEvent(id, (event) => {
+    const cleanup = deps.evaluationEventPublisher.onEvaluationEvent(id, (event) => {
       const eventType = event.type === 'evaluated' ? 'evaluated' : 'failed';
       reply.raw.write(`event: ${eventType}\ndata: ${JSON.stringify(event)}\n\n`);
       // イベント送信後に接続を閉じる

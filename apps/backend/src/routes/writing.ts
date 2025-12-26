@@ -1,14 +1,14 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { prisma } from '../lib/prisma.js';
 import { z } from 'zod';
-import { executeCode } from '../runner/executor.js';
+import { ICodeExecutor } from '../domain/ports/ICodeExecutor.js';
 import {
-  generateWritingChallenge,
-  GenerateWritingChallengeInput,
-} from '../llm/writing-generator.js';
-import { generateCodeReview } from '../llm/code-reviewer.js';
-import { checkOllamaHealth } from '../llm/llm-client.js';
-import { triggerLearningAnalysis } from '../lib/analysis-trigger.js';
+  IWritingChallengeGenerator,
+  WritingChallengeGenerateInput,
+} from '../domain/ports/IWritingChallengeGenerator.js';
+import { ICodeWritingFeedbackGenerator } from '../domain/ports/ICodeWritingFeedbackGenerator.js';
+import { ILlmHealthChecker } from '../domain/ports/ILlmHealthChecker.js';
+import { ILearningAnalysisScheduler } from '../domain/ports/ILearningAnalysisScheduler.js';
 
 // ========== Schemas ==========
 const createChallengeSchema = z.object({
@@ -34,7 +34,15 @@ const autoGenerateChallengeSchema = z.object({
   topic: z.string().optional(),
 });
 
-export async function writingRoutes(fastify: FastifyInstance) {
+export interface WritingRouteDeps {
+  codeExecutor: ICodeExecutor;
+  writingChallengeGenerator: IWritingChallengeGenerator;
+  codeFeedbackGenerator: ICodeWritingFeedbackGenerator;
+  llmHealthChecker: ILlmHealthChecker;
+  learningAnalysisScheduler: ILearningAnalysisScheduler;
+}
+
+export async function writingRoutes(fastify: FastifyInstance, deps: WritingRouteDeps) {
   // GET /writing/challenges - お題一覧（READY状態のもののみ、ユーザーに割り当てられたもののみ）
   fastify.get('/challenges', async (request: FastifyRequest, reply: FastifyReply) => {
     const userId = (request.query as { userId?: string }).userId;
@@ -129,7 +137,7 @@ export async function writingRoutes(fastify: FastifyInstance) {
     const body = autoGenerateChallengeSchema.parse(request.body);
 
     // Ollamaの接続確認
-    const ollamaHealthy = await checkOllamaHealth();
+    const ollamaHealthy = await deps.llmHealthChecker.isHealthy();
     if (!ollamaHealthy) {
       return reply.status(503).send({
         error: 'LLM service is not available',
@@ -152,7 +160,7 @@ export async function writingRoutes(fastify: FastifyInstance) {
     });
 
     // 非同期でLLM生成を開始
-    generateChallengeAsync(fastify, challenge.id, body).catch((err) => {
+    generateChallengeAsync(fastify, challenge.id, body, deps).catch((err) => {
       fastify.log.error({ challengeId: challenge.id, err }, 'Writing challenge generation failed');
     });
 
@@ -193,7 +201,7 @@ export async function writingRoutes(fastify: FastifyInstance) {
     });
 
     // 非同期で実行開始
-    runCodeAsync(submission.id, body.code, challenge.testCode, body.language).catch((err) => {
+    runCodeAsync(submission.id, body.code, challenge.testCode, body.language, deps).catch((err) => {
       fastify.log.error({ submissionId: submission.id, err }, 'Code execution failed');
     });
 
@@ -267,7 +275,7 @@ export async function writingRoutes(fastify: FastifyInstance) {
       const { id } = request.params;
 
       // Ollamaの接続確認
-      const isHealthy = await checkOllamaHealth();
+      const isHealthy = await deps.llmHealthChecker.isHealthy();
       if (!isHealthy) {
         return reply.status(503).send({
           error: 'LLM service is not available. Please ensure Ollama is running.',
@@ -313,9 +321,9 @@ export async function writingRoutes(fastify: FastifyInstance) {
       });
 
       // 非同期でフィードバック生成
-      generateFeedbackAsync(fastify, submission).catch((err) => {
-        fastify.log.error({ submissionId: id, err }, 'Feedback generation failed');
-      });
+    generateFeedbackAsync(fastify, submission, deps).catch((err) => {
+      fastify.log.error({ submissionId: id, err }, 'Feedback generation failed');
+    });
 
       return reply.status(202).send({
         id: submission.id,
@@ -330,13 +338,14 @@ export async function writingRoutes(fastify: FastifyInstance) {
 async function generateChallengeAsync(
   fastify: FastifyInstance,
   challengeId: string,
-  input: GenerateWritingChallengeInput
+  input: WritingChallengeGenerateInput,
+  deps: WritingRouteDeps
 ) {
   try {
     fastify.log.info({ challengeId, input }, 'Starting writing challenge generation');
 
     // LLMで生成
-    const generated = await generateWritingChallenge(input);
+    const generated = await deps.writingChallengeGenerator.generate(input);
 
     // 生成結果で更新
     await prisma.writingChallenge.update({
@@ -372,7 +381,8 @@ async function runCodeAsync(
   submissionId: string,
   userCode: string,
   testCode: string,
-  language: string
+  language: string,
+  deps: WritingRouteDeps
 ) {
   try {
     // RUNNINGに更新
@@ -382,7 +392,11 @@ async function runCodeAsync(
     });
 
     // 実行
-    const result = await executeCode(userCode, testCode, language);
+    const result = await deps.codeExecutor.execute({
+      userCode,
+      testCode,
+      language,
+    });
 
     // 結果更新
     const updatedSubmission = await prisma.writingSubmission.update({
@@ -398,7 +412,7 @@ async function runCodeAsync(
     });
 
     // 学習分析をトリガー
-    triggerLearningAnalysis(updatedSubmission.userId).catch((err) => {
+    deps.learningAnalysisScheduler.trigger(updatedSubmission.userId).catch((err) => {
       console.error('Failed to trigger learning analysis:', err);
     });
   } catch (err) {
@@ -430,14 +444,15 @@ async function generateFeedbackAsync(
       description: string;
       testCode: string;
     };
-  }
+  },
+  deps: WritingRouteDeps
 ) {
   try {
     fastify.log.info({ submissionId: submission.id }, 'Starting feedback generation');
 
     const testOutput = [submission.stdout, submission.stderr].filter(Boolean).join('\n\n');
 
-    const feedback = await generateCodeReview({
+    const feedback = await deps.codeFeedbackGenerator.generate({
       language: submission.language,
       challengeTitle: submission.challenge.title,
       challengeDescription: submission.challenge.description,
