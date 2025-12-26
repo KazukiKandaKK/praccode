@@ -3,8 +3,6 @@ import Fastify from 'fastify';
 import dashboardRoutes from './dashboard';
 import { prisma } from '../lib/prisma';
 import * as learningAnalyzer from '../llm/learning-analyzer';
-import * as writingGenerator from '../llm/writing-generator';
-import * as generator from '../llm/generator';
 
 // Mock Prisma
 vi.mock('../lib/prisma', () => ({

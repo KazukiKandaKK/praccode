@@ -1,22 +1,23 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import Fastify from 'fastify';
+import { describe, it, expect, vi, beforeEach, type Mocked } from 'vitest';
+import Fastify, { type FastifyInstance } from 'fastify';
 import { progressController } from './progressController';
-import { GetUserProgressUseCase } from '../../../application/usecases/GetUserProgressUseCase';
+import { GetUserProgressUseCase } from '../../application/usecases/GetUserProgressUseCase';
 
 const mockGetUserProgressUseCase = {
   execute: vi.fn(),
-} as unknown as GetUserProgressUseCase;
+} as unknown as Mocked<GetUserProgressUseCase>;
 
 describe('progressController', () => {
   let app: ReturnType<typeof Fastify>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     app = Fastify();
-    app.register((instance, opts, done) => {
+    app.register((instance: FastifyInstance, _opts: unknown, done: (err?: Error) => void) => {
       progressController(instance, mockGetUserProgressUseCase);
       done();
     });
     vi.clearAllMocks();
+    await app.ready();
   });
 
   describe('GET /progress', () => {

@@ -45,21 +45,16 @@ describe('retry-handler', () => {
       expect(action).toHaveBeenCalledTimes(2);
     });
 
-            it('最大リトライ回数を超えて失敗した場合、エラーを投げる', async () => {
-                const action = vi.fn().mockRejectedValue(new Error('persistent failure'));
-                
-                try {
-                    const promise = retryWithBackoff(action, { maxRetries: 2, baseDelay: 100 });
-                    await vi.advanceTimersByTimeAsync(100); // 1st retry delay
-                    await vi.advanceTimersByTimeAsync(200); // 2nd retry delay
-                    await promise;
-                } catch (error) {
-                    expect(error).toBeInstanceOf(Error);
-                    expect((error as Error).message).toBe('persistent failure');
-                }
-    
-                expect(action).toHaveBeenCalledTimes(3);
-            });
+    it('最大リトライ回数を超えて失敗した場合、エラーを投げる', async () => {
+      const action = vi.fn().mockRejectedValue(new Error('persistent failure'));
+
+      const promise = retryWithBackoff(action, { maxRetries: 2, baseDelay: 100 });
+      const expectation = expect(promise).rejects.toThrow('persistent failure');
+      await vi.runAllTimersAsync();
+      await expectation;
+
+      expect(action).toHaveBeenCalledTimes(3);
+    });
     it('onRetryコールバックが呼ばれる', async () => {
       const action = vi
         .fn()

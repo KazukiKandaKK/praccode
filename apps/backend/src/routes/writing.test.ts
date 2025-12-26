@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import Fastify from 'fastify';
+import Fastify, { type FastifyRequest, type FastifyReply } from 'fastify';
 import { writingRoutes } from './writing';
 import { prisma } from '../lib/prisma';
 import * as llmClient from '../llm/llm-client';
@@ -54,12 +54,12 @@ describe('writingRoutes', () => {
 
   beforeEach(() => {
     app = Fastify();
-    app.setErrorHandler((error, request, reply) => {
-      if (error.validation) {
-        reply.status(400).send({ error: 'Invalid input' });
+    app.setErrorHandler((error: unknown, request: FastifyRequest, reply: FastifyReply) => {
+      if (error && typeof error === 'object' && 'validation' in error) {
+        return reply.status(400).send({ error: 'Invalid input' });
       }
       console.error(error);
-      reply.status(500).send({ error: 'Internal Server Error' });
+      return reply.status(500).send({ error: 'Internal Server Error' });
     });
     app.register(writingRoutes, { prefix: '/writing' });
     vi.clearAllMocks();

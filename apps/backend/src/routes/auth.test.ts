@@ -277,7 +277,9 @@ describe('authRoutes', () => {
 
     it('正常系: 有効なトークンでメール認証に成功する', async () => {
       mockPrisma.emailVerificationToken.findUnique.mockResolvedValue(mockVerificationToken);
-      mockPrisma.$transaction.mockImplementation(async (fn) => await fn(mockPrisma));
+      mockPrisma.$transaction.mockImplementation(
+        async (fn: (client: typeof mockPrisma) => Promise<unknown>) => fn(mockPrisma)
+      );
       mockPrisma.user.update.mockResolvedValue({});
       mockPrisma.emailVerificationToken.delete.mockResolvedValue({});
 
@@ -444,7 +446,9 @@ describe('authRoutes', () => {
     it('正常系: 有効なトークンでパスワードリセットに成功する', async () => {
       mockPrisma.passwordResetToken.findUnique.mockResolvedValue(mockResetToken);
       mockBcrypt.hash.mockResolvedValue('new-hashed-password');
-      mockPrisma.$transaction.mockImplementation(async (fn) => await fn(mockPrisma));
+      mockPrisma.$transaction.mockImplementation(
+        async (fn: (client: typeof mockPrisma) => Promise<unknown>) => fn(mockPrisma)
+      );
 
       const response = await app.inject({
         method: 'POST',

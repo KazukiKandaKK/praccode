@@ -1,9 +1,7 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { authRoutes } from './routes/auth.js';
-import { exerciseRoutes } from './routes/exercises.js';
 import { submissionRoutes } from './routes/submissions.js';
-import { progressRoutes } from './routes/progress.js';
 import { userRoutes } from './routes/users.js';
 import { writingRoutes } from './routes/writing.js';
 import dashboardRoutes from './routes/dashboard.js';
@@ -22,7 +20,13 @@ import { progressController } from './infrastructure/web/progressController.js';
 const fastify = Fastify({
   logger: true,
 });
-//...
+
+await fastify.register(cors, {
+  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  credentials: true,
+});
+
+const exerciseRepository = new PrismaExerciseRepository();
 const hintRepository = new PrismaHintRepository();
 const submissionRepository = new PrismaSubmissionRepository();
 const hintGenerator = new LLMHintGenerator();
@@ -38,18 +42,14 @@ const getUserProgressUseCase = new GetUserProgressUseCase(submissionRepository, 
 
 // ルート登録
 fastify.register(authRoutes, { prefix: '/auth' });
-// fastify.register(exerciseRoutes, { prefix: '/exercises' });
-fastify.register(
-  (instance, opts, done) =>
-    exerciseController(instance, listExercisesUseCase, getExerciseByIdUseCase),
-  { prefix: '/exercises' }
-);
+fastify.register((instance) => exerciseController(instance, listExercisesUseCase, getExerciseByIdUseCase), {
+  prefix: '/exercises',
+});
 fastify.register(submissionRoutes, { prefix: '/submissions' });
-// fastify.register(progressRoutes, { prefix: '/me' });
-fastify.register((instance, opts, done) => progressController(instance, getUserProgressUseCase), {
+fastify.register((instance) => progressController(instance, getUserProgressUseCase), {
   prefix: '/me',
 });
-fastify.register((instance, opts, done) => hintController(instance, generateHintUseCase), {
+fastify.register((instance) => hintController(instance, generateHintUseCase), {
   prefix: '/hints',
 });
 fastify.register(userRoutes, { prefix: '/users' });

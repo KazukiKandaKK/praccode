@@ -6,6 +6,19 @@ import type { LLMProvider, LLMGenerateOptions } from './llm-provider.js';
 import { parseRetryAfter } from './retry-handler.js';
 import { PromptSanitizer } from './prompt-sanitizer.js';
 
+type GeminiGenerateRequest = {
+  contents: {
+    parts: {
+      text: string;
+    }[];
+  }[];
+  generationConfig: {
+    temperature: number;
+    maxOutputTokens: number;
+    responseMimeType?: string;
+  };
+};
+
 export class GeminiProvider implements LLMProvider {
   async generate(prompt: string, options?: LLMGenerateOptions): Promise<string> {
     const apiKey = process.env.GEMINI_API_KEY;
@@ -102,7 +115,7 @@ export class GeminiProvider implements LLMProvider {
             }
           }
         }
-      } catch (e) {
+      } catch (parseError) {
         // If parsing lines fails, try to parse the whole thing as one JSON object
         try {
           const data = JSON.parse(responseText);
@@ -116,8 +129,17 @@ export class GeminiProvider implements LLMProvider {
               .filter((text: any): text is string => Boolean(text));
             allTexts.push(...texts);
           }
-        } catch (finalError) {
-          throw new Error(`Failed to parse Gemini API response: ${responseText.substring(0, 200)}`);
+        } catch (fallbackError) {
+          const originalMessage =
+            parseError instanceof Error ? parseError.message : String(parseError);
+          const fallbackMessage =
+            fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
+          throw new Error(
+            `Failed to parse Gemini API response: ${responseText.substring(
+              0,
+              200
+            )} (primary: ${originalMessage}; fallback: ${fallbackMessage})`
+          );
         }
       }
 

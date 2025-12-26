@@ -1,15 +1,18 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, type Mocked } from 'vitest';
 import { GetUserProgressUseCase } from './GetUserProgressUseCase';
 import { ISubmissionRepository } from '../../domain/ports/ISubmissionRepository';
 import { IExerciseRepository } from '../../domain/ports/IExerciseRepository';
 
-const mockSubmissionRepository = {
+const mockSubmissionRepository: Mocked<ISubmissionRepository> = {
   findCompletedByUserId: vi.fn(),
-} as unknown as ISubmissionRepository;
+};
 
-const mockExerciseRepository = {
+const mockExerciseRepository: Mocked<IExerciseRepository> = {
   countAll: vi.fn(),
-} as unknown as IExerciseRepository;
+  findById: vi.fn(),
+  find: vi.fn(),
+  count: vi.fn(),
+};
 
 describe('GetUserProgressUseCase', () => {
   let useCase: GetUserProgressUseCase;

@@ -1,13 +1,14 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, type Mocked } from 'vitest';
 import { ListExercisesUseCase } from './ListExercisesUseCase';
 import { IExerciseRepository } from '../../domain/ports/IExerciseRepository';
 import { ExerciseEntity } from '../../domain/entities/Exercise';
 
-const mockExerciseRepository = {
+const mockExerciseRepository: Mocked<IExerciseRepository> = {
   findById: vi.fn(),
   find: vi.fn(),
   count: vi.fn(),
-} as IExerciseRepository;
+  countAll: vi.fn(),
+};
 
 describe('ListExercisesUseCase', () => {
   let useCase: ListExercisesUseCase;

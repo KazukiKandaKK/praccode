@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import { readFileSync } from 'fs';
 import { loadPrompt, renderPrompt } from './prompt-loader';
 
@@ -7,7 +7,7 @@ vi.mock('fs', () => ({
   readFileSync: vi.fn(),
 }));
 
-const mockedReadFile = readFileSync as vi.Mock;
+const mockedReadFile = readFileSync as Mock;
 
 describe('prompt-loader', () => {
   beforeEach(() => {

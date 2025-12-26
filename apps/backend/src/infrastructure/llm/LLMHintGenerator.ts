@@ -1,5 +1,5 @@
-import { IHintGenerator, GenerateHintContext } from '../../../domain/ports/IHintGenerator';
-import { generateHint as generateHintFromLLM } from '../../../llm/hint';
+import { IHintGenerator, GenerateHintContext } from '../../domain/ports/IHintGenerator';
+import { generateHint as generateHintFromLLM } from '../../llm/hint.js';
 
 export class LLMHintGenerator implements IHintGenerator {
   async generate(context: GenerateHintContext): Promise<string> {

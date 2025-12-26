@@ -12,7 +12,7 @@ describe('evaluation-events', () => {
   });
 
   it('should emit and receive a "complete" event', () => {
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       const submissionId = 'sub-1';
 
       const callback = vi.fn((event) => {
@@ -31,7 +31,7 @@ describe('evaluation-events', () => {
   });
 
   it('should emit and receive a "failed" event', () => {
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       const submissionId = 'sub-2';
 
       const callback = vi.fn((event) => {

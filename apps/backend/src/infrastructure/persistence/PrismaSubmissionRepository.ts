@@ -1,6 +1,6 @@
-import { ISubmissionRepository } from '../../../domain/ports/ISubmissionRepository';
-import { Submission } from '../../../domain/entities/Submission';
-import { prisma } from '../../../lib/prisma';
+import { ISubmissionRepository } from '../../domain/ports/ISubmissionRepository';
+import { Submission } from '../../domain/entities/Submission';
+import { prisma } from '../../lib/prisma';
 
 export class PrismaSubmissionRepository implements ISubmissionRepository {
   async findCompletedByUserId(userId: string): Promise<Submission[]> {

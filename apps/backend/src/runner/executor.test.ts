@@ -28,7 +28,7 @@ describe('executeCode', () => {
     vi.mocked(fs.mkdir).mockResolvedValue(undefined);
     vi.mocked(fs.writeFile).mockResolvedValue(undefined);
     vi.mocked(fs.rm).mockResolvedValue(undefined);
-    vi.mocked(crypto.randomUUID).mockReturnValue('test-uuid');
+    vi.mocked(crypto.randomUUID).mockReturnValue('123e4567-e89b-12d3-a456-426614174000');
 
     mockProc = new MockProcess();
     vi.mocked(child_process.spawn).mockReturnValue(mockProc as any);

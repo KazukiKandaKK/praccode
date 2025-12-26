@@ -2,9 +2,9 @@ import {
   ExerciseFilter,
   IExerciseRepository,
   Pagination,
-} from '../../../domain/ports/IExerciseRepository';
-import { Exercise, ExerciseEntity } from '../../../domain/entities/Exercise';
-import { prisma } from '../../../lib/prisma';
+} from '../../domain/ports/IExerciseRepository';
+import { Exercise, ExerciseEntity } from '../../domain/entities/Exercise';
+import { prisma } from '../../lib/prisma';
 
 export class PrismaExerciseRepository implements IExerciseRepository {
   async findById(id: string): Promise<Exercise | null> {

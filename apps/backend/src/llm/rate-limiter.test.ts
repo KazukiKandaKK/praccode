@@ -1,9 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { RateLimiter, getGlobalRateLimiter } from './rate-limiter';
 
-// sleep関数をモックしてテストを高速化
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
 describe('RateLimiter', () => {
   beforeEach(() => {
     // フェイクタイマーを使用してDate.nowとsetTimeoutを制御

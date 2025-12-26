@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { GetUserProgressUseCase } from '../../../application/usecases/GetUserProgressUseCase';
+import { GetUserProgressUseCase } from '../../application/usecases/GetUserProgressUseCase';
 import { z } from 'zod';
 
 const progressQuerySchema = z.object({

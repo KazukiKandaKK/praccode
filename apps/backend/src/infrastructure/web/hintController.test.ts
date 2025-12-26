@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import Fastify from 'fastify';
+import { describe, it, expect, vi, beforeEach, type Mocked } from 'vitest';
+import Fastify, { type FastifyInstance } from 'fastify';
 import { hintController } from './hintController';
 import { GenerateHintUseCase } from '../../application/usecases/GenerateHintUseCase';
 import { ApplicationError } from '../../application/errors/ApplicationError';
@@ -7,19 +7,20 @@ import { ApplicationError } from '../../application/errors/ApplicationError';
 // Mock the use case
 const mockGenerateHintUseCase = {
   execute: vi.fn(),
-} as unknown as GenerateHintUseCase;
+} as unknown as Mocked<GenerateHintUseCase>;
 
 describe('hintController', () => {
   let app: ReturnType<typeof Fastify>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     app = Fastify();
     // Register the controller with the mocked use case
-    app.register((instance, opts, done) => {
+    app.register((instance: FastifyInstance, _opts: unknown, done: (err?: Error) => void) => {
       hintController(instance, mockGenerateHintUseCase);
       done();
     });
     vi.clearAllMocks();
+    await app.ready();
   });
 
   it('should call the use case and return a hint on success', async () => {

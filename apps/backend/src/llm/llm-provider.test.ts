@@ -5,8 +5,15 @@ import type { LLMProvider } from './llm-provider';
 // It confirms that the type definition file can be imported.
 describe('LLMProvider interface', () => {
   it('should be defined', () => {
-    // This is a type-only import, so there's no runtime value to check.
-    // The test's existence is enough to include the file in coverage.
-    expect(true).toBe(true);
+    const mockProvider: LLMProvider = {
+      async generate() {
+        return 'ok';
+      },
+      async checkHealth() {
+        return true;
+      },
+    };
+
+    expect(mockProvider).toBeDefined();
   });
 });

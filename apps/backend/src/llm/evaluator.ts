@@ -17,13 +17,6 @@ export interface EvaluateAnswerOutput {
   aspects?: Record<string, number>;
 }
 
-const outputSchema = z.object({
-  score: z.number().min(0).max(100),
-  level: z.enum(['A', 'B', 'C', 'D']),
-  feedback: z.string(),
-  aspects: z.record(z.string(), z.number()).optional(),
-});
-
 /**
  * スコアからレベルを判定
  * A: 90-100, B: 70-89, C: 50-69, D: 0-49

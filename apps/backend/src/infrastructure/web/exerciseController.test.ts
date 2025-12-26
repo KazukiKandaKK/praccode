@@ -1,27 +1,28 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import Fastify from 'fastify';
+import { describe, it, expect, vi, beforeEach, type Mocked } from 'vitest';
+import Fastify, { type FastifyInstance } from 'fastify';
 import { exerciseController } from './exerciseController';
-import { ListExercisesUseCase } from '../../../application/usecases/ListExercisesUseCase';
-import { GetExerciseByIdUseCase } from '../../../application/usecases/GetExerciseByIdUseCase';
+import { ListExercisesUseCase } from '../../application/usecases/ListExercisesUseCase';
+import { GetExerciseByIdUseCase } from '../../application/usecases/GetExerciseByIdUseCase';
 
 const mockListExercisesUseCase = {
   execute: vi.fn(),
-} as unknown as ListExercisesUseCase;
+} as unknown as Mocked<ListExercisesUseCase>;
 
 const mockGetExerciseByIdUseCase = {
   execute: vi.fn(),
-} as unknown as GetExerciseByIdUseCase;
+} as unknown as Mocked<GetExerciseByIdUseCase>;
 
 describe('exerciseController', () => {
   let app: ReturnType<typeof Fastify>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     app = Fastify();
-    app.register((instance, opts, done) => {
+    app.register((instance: FastifyInstance, _opts: unknown, done: (err?: Error) => void) => {
       exerciseController(instance, mockListExercisesUseCase, mockGetExerciseByIdUseCase);
       done();
     });
     vi.clearAllMocks();
+    await app.ready();
   });
 
   describe('GET /', () => {

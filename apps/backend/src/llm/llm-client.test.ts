@@ -31,7 +31,9 @@ describe('LLM Client', () => {
   });
 
   describe('generateWithOllama', () => {
-    const mockRateLimiter = { acquire: vi.fn().mockResolvedValue(undefined) };
+    const mockRateLimiter = {
+      acquire: vi.fn().mockResolvedValue(undefined),
+    } as unknown as import('./rate-limiter').RateLimiter;
     const mockProvider = { generate: vi.fn().mockResolvedValue('response') };
 
     beforeEach(() => {
