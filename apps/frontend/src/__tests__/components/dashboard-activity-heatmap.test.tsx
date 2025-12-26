@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { DashboardActivityHeatmap } from './dashboard-activity-heatmap';
+import { DashboardActivityHeatmap } from '@/components/dashboard-activity-heatmap';
 
 describe('DashboardActivityHeatmap', () => {
   describe('カラースケール', () => {

@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Fastify from 'fastify';
-import { submissionRoutes } from './submissions';
-import { prisma } from '../lib/prisma';
-import * as evaluator from '../llm/evaluator';
-import * as evaluationEvents from '../lib/evaluation-events';
-import * as analysisTrigger from '../lib/analysis-trigger';
+import { submissionRoutes } from '@/routes/submissions';
+import { prisma } from '@/lib/prisma';
+import * as evaluator from '@/llm/evaluator';
+import * as evaluationEvents from '@/lib/evaluation-events';
+import * as analysisTrigger from '@/lib/analysis-trigger';
 
 // Mock dependencies
-vi.mock('../lib/prisma', () => ({
+vi.mock('@/lib/prisma', () => ({
   prisma: {
     submission: {
       findMany: vi.fn(),
@@ -21,9 +21,9 @@ vi.mock('../lib/prisma', () => ({
     },
   },
 }));
-vi.mock('../llm/evaluator');
-vi.mock('../lib/evaluation-events');
-vi.mock('../lib/analysis-trigger');
+vi.mock('@/llm/evaluator');
+vi.mock('@/lib/evaluation-events');
+vi.mock('@/lib/analysis-trigger');
 
 const mockPrisma = prisma as any;
 const mockEvaluator = evaluator as any;

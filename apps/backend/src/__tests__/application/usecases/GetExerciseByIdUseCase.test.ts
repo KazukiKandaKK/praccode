@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, type Mocked } from 'vitest';
-import { GetExerciseByIdUseCase } from './GetExerciseByIdUseCase';
-import { IExerciseRepository } from '../../domain/ports/IExerciseRepository';
-import { ExerciseEntity } from '../../domain/entities/Exercise';
-import { ApplicationError } from '../errors/ApplicationError';
+import { GetExerciseByIdUseCase } from '@/application/usecases/GetExerciseByIdUseCase';
+import { IExerciseRepository } from '@/domain/ports/IExerciseRepository';
+import { ExerciseEntity } from '@/domain/entities/Exercise';
+import { ApplicationError } from '@/application/errors/ApplicationError';
 
 const mockExerciseRepository: Mocked<IExerciseRepository> = {
   findById: vi.fn(),

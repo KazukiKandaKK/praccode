@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import Fastify from 'fastify';
-import dashboardRoutes from './dashboard';
-import { prisma } from '../lib/prisma';
-import * as learningAnalyzer from '../llm/learning-analyzer';
+import dashboardRoutes from '@/routes/dashboard';
+import { prisma } from '@/lib/prisma';
+import * as learningAnalyzer from '@/llm/learning-analyzer';
 
 // Mock Prisma
-vi.mock('../lib/prisma', () => ({
+vi.mock('@/lib/prisma', () => ({
   prisma: {
     submission: { findMany: vi.fn() },
     writingSubmission: { findMany: vi.fn() },
@@ -16,9 +16,9 @@ vi.mock('../lib/prisma', () => ({
 }));
 
 // Mock LLM modules
-vi.mock('../llm/learning-analyzer');
-vi.mock('../llm/writing-generator');
-vi.mock('../llm/generator');
+vi.mock('@/llm/learning-analyzer');
+vi.mock('@/llm/writing-generator');
+vi.mock('@/llm/generator');
 
 const mockPrisma = prisma as any;
 const mockLearningAnalyzer = learningAnalyzer as any;

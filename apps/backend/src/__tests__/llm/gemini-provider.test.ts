@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { GeminiProvider } from './gemini-provider';
+import { GeminiProvider } from '@/llm/gemini-provider';
 
 // Mock global fetch
 const mockFetch = vi.fn();

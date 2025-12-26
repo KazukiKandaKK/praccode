@@ -7,7 +7,7 @@ import {
   getLanguageLabel,
   getLearningGoalLabel,
   getGenreLabel,
-} from './utils';
+} from '@/lib/utils';
 
 // ============================================
 // getDifficultyLabel テスト

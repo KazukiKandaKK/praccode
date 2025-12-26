@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, type Mocked } from 'vitest';
 import Fastify, { type FastifyInstance } from 'fastify';
-import { progressController } from './progressController';
-import { GetUserProgressUseCase } from '../../application/usecases/GetUserProgressUseCase';
+import { progressController } from '@/infrastructure/web/progressController';
+import { GetUserProgressUseCase } from '@/application/usecases/GetUserProgressUseCase';
 
 const mockGetUserProgressUseCase = {
   execute: vi.fn(),

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { LLMProvider } from './llm-provider';
+import type { LLMProvider } from '@/llm/llm-provider';
 
 // This test file is only for improving coverage metrics.
 // It confirms that the type definition file can be imported.

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, type Mocked } from 'vitest';
-import { GetUserProgressUseCase } from './GetUserProgressUseCase';
-import { ISubmissionRepository } from '../../domain/ports/ISubmissionRepository';
-import { IExerciseRepository } from '../../domain/ports/IExerciseRepository';
+import { GetUserProgressUseCase } from '@/application/usecases/GetUserProgressUseCase';
+import { ISubmissionRepository } from '@/domain/ports/ISubmissionRepository';
+import { IExerciseRepository } from '@/domain/ports/IExerciseRepository';
 
 const mockSubmissionRepository: Mocked<ISubmissionRepository> = {
   findCompletedByUserId: vi.fn(),

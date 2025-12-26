@@ -3,7 +3,7 @@ import {
   emitEvaluationComplete,
   emitEvaluationFailed,
   onEvaluationEvent,
-} from './evaluation-events';
+} from '@/lib/evaluation-events';
 
 describe('evaluation-events', () => {
   afterEach(() => {

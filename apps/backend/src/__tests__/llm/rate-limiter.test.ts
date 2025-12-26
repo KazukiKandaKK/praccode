@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { RateLimiter, getGlobalRateLimiter } from './rate-limiter';
+import { RateLimiter, getGlobalRateLimiter } from '@/llm/rate-limiter';
 
 describe('RateLimiter', () => {
   beforeEach(() => {

@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, type Mocked } from 'vitest';
 import Fastify, { type FastifyInstance } from 'fastify';
-import { hintController } from './hintController';
-import { GenerateHintUseCase } from '../../application/usecases/GenerateHintUseCase';
-import { ApplicationError } from '../../application/errors/ApplicationError';
+import { hintController } from '@/infrastructure/web/hintController';
+import { GenerateHintUseCase } from '@/application/usecases/GenerateHintUseCase';
+import { ApplicationError } from '@/application/errors/ApplicationError';
 
 // Mock the use case
 const mockGenerateHintUseCase = {

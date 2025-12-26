@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import { readFileSync } from 'fs';
-import { loadPrompt, renderPrompt } from './prompt-loader';
+import { loadPrompt, renderPrompt } from '@/llm/prompt-loader';
 
 // Mock fs.readFileSync
 vi.mock('fs', () => ({

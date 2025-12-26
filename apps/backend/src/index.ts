@@ -42,9 +42,12 @@ const getUserProgressUseCase = new GetUserProgressUseCase(submissionRepository, 
 
 // ルート登録
 fastify.register(authRoutes, { prefix: '/auth' });
-fastify.register((instance) => exerciseController(instance, listExercisesUseCase, getExerciseByIdUseCase), {
-  prefix: '/exercises',
-});
+fastify.register(
+  (instance) => exerciseController(instance, listExercisesUseCase, getExerciseByIdUseCase),
+  {
+    prefix: '/exercises',
+  }
+);
 fastify.register(submissionRoutes, { prefix: '/submissions' });
 fastify.register((instance) => progressController(instance, getUserProgressUseCase), {
   prefix: '/me',

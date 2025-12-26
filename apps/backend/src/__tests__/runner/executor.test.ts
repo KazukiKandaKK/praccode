@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { EventEmitter } from 'events';
-import { executeCode } from './executor';
+import { executeCode } from '@/runner/executor';
 import * as fs from 'fs/promises';
 import * as child_process from 'child_process';
 import * as crypto from 'crypto';

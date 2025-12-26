@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
-import { OllamaProvider } from './ollama-provider';
-import { GeminiProvider } from './gemini-provider';
-import { getGlobalRateLimiter } from './rate-limiter';
-import { retryWithBackoff } from './retry-handler';
+import { OllamaProvider } from '@/llm/ollama-provider';
+import { GeminiProvider } from '@/llm/gemini-provider';
+import { getGlobalRateLimiter } from '@/llm/rate-limiter';
+import { retryWithBackoff } from '@/llm/retry-handler';
 
-vi.mock('./ollama-provider');
-vi.mock('./gemini-provider');
-vi.mock('./rate-limiter');
-vi.mock('./retry-handler');
+vi.mock('@/llm/ollama-provider');
+vi.mock('@/llm/gemini-provider');
+vi.mock('@/llm/rate-limiter');
+vi.mock('@/llm/retry-handler');
 
 describe('LLM Client', () => {
   afterEach(() => {
@@ -17,14 +17,14 @@ describe('LLM Client', () => {
 
   describe('getLLMProvider', () => {
     it('should return OllamaProvider by default', async () => {
-      const { getLLMProvider } = await import('./llm-client');
+      const { getLLMProvider } = await import('@/llm/llm-client');
       const provider = getLLMProvider();
       expect(provider).toBeInstanceOf(OllamaProvider);
     });
 
     it('should return GeminiProvider when env var is set', async () => {
       vi.stubEnv('LLM_PROVIDER', 'gemini');
-      const { getLLMProvider } = await import('./llm-client');
+      const { getLLMProvider } = await import('@/llm/llm-client');
       const provider = getLLMProvider();
       expect(provider).toBeInstanceOf(GeminiProvider);
     });
@@ -33,7 +33,7 @@ describe('LLM Client', () => {
   describe('generateWithOllama', () => {
     const mockRateLimiter = {
       acquire: vi.fn().mockResolvedValue(undefined),
-    } as unknown as import('./rate-limiter').RateLimiter;
+    } as unknown as import('@/llm/rate-limiter').RateLimiter;
     const mockProvider = { generate: vi.fn().mockResolvedValue('response') };
 
     beforeEach(() => {
@@ -43,7 +43,7 @@ describe('LLM Client', () => {
     });
 
     it('should call its dependencies', async () => {
-      const { generateWithOllama } = await import('./llm-client');
+      const { generateWithOllama } = await import('@/llm/llm-client');
       await generateWithOllama('prompt');
       expect(mockRateLimiter.acquire).toHaveBeenCalled();
       expect(retryWithBackoff).toHaveBeenCalled();
@@ -54,7 +54,7 @@ describe('LLM Client', () => {
       const rateLimitError = new Error('429 rate limit');
       mockProvider.generate.mockRejectedValue(rateLimitError);
 
-      const { generateWithOllama } = await import('./llm-client');
+      const { generateWithOllama } = await import('@/llm/llm-client');
 
       // The retry handler will catch and re-throw, so we expect it to be thrown here
       await expect(generateWithOllama('prompt')).rejects.toThrow(rateLimitError);

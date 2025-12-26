@@ -1,16 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Fastify, { type FastifyRequest, type FastifyReply } from 'fastify';
-import { writingRoutes } from './writing';
-import { prisma } from '../lib/prisma';
-import * as llmClient from '../llm/llm-client';
-import * as executor from '../runner/executor';
-import * as codeReviewer from '../llm/code-reviewer';
-import * as writingGenerator from '../llm/writing-generator';
+import { writingRoutes } from '@/routes/writing';
+import { prisma } from '@/lib/prisma';
+import * as llmClient from '@/llm/llm-client';
+import * as executor from '@/runner/executor';
+import * as codeReviewer from '@/llm/code-reviewer';
+import * as writingGenerator from '@/llm/writing-generator';
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 // Mock dependencies
-vi.mock('../lib/prisma', () => ({
+vi.mock('@/lib/prisma', () => ({
   prisma: {
     writingChallenge: {
       findMany: vi.fn(),
@@ -38,10 +38,10 @@ vi.mock('../lib/prisma', () => ({
     },
   },
 }));
-vi.mock('../llm/llm-client');
-vi.mock('../runner/executor');
-vi.mock('../llm/code-reviewer');
-vi.mock('../llm/writing-generator');
+vi.mock('@/llm/llm-client');
+vi.mock('@/runner/executor');
+vi.mock('@/llm/code-reviewer');
+vi.mock('@/llm/writing-generator');
 
 const mockPrisma = prisma as any;
 const mockLlmClient = llmClient as any;

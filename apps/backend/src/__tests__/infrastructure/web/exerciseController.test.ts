@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, type Mocked } from 'vitest';
 import Fastify, { type FastifyInstance } from 'fastify';
-import { exerciseController } from './exerciseController';
-import { ListExercisesUseCase } from '../../application/usecases/ListExercisesUseCase';
-import { GetExerciseByIdUseCase } from '../../application/usecases/GetExerciseByIdUseCase';
+import { exerciseController } from '@/infrastructure/web/exerciseController';
+import { ListExercisesUseCase } from '@/application/usecases/ListExercisesUseCase';
+import { GetExerciseByIdUseCase } from '@/application/usecases/GetExerciseByIdUseCase';
 
 const mockListExercisesUseCase = {
   execute: vi.fn(),

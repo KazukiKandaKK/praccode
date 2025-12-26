@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Fastify, { FastifyInstance } from 'fastify';
 import bcrypt from 'bcryptjs';
-import { authRoutes } from './auth';
-import { prisma } from '../lib/prisma';
-import * as mail from '../lib/mail';
+import { authRoutes } from '@/routes/auth';
+import { prisma } from '@/lib/prisma';
+import * as mail from '@/lib/mail';
 import * as crypto from 'node:crypto';
 
 // Mock dependencies
-vi.mock('../lib/prisma', () => ({
+vi.mock('@/lib/prisma', () => ({
   prisma: {
     user: {
       findUnique: vi.fn(),
@@ -38,7 +38,7 @@ vi.mock('../lib/prisma', () => ({
   },
 }));
 
-vi.mock('../lib/mail', () => ({
+vi.mock('@/lib/mail', () => ({
   sendEmailVerification: vi.fn().mockResolvedValue(undefined),
   sendWelcomeEmail: vi.fn().mockResolvedValue(undefined),
   sendPasswordResetEmail: vi.fn().mockResolvedValue(undefined),
