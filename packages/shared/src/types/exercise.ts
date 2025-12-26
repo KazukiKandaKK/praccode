@@ -49,3 +49,4 @@ export interface ExerciseFilters {
   page?: number;
   limit?: number;
 }
+

@@ -4,10 +4,14 @@ import { authRoutes } from './routes/auth.js';
 import { exerciseRoutes } from './routes/exercises.js';
 import { submissionRoutes } from './routes/submissions.js';
 import { progressRoutes } from './routes/progress.js';
-import { hintRoutes } from './routes/hints.js';
 import { userRoutes } from './routes/users.js';
 import { writingRoutes } from './routes/writing.js';
 import dashboardRoutes from './routes/dashboard.js';
+import { hintController } from './infrastructure/web/hintController.js';
+import { GenerateHintUseCase } from './application/usecases/GenerateHintUseCase.js';
+import { PrismaExerciseRepository } from './infrastructure/persistence/PrismaExerciseRepository.js';
+import { PrismaHintRepository } from './infrastructure/persistence/PrismaHintRepository.js';
+import { LLMHintGenerator } from './infrastructure/llm/LLMHintGenerator.js';
 
 const fastify = Fastify({
   logger: true,
@@ -29,12 +33,20 @@ fastify.get('/.well-known/*', async (request, reply) => {
   return reply.status(200).send({});
 });
 
+// --- Dependency Injection (Composition Root) ---
+const exerciseRepository = new PrismaExerciseRepository();
+const hintRepository = new PrismaHintRepository();
+const hintGenerator = new LLMHintGenerator();
+const generateHintUseCase = new GenerateHintUseCase(exerciseRepository, hintRepository, hintGenerator);
+// --- End of Dependency Injection ---
+
+
 // ルート登録
 fastify.register(authRoutes, { prefix: '/auth' });
 fastify.register(exerciseRoutes, { prefix: '/exercises' });
 fastify.register(submissionRoutes, { prefix: '/submissions' });
 fastify.register(progressRoutes, { prefix: '/me' });
-fastify.register(hintRoutes, { prefix: '/hints' });
+fastify.register((instance, opts, done) => hintController(instance, generateHintUseCase), { prefix: '/hints' });
 fastify.register(userRoutes, { prefix: '/users' });
 fastify.register(writingRoutes, { prefix: '/writing' });
 fastify.register(dashboardRoutes);
