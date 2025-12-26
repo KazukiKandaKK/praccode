@@ -54,7 +54,7 @@ describe('retry-handler', () => {
             await vi.advanceTimersByTimeAsync(200); // 2nd retry delay
 
             await expect(promise).rejects.toThrow('persistent failure');
-            expect(action).toHaveBeenCalledTimes(3); // 1 initial + 2 retries
+            expect(action).toHaveBeenCalledTimes(3);
         });
 
         it('onRetryコールバックが呼ばれる', async () => {

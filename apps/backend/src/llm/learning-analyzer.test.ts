@@ -72,35 +72,21 @@ describe('calculateStats', () => {
       expect(result.aspectScores['data_flow']).toEqual({ total: 75, count: 1 });
     });
 
-    it('複数のリーディング提出で平均を正しく計算する', () => {
-      const readingSubmissions = [
-        {
-          exerciseTitle: 'Exercise 1',
-          language: 'typescript',
-          genre: 'auth',
-          score: 60,
-          level: 'C',
-          aspects: { responsibility: 70 },
-          feedback: null,
-        },
-        {
-          exerciseTitle: 'Exercise 2',
-          language: 'typescript',
-          genre: 'database',
-          score: 80,
-          level: 'B',
-          aspects: { responsibility: 90 },
-          feedback: null,
-        },
-      ];
-
-      const result = calculateStats(readingSubmissions, []);
-
-      expect(result.totalReadingSubmissions).toBe(2);
-      expect(result.avgReadingScore).toBe(70); // (60 + 80) / 2 = 70
-      expect(result.languageStats['typescript'].avgScore).toBe(70);
-      expect(result.aspectScores['responsibility']).toEqual({ total: 160, count: 2 });
-    });
+    it('複数の言語とジャンルにまたがる提出で平均を正しく計算する', () => {
+        const readingSubmissions = [
+          { exerciseTitle: 'E1', language: 'typescript', genre: 'auth', score: 90, level: 'A', aspects: null, feedback: null },
+          { exerciseTitle: 'E2', language: 'typescript', genre: 'auth', score: 70, level: 'B', aspects: null, feedback: null },
+          { exerciseTitle: 'E3', language: 'go', genre: 'database', score: 50, level: 'C', aspects: null, feedback: null },
+        ];
+  
+        const result = calculateStats(readingSubmissions, []);
+  
+        expect(result.avgReadingScore).toBe(70); // (90+70+50)/3
+        expect(result.languageStats['typescript']).toEqual({ count: 2, avgScore: 80 });
+        expect(result.languageStats['go']).toEqual({ count: 1, avgScore: 50 });
+        expect(result.genreStats['auth']).toEqual({ count: 2, avgScore: 80 });
+        expect(result.genreStats['database']).toEqual({ count: 1, avgScore: 50 });
+      });
 
     it('ライティング提出の成功率を正しく計算する', () => {
       const writingSubmissions = [
