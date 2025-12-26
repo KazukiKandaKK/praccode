@@ -5,46 +5,49 @@ import { ListExercisesUseCase } from '../../../application/usecases/ListExercise
 import { GetExerciseByIdUseCase } from '../../../application/usecases/GetExerciseByIdUseCase';
 
 const mockListExercisesUseCase = {
-    execute: vi.fn(),
+  execute: vi.fn(),
 } as unknown as ListExercisesUseCase;
 
 const mockGetExerciseByIdUseCase = {
-    execute: vi.fn(),
+  execute: vi.fn(),
 } as unknown as GetExerciseByIdUseCase;
 
 describe('exerciseController', () => {
-    let app: ReturnType<typeof Fastify>;
+  let app: ReturnType<typeof Fastify>;
 
-    beforeEach(() => {
-        app = Fastify();
-        app.register((instance, opts, done) => {
-            exerciseController(instance, mockListExercisesUseCase, mockGetExerciseByIdUseCase);
-            done();
-        });
-        vi.clearAllMocks();
+  beforeEach(() => {
+    app = Fastify();
+    app.register((instance, opts, done) => {
+      exerciseController(instance, mockListExercisesUseCase, mockGetExerciseByIdUseCase);
+      done();
     });
+    vi.clearAllMocks();
+  });
 
-    describe('GET /', () => {
-        it('should call ListExercisesUseCase and return the result', async () => {
-            mockListExercisesUseCase.execute.mockResolvedValue({ exercises: [], pagination: {} as any });
-            const response = await app.inject({
-                method: 'GET',
-                url: '/?userId=d2d3b878-348c-4f70-9a57-7988351f5c69'
-            });
-            expect(response.statusCode).toBe(200);
-            expect(mockListExercisesUseCase.execute).toHaveBeenCalled();
-        });
+  describe('GET /', () => {
+    it('should call ListExercisesUseCase and return the result', async () => {
+      mockListExercisesUseCase.execute.mockResolvedValue({ exercises: [], pagination: {} as any });
+      const response = await app.inject({
+        method: 'GET',
+        url: '/?userId=d2d3b878-348c-4f70-9a57-7988351f5c69',
+      });
+      expect(response.statusCode).toBe(200);
+      expect(mockListExercisesUseCase.execute).toHaveBeenCalled();
     });
+  });
 
-    describe('GET /:id', () => {
-        it('should call GetExerciseByIdUseCase and return the result', async () => {
-            mockGetExerciseByIdUseCase.execute.mockResolvedValue({} as any);
-            const response = await app.inject({
-                method: 'GET',
-                url: '/123?userId=d2d3b878-348c-4f70-9a57-7988351f5c69'
-            });
-            expect(response.statusCode).toBe(200);
-            expect(mockGetExerciseByIdUseCase.execute).toHaveBeenCalledWith({ exerciseId: '123', userId: 'd2d3b878-348c-4f70-9a57-7988351f5c69' });
-        });
+  describe('GET /:id', () => {
+    it('should call GetExerciseByIdUseCase and return the result', async () => {
+      mockGetExerciseByIdUseCase.execute.mockResolvedValue({} as any);
+      const response = await app.inject({
+        method: 'GET',
+        url: '/123?userId=d2d3b878-348c-4f70-9a57-7988351f5c69',
+      });
+      expect(response.statusCode).toBe(200);
+      expect(mockGetExerciseByIdUseCase.execute).toHaveBeenCalledWith({
+        exerciseId: '123',
+        userId: 'd2d3b878-348c-4f70-9a57-7988351f5c69',
+      });
     });
+  });
 });

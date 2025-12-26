@@ -10,7 +10,6 @@ vi.mock('fs', () => ({
 const mockedReadFile = readFileSync as vi.Mock;
 
 describe('prompt-loader', () => {
-
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -39,19 +38,19 @@ describe('prompt-loader', () => {
         USER_ANSWER: 'It is a thing.',
       };
       const result = renderPrompt(template, variables);
-      
+
       expect(result).toContain('---USER_INPUT_START---\nWhat is it?\n---USER_INPUT_END---');
       expect(result).toContain('---USER_INPUT_START---\nIt is a thing.\n---USER_INPUT_END---');
     });
 
     it('should replace non-user input fields directly', () => {
-        const variables = {
-          OTHER_INFO: 'This is other info.',
-        };
-        const result = renderPrompt(template, variables);
-        expect(result).toContain('Info: This is other info.');
-        expect(result).not.toContain('---USER_INPUT_START---');
-      });
+      const variables = {
+        OTHER_INFO: 'This is other info.',
+      };
+      const result = renderPrompt(template, variables);
+      expect(result).toContain('Info: This is other info.');
+      expect(result).not.toContain('---USER_INPUT_START---');
+    });
 
     it('should handle multiple placeholders correctly', () => {
       const variables = {
@@ -66,13 +65,13 @@ describe('prompt-loader', () => {
     });
 
     it('should not replace placeholders that are not in the variables object', () => {
-        const variables = {
-            QUESTION: 'A question.',
-          };
-          const result = renderPrompt(template, variables);
-          expect(result).toContain('---USER_INPUT_START---\nA question.\n---USER_INPUT_END---');
-          expect(result).toContain('{{USER_ANSWER}}');
-          expect(result).toContain('{{OTHER_INFO}}');
+      const variables = {
+        QUESTION: 'A question.',
+      };
+      const result = renderPrompt(template, variables);
+      expect(result).toContain('---USER_INPUT_START---\nA question.\n---USER_INPUT_END---');
+      expect(result).toContain('{{USER_ANSWER}}');
+      expect(result).toContain('{{OTHER_INFO}}');
     });
   });
 });

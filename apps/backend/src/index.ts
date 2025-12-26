@@ -26,21 +26,32 @@ const fastify = Fastify({
 const hintRepository = new PrismaHintRepository();
 const submissionRepository = new PrismaSubmissionRepository();
 const hintGenerator = new LLMHintGenerator();
-const generateHintUseCase = new GenerateHintUseCase(exerciseRepository, hintRepository, hintGenerator);
+const generateHintUseCase = new GenerateHintUseCase(
+  exerciseRepository,
+  hintRepository,
+  hintGenerator
+);
 const listExercisesUseCase = new ListExercisesUseCase(exerciseRepository);
 const getExerciseByIdUseCase = new GetExerciseByIdUseCase(exerciseRepository);
 const getUserProgressUseCase = new GetUserProgressUseCase(submissionRepository, exerciseRepository);
 // --- End of Dependency Injection ---
 
-
 // ルート登録
 fastify.register(authRoutes, { prefix: '/auth' });
 // fastify.register(exerciseRoutes, { prefix: '/exercises' });
-fastify.register((instance, opts, done) => exerciseController(instance, listExercisesUseCase, getExerciseByIdUseCase), { prefix: '/exercises' });
+fastify.register(
+  (instance, opts, done) =>
+    exerciseController(instance, listExercisesUseCase, getExerciseByIdUseCase),
+  { prefix: '/exercises' }
+);
 fastify.register(submissionRoutes, { prefix: '/submissions' });
 // fastify.register(progressRoutes, { prefix: '/me' });
-fastify.register((instance, opts, done) => progressController(instance, getUserProgressUseCase), { prefix: '/me' });
-fastify.register((instance, opts, done) => hintController(instance, generateHintUseCase), { prefix: '/hints' });
+fastify.register((instance, opts, done) => progressController(instance, getUserProgressUseCase), {
+  prefix: '/me',
+});
+fastify.register((instance, opts, done) => hintController(instance, generateHintUseCase), {
+  prefix: '/hints',
+});
 fastify.register(userRoutes, { prefix: '/users' });
 fastify.register(writingRoutes, { prefix: '/writing' });
 fastify.register(dashboardRoutes);

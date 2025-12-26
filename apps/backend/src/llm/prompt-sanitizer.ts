@@ -108,10 +108,7 @@ export class PromptSanitizer {
       const withoutPadding = part.replace(/=+$/, '');
 
       // 一定の長さ以上で、base64パターンに一致する場合
-      if (
-        withoutPadding.length >= BASE64_MIN_LENGTH &&
-        base64Pattern.test(part)
-      ) {
+      if (withoutPadding.length >= BASE64_MIN_LENGTH && base64Pattern.test(part)) {
         // 実際にbase64としてデコード可能か確認
         try {
           const decoded = Buffer.from(part, 'base64').toString('utf-8');

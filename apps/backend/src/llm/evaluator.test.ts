@@ -9,44 +9,43 @@ const mockLlmClient = llmClient as any;
 // evaluateAnswer test
 // ============================================
 describe('evaluateAnswer', () => {
-    const validInput = {
-        code: 'const a = 1;',
-        question: 'What is a?',
-        idealPoints: ['`a` is a variable'],
-        userAnswer: 'a is a var',
+  const validInput = {
+    code: 'const a = 1;',
+    question: 'What is a?',
+    idealPoints: ['`a` is a variable'],
+    userAnswer: 'a is a var',
+  };
+
+  it('正常系: LLMが有効なJSONを返した場合、パースして返す', async () => {
+    const mockResponse = {
+      score: 85,
+      feedback: 'Good job',
+      aspects: { Clarity: 90 },
     };
+    mockLlmClient.generateWithOllama.mockResolvedValue(JSON.stringify(mockResponse));
 
-    it('正常系: LLMが有効なJSONを返した場合、パースして返す', async () => {
-        const mockResponse = {
-            score: 85,
-            feedback: 'Good job',
-            aspects: { 'Clarity': 90 }
-        };
-        mockLlmClient.generateWithOllama.mockResolvedValue(JSON.stringify(mockResponse));
+    const result = await evaluateAnswer(validInput);
 
-        const result = await evaluateAnswer(validInput);
+    expect(result.score).toBe(85);
+    expect(result.level).toBe('B');
+    expect(result.feedback).toBe('Good job');
+    expect(result.aspects).toEqual({ Clarity: 90 });
+  });
 
-        expect(result.score).toBe(85);
-        expect(result.level).toBe('B');
-        expect(result.feedback).toBe('Good job');
-        expect(result.aspects).toEqual({ 'Clarity': 90 });
-    });
+  it('異常系: LLMが不正なJSONを返した場合、エラーを投げる', async () => {
+    mockLlmClient.generateWithOllama.mockResolvedValue('this is not json');
+    await expect(evaluateAnswer(validInput)).rejects.toThrow();
+  });
 
-    it('異常系: LLMが不正なJSONを返した場合、エラーを投げる', async () => {
-        mockLlmClient.generateWithOllama.mockResolvedValue('this is not json');
-        await expect(evaluateAnswer(validInput)).rejects.toThrow();
-    });
-
-    it('異常系: LLMのレスポンスに必要なフィールドが欠けている場合、エラーを投げる', async () => {
-        const mockResponse = {
-            // 'score' field is missing
-            feedback: 'Good job',
-        };
-        mockLlmClient.generateWithOllama.mockResolvedValue(JSON.stringify(mockResponse));
-        await expect(evaluateAnswer(validInput)).rejects.toThrow();
-    });
+  it('異常系: LLMのレスポンスに必要なフィールドが欠けている場合、エラーを投げる', async () => {
+    const mockResponse = {
+      // 'score' field is missing
+      feedback: 'Good job',
+    };
+    mockLlmClient.generateWithOllama.mockResolvedValue(JSON.stringify(mockResponse));
+    await expect(evaluateAnswer(validInput)).rejects.toThrow();
+  });
 });
-
 
 // ============================================
 // scoreToLevel テスト
@@ -169,4 +168,3 @@ describe('normalizeScore', () => {
     });
   });
 });
-

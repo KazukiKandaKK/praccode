@@ -1,4 +1,8 @@
-import { ExerciseFilter, IExerciseRepository, Pagination } from '../../../domain/ports/IExerciseRepository';
+import {
+  ExerciseFilter,
+  IExerciseRepository,
+  Pagination,
+} from '../../../domain/ports/IExerciseRepository';
 import { Exercise, ExerciseEntity } from '../../../domain/entities/Exercise';
 import { prisma } from '../../../lib/prisma';
 
@@ -21,7 +25,7 @@ export class PrismaExerciseRepository implements IExerciseRepository {
       exerciseData.id,
       exerciseData.code,
       exerciseData.learningGoals as string[],
-      exerciseData.questions.map(q => ({
+      exerciseData.questions.map((q) => ({
         questionIndex: q.questionIndex,
         questionText: q.questionText,
       }))
@@ -31,13 +35,15 @@ export class PrismaExerciseRepository implements IExerciseRepository {
   async find(filter: ExerciseFilter, pagination: Pagination): Promise<Exercise[]> {
     const where = this.buildWhereClause(filter);
     const exercisesData = await prisma.exercise.findMany({
-        where,
-        skip: (pagination.page - 1) * pagination.limit,
-        take: pagination.limit,
-        orderBy: { createdAt: 'desc' },
+      where,
+      skip: (pagination.page - 1) * pagination.limit,
+      take: pagination.limit,
+      orderBy: { createdAt: 'desc' },
     });
 
-    return exercisesData.map(data => new ExerciseEntity(data.id, data.code, data.learningGoals as string[], [])); // Assuming questions are not needed for list view
+    return exercisesData.map(
+      (data) => new ExerciseEntity(data.id, data.code, data.learningGoals as string[], [])
+    ); // Assuming questions are not needed for list view
   }
 
   async count(filter: ExerciseFilter): Promise<number> {
@@ -51,11 +57,11 @@ export class PrismaExerciseRepository implements IExerciseRepository {
 
   private buildWhereClause(filter: ExerciseFilter) {
     return {
-        assignedToId: filter.userId,
-        ...(filter.language && { language: filter.language }),
-        ...(filter.difficulty && { difficulty: filter.difficulty }),
-        ...(filter.genre && { genre: filter.genre }),
-        status: 'READY' as const,
-      };
+      assignedToId: filter.userId,
+      ...(filter.language && { language: filter.language }),
+      ...(filter.difficulty && { difficulty: filter.difficulty }),
+      ...(filter.genre && { genre: filter.genre }),
+      status: 'READY' as const,
+    };
   }
 }

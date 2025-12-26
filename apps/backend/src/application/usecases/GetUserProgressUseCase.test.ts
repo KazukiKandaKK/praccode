@@ -4,38 +4,37 @@ import { ISubmissionRepository } from '../../domain/ports/ISubmissionRepository'
 import { IExerciseRepository } from '../../domain/ports/IExerciseRepository';
 
 const mockSubmissionRepository = {
-    findCompletedByUserId: vi.fn(),
+  findCompletedByUserId: vi.fn(),
 } as unknown as ISubmissionRepository;
 
 const mockExerciseRepository = {
-    countAll: vi.fn(),
+  countAll: vi.fn(),
 } as unknown as IExerciseRepository;
 
-
 describe('GetUserProgressUseCase', () => {
-    let useCase: GetUserProgressUseCase;
+  let useCase: GetUserProgressUseCase;
 
-    beforeEach(() => {
-        vi.clearAllMocks();
-        useCase = new GetUserProgressUseCase(mockSubmissionRepository, mockExerciseRepository);
-    });
+  beforeEach(() => {
+    vi.clearAllMocks();
+    useCase = new GetUserProgressUseCase(mockSubmissionRepository, mockExerciseRepository);
+  });
 
-    it('should calculate and return user progress', async () => {
-        mockExerciseRepository.countAll.mockResolvedValue(10);
-        mockSubmissionRepository.findCompletedByUserId.mockResolvedValue([
-            {
-                exerciseId: 'ex-1',
-                updatedAt: new Date(),
-                exercise: { title: 'Ex 1' },
-                answers: [{ score: 80, aspects: { Logic: 8 } }]
-            }
-        ]);
+  it('should calculate and return user progress', async () => {
+    mockExerciseRepository.countAll.mockResolvedValue(10);
+    mockSubmissionRepository.findCompletedByUserId.mockResolvedValue([
+      {
+        exerciseId: 'ex-1',
+        updatedAt: new Date(),
+        exercise: { title: 'Ex 1' },
+        answers: [{ score: 80, aspects: { Logic: 8 } }],
+      },
+    ]);
 
-        const result = await useCase.execute('user-1');
+    const result = await useCase.execute('user-1');
 
-        expect(result.totalExercises).toBe(10);
-        expect(result.completedExercises).toBe(1);
-        expect(result.averageScore).toBe(80);
-        expect(result.aspectScores).toEqual({ Logic: 8 });
-    });
+    expect(result.totalExercises).toBe(10);
+    expect(result.completedExercises).toBe(1);
+    expect(result.averageScore).toBe(80);
+    expect(result.aspectScores).toEqual({ Logic: 8 });
+  });
 });

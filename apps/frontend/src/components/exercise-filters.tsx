@@ -119,4 +119,3 @@ export function ExerciseFilters() {
     </div>
   );
 }
-

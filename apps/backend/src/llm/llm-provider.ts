@@ -20,4 +20,3 @@ export interface LLMProvider {
    */
   checkHealth(): Promise<boolean>;
 }
-

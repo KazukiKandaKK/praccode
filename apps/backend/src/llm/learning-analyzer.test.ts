@@ -15,21 +15,31 @@ const mockLlmClient = llmClient as any;
 // analyzeLearningProgress テスト
 // ============================================
 describe('analyzeLearningProgress', () => {
-    it('提出データがない場合、デフォルトの分析結果を返す', async () => {
-        const result = await analyzeLearningProgress([], []);
-        expect(result.summary).toContain('まだ提出データがありません');
-        expect(result.recommendations).toEqual(['まずは問題に挑戦してみましょう！']);
-    });
+  it('提出データがない場合、デフォルトの分析結果を返す', async () => {
+    const result = await analyzeLearningProgress([], []);
+    expect(result.summary).toContain('まだ提出データがありません');
+    expect(result.recommendations).toEqual(['まずは問題に挑戦してみましょう！']);
+  });
 
-    it('LLMの生成が失敗した場合、フォールバック分析を返す', async () => {
-        mockLlmClient.generateWithOllama.mockRejectedValue(new Error('LLM Error'));
-        const readingSubmissions = [{ exerciseTitle: 'Test', language: 'ts', genre: 'test', score: 50, level: 'C', aspects: null, feedback: '' }];
-        const result = await analyzeLearningProgress(readingSubmissions, []);
-        
-        // Check if it returns a fallback analysis based on stats
-        expect(result.weaknesses).toContain('コードリーディングの精度向上が必要');
-        expect(result.summary).toContain('1回の提出データを分析しました');
-    });
+  it('LLMの生成が失敗した場合、フォールバック分析を返す', async () => {
+    mockLlmClient.generateWithOllama.mockRejectedValue(new Error('LLM Error'));
+    const readingSubmissions = [
+      {
+        exerciseTitle: 'Test',
+        language: 'ts',
+        genre: 'test',
+        score: 50,
+        level: 'C',
+        aspects: null,
+        feedback: '',
+      },
+    ];
+    const result = await analyzeLearningProgress(readingSubmissions, []);
+
+    // Check if it returns a fallback analysis based on stats
+    expect(result.weaknesses).toContain('コードリーディングの精度向上が必要');
+    expect(result.summary).toContain('1回の提出データを分析しました');
+  });
 });
 
 // ============================================
@@ -73,20 +83,44 @@ describe('calculateStats', () => {
     });
 
     it('複数の言語とジャンルにまたがる提出で平均を正しく計算する', () => {
-        const readingSubmissions = [
-          { exerciseTitle: 'E1', language: 'typescript', genre: 'auth', score: 90, level: 'A', aspects: null, feedback: null },
-          { exerciseTitle: 'E2', language: 'typescript', genre: 'auth', score: 70, level: 'B', aspects: null, feedback: null },
-          { exerciseTitle: 'E3', language: 'go', genre: 'database', score: 50, level: 'C', aspects: null, feedback: null },
-        ];
-  
-        const result = calculateStats(readingSubmissions, []);
-  
-        expect(result.avgReadingScore).toBe(70); // (90+70+50)/3
-        expect(result.languageStats['typescript']).toEqual({ count: 2, avgScore: 80 });
-        expect(result.languageStats['go']).toEqual({ count: 1, avgScore: 50 });
-        expect(result.genreStats['auth']).toEqual({ count: 2, avgScore: 80 });
-        expect(result.genreStats['database']).toEqual({ count: 1, avgScore: 50 });
-      });
+      const readingSubmissions = [
+        {
+          exerciseTitle: 'E1',
+          language: 'typescript',
+          genre: 'auth',
+          score: 90,
+          level: 'A',
+          aspects: null,
+          feedback: null,
+        },
+        {
+          exerciseTitle: 'E2',
+          language: 'typescript',
+          genre: 'auth',
+          score: 70,
+          level: 'B',
+          aspects: null,
+          feedback: null,
+        },
+        {
+          exerciseTitle: 'E3',
+          language: 'go',
+          genre: 'database',
+          score: 50,
+          level: 'C',
+          aspects: null,
+          feedback: null,
+        },
+      ];
+
+      const result = calculateStats(readingSubmissions, []);
+
+      expect(result.avgReadingScore).toBe(70); // (90+70+50)/3
+      expect(result.languageStats['typescript']).toEqual({ count: 2, avgScore: 80 });
+      expect(result.languageStats['go']).toEqual({ count: 1, avgScore: 50 });
+      expect(result.genreStats['auth']).toEqual({ count: 2, avgScore: 80 });
+      expect(result.genreStats['database']).toEqual({ count: 1, avgScore: 50 });
+    });
 
     it('ライティング提出の成功率を正しく計算する', () => {
       const writingSubmissions = [
@@ -468,4 +502,3 @@ describe('getRecommendedProblemContext', () => {
     });
   });
 });
-

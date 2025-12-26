@@ -66,9 +66,9 @@ function buildPrompt(input: EvaluateAnswerInput): string {
 }
 
 const llmResponseSchema = z.object({
-    score: z.number(),
-    feedback: z.string(),
-    aspects: z.record(z.string(), z.number()).optional(),
+  score: z.number(),
+  feedback: z.string(),
+  aspects: z.record(z.string(), z.number()).optional(),
 });
 
 export async function evaluateAnswer(input: EvaluateAnswerInput): Promise<EvaluateAnswerOutput> {

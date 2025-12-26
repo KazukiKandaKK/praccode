@@ -194,4 +194,3 @@ export function CreateWritingChallengeDialog({
     </div>
   );
 }
-

@@ -15,7 +15,7 @@
 
 ```bash
 ./llm-tools/scripts/ollama_setup.sh
-````
+```
 
 ### スモークテストを流す
 

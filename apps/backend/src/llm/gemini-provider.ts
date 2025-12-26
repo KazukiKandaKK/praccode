@@ -79,8 +79,11 @@ export class GeminiProvider implements LLMProvider {
 
       // Handle both streaming and non-streaming responses
       try {
-        const lines = responseText.trim().split('\n').filter(line => line.startsWith('[') || line.startsWith('{'));
-        
+        const lines = responseText
+          .trim()
+          .split('\n')
+          .filter((line) => line.startsWith('[') || line.startsWith('{'));
+
         for (const line of lines) {
           // Sometimes the stream response is wrapped in an array, sometimes not.
           const items = JSON.parse(line);
@@ -100,22 +103,22 @@ export class GeminiProvider implements LLMProvider {
           }
         }
       } catch (e) {
-         // If parsing lines fails, try to parse the whole thing as one JSON object
-         try {
-            const data = JSON.parse(responseText);
-            if (data.error) {
-                throw new Error(`Gemini API error: ${data.error.code} - ${data.error.message}`);
-            }
-            if (data.candidates && data.candidates.length > 0) {
-                hasCandidates = true;
-                const texts = data.candidates
-                  .map((candidate: any) => candidate.content?.parts?.[0]?.text)
-                  .filter((text: any): text is string => Boolean(text));
-                allTexts.push(...texts);
-            }
-         } catch (finalError) {
-            throw new Error(`Failed to parse Gemini API response: ${responseText.substring(0, 200)}`);
-         }
+        // If parsing lines fails, try to parse the whole thing as one JSON object
+        try {
+          const data = JSON.parse(responseText);
+          if (data.error) {
+            throw new Error(`Gemini API error: ${data.error.code} - ${data.error.message}`);
+          }
+          if (data.candidates && data.candidates.length > 0) {
+            hasCandidates = true;
+            const texts = data.candidates
+              .map((candidate: any) => candidate.content?.parts?.[0]?.text)
+              .filter((text: any): text is string => Boolean(text));
+            allTexts.push(...texts);
+          }
+        } catch (finalError) {
+          throw new Error(`Failed to parse Gemini API response: ${responseText.substring(0, 200)}`);
+        }
       }
 
       if (!hasCandidates) {

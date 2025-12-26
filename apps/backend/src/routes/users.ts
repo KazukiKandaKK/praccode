@@ -38,7 +38,9 @@ export async function userRoutes(fastify: FastifyInstance) {
   fastify.get('/me', async (request, reply) => {
     const query = getMeQuerySchema.safeParse(request.query);
     if (!query.success) {
-        return reply.status(400).send({ error: 'Invalid query parameters', details: query.error.format() });
+      return reply
+        .status(400)
+        .send({ error: 'Invalid query parameters', details: query.error.format() });
     }
     const { userId } = query.data;
 
@@ -80,7 +82,9 @@ export async function userRoutes(fastify: FastifyInstance) {
   fastify.patch('/me', async (request, reply) => {
     const body = updateProfileSchema.safeParse(request.body);
     if (!body.success) {
-        return reply.status(400).send({ error: 'Invalid request body', details: body.error.format() });
+      return reply
+        .status(400)
+        .send({ error: 'Invalid request body', details: body.error.format() });
     }
     const { userId, name } = body.data;
 
