@@ -1,6 +1,5 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
-import { authRoutes } from './routes/auth.js';
 import { submissionRoutes } from './routes/submissions.js';
 import { userRoutes } from './routes/users.js';
 import { writingRoutes } from './routes/writing.js';
@@ -16,6 +15,19 @@ import { exerciseController } from './infrastructure/web/exerciseController.js';
 import { PrismaSubmissionRepository } from './infrastructure/persistence/PrismaSubmissionRepository.js';
 import { GetUserProgressUseCase } from './application/usecases/GetUserProgressUseCase.js';
 import { progressController } from './infrastructure/web/progressController.js';
+import { PrismaUserRepository } from './infrastructure/persistence/PrismaUserRepository.js';
+import { BcryptPasswordHasher } from './infrastructure/security/BcryptPasswordHasher.js';
+import { CryptoTokenService } from './infrastructure/security/CryptoTokenService.js';
+import { MailEmailService } from './infrastructure/services/MailEmailService.js';
+import { PrismaEmailVerificationTokenRepository } from './infrastructure/persistence/PrismaEmailVerificationTokenRepository.js';
+import { PrismaPasswordResetTokenRepository } from './infrastructure/persistence/PrismaPasswordResetTokenRepository.js';
+import { InitialAssignmentService } from './infrastructure/services/InitialAssignmentService.js';
+import { LoginUseCase } from './application/usecases/LoginUseCase.js';
+import { RegisterUserUseCase } from './application/usecases/RegisterUserUseCase.js';
+import { VerifyEmailUseCase } from './application/usecases/VerifyEmailUseCase.js';
+import { RequestPasswordResetUseCase } from './application/usecases/RequestPasswordResetUseCase.js';
+import { ResetPasswordUseCase } from './application/usecases/ResetPasswordUseCase.js';
+import { authRoutes } from './routes/auth.js';
 
 const fastify = Fastify({
   logger: true,
@@ -30,6 +42,41 @@ const exerciseRepository = new PrismaExerciseRepository();
 const hintRepository = new PrismaHintRepository();
 const submissionRepository = new PrismaSubmissionRepository();
 const hintGenerator = new LLMHintGenerator();
+const userRepository = new PrismaUserRepository();
+const passwordHasher = new BcryptPasswordHasher();
+const tokenService = new CryptoTokenService();
+const emailService = new MailEmailService();
+const emailVerificationTokenRepository = new PrismaEmailVerificationTokenRepository();
+const passwordResetTokenRepository = new PrismaPasswordResetTokenRepository();
+const initialAssignmentService = new InitialAssignmentService();
+
+const loginUseCase = new LoginUseCase(userRepository, passwordHasher);
+const registerUserUseCase = new RegisterUserUseCase(
+  userRepository,
+  passwordHasher,
+  emailVerificationTokenRepository,
+  emailService,
+  tokenService,
+  initialAssignmentService
+);
+const verifyEmailUseCase = new VerifyEmailUseCase(
+  emailVerificationTokenRepository,
+  userRepository,
+  emailService,
+  tokenService
+);
+const requestPasswordResetUseCase = new RequestPasswordResetUseCase(
+  userRepository,
+  passwordResetTokenRepository,
+  tokenService,
+  emailService
+);
+const resetPasswordUseCase = new ResetPasswordUseCase(
+  passwordResetTokenRepository,
+  passwordHasher,
+  userRepository,
+  tokenService
+);
 const generateHintUseCase = new GenerateHintUseCase(
   exerciseRepository,
   hintRepository,
@@ -41,7 +88,17 @@ const getUserProgressUseCase = new GetUserProgressUseCase(submissionRepository, 
 // --- End of Dependency Injection ---
 
 // ルート登録
-fastify.register(authRoutes, { prefix: '/auth' });
+fastify.register(
+  (instance) =>
+    authRoutes(instance, {
+      loginUseCase,
+      registerUserUseCase,
+      verifyEmailUseCase,
+      requestPasswordResetUseCase,
+      resetPasswordUseCase,
+    }),
+  { prefix: '/auth' }
+);
 fastify.register(
   (instance) => exerciseController(instance, listExercisesUseCase, getExerciseByIdUseCase),
   {
