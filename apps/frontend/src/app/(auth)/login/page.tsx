@@ -84,7 +84,14 @@ function LoginForm() {
           </div>
 
           {/* Email Login Form */}
-          <form action={handleSubmit} className="space-y-4">
+          <form
+            onSubmit={async (event) => {
+              event.preventDefault();
+              const formData = new FormData(event.currentTarget);
+              await handleSubmit(formData);
+            }}
+            className="space-y-4"
+          >
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-2">
                 メールアドレス

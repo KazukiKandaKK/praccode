@@ -42,6 +42,7 @@ export default function ExerciseDetailPage() {
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [hints, setHints] = useState<Record<number, string>>({});
   const [loadingHint, setLoadingHint] = useState<number | null>(null);
+  const [hintErrors, setHintErrors] = useState<Record<number, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -103,15 +104,47 @@ export default function ExerciseDetailPage() {
   };
 
   const handleGetHint = async (questionIndex: number) => {
+    if (!session?.user?.id) {
+      router.push('/login');
+      return;
+    }
+
     setLoadingHint(questionIndex);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setHints((prev) => ({
-      ...prev,
-      [questionIndex]:
-        'コードの構造に注目してみましょう。このクラスがどのようなメソッドを持っているか、それぞれのメソッドが何を行っているかを整理してみてください。',
-    }));
-    setLoadingHint(null);
+    setHintErrors((prev) => ({ ...prev, [questionIndex]: '' }));
+
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      // backendは /hints prefix で controller path が /hints のため /hints/hints となる
+      const res = await fetch(`${apiUrl}/hints/hints`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          exerciseId,
+          questionIndex,
+          userId: session.user.id,
+        }),
+      });
+
+      if (!res.ok) {
+        const message =
+          res.status === 404
+            ? 'ヒントが見つかりませんでした'
+            : 'ヒントの取得に失敗しました';
+        setHintErrors((prev) => ({ ...prev, [questionIndex]: message }));
+        return;
+      }
+
+      const data = (await res.json()) as { hint: string };
+      setHints((prev) => ({ ...prev, [questionIndex]: data.hint }));
+    } catch (error) {
+      console.error('Hint fetch error:', error);
+      setHintErrors((prev) => ({
+        ...prev,
+        [questionIndex]: 'ヒントの取得に失敗しました',
+      }));
+    } finally {
+      setLoadingHint(null);
+    }
   };
 
   const handleSubmit = async () => {
@@ -262,7 +295,14 @@ export default function ExerciseDetailPage() {
                       <Lightbulb className="w-4 h-4" />
                       <span className="text-sm font-medium">ヒント</span>
                     </div>
-                    <p className="text-sm text-amber-200">{hints[question.questionIndex]}</p>
+                    <p className="text-sm text-amber-200 whitespace-pre-wrap">
+                      {hints[question.questionIndex]}
+                    </p>
+                  </div>
+                )}
+                {hintErrors[question.questionIndex] && (
+                  <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-300">
+                    {hintErrors[question.questionIndex]}
                   </div>
                 )}
 
