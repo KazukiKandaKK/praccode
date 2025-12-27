@@ -3,8 +3,8 @@
 import { signIn, signOut } from '@/lib/auth';
 import { z } from 'zod';
 
-// Server Actions run on server-side, use container-to-container communication
-const API_URL = process.env.API_URL || 'http://api:3001';
+// Server Actions run on server-side, prefer API_URL then NEXT_PUBLIC_API_URL, fallback to localhost
+const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 const registerSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),

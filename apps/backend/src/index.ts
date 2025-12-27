@@ -192,8 +192,8 @@ const getExerciseByIdUseCase = new GetExerciseByIdUseCase(exerciseRepository);
 const getUserProgressUseCase = new GetUserProgressUseCase(submissionRepository, exerciseRepository);
 // --- End of Dependency Injection ---
 
-// ルート登録
-fastify.register(
+// ルート登録（順番は依存なしだが、awaitで初期化完了を明示）
+await fastify.register(
   (instance) =>
     authRoutes(instance, {
       loginUseCase,
@@ -204,42 +204,50 @@ fastify.register(
     }),
   { prefix: '/auth' }
 );
-fastify.register(
-  (instance) => exerciseController(instance, listExercisesUseCase, getExerciseByIdUseCase),
-  {
-    prefix: '/exercises',
-  }
+await fastify.register(
+  async (instance) => {
+    exerciseController(instance, listExercisesUseCase, getExerciseByIdUseCase);
+  },
+  { prefix: '/exercises' }
 );
-fastify.register(
-  (instance) =>
+await fastify.register(
+  async (instance) => {
     submissionController(instance, {
       listSubmissions: listSubmissionsUseCase,
       getSubmission: getSubmissionUseCase,
       updateSubmissionAnswers: updateSubmissionAnswersUseCase,
       evaluateSubmission: evaluateSubmissionUseCase,
       eventPublisher: evaluationEventPublisher,
-    }),
+    });
+  },
   { prefix: '/submissions' }
 );
-fastify.register((instance) => progressController(instance, getUserProgressUseCase), {
-  prefix: '/me',
-});
-fastify.register((instance) => hintController(instance, generateHintUseCase), {
-  prefix: '/hints',
-});
-fastify.register(
-  (instance) =>
+await fastify.register(
+  async (instance) => {
+    progressController(instance, getUserProgressUseCase);
+  },
+  { prefix: '/me' }
+);
+await fastify.register(
+  async (instance) => {
+    hintController(instance, generateHintUseCase);
+  },
+  { prefix: '/hints' }
+);
+await fastify.register(
+  async (instance) => {
     userController(instance, {
       getProfile: getUserProfileUseCase,
       updateProfile: updateUserProfileUseCase,
       requestEmailChange: requestEmailChangeUseCase,
       confirmEmailChange: confirmEmailChangeUseCase,
       changePassword: changePasswordUseCase,
-    }),
+    });
+  },
   { prefix: '/users' }
 );
-fastify.register(
-  (instance) =>
+await fastify.register(
+  async (instance) => {
     writingRoutes(instance, {
       listChallenges: listWritingChallengesUseCase,
       getChallenge: getWritingChallengeUseCase,
@@ -249,16 +257,19 @@ fastify.register(
       listSubmissions: listWritingSubmissionsUseCase,
       getSubmission: getWritingSubmissionUseCase,
       requestFeedback: requestWritingFeedbackUseCase,
-    }),
+    });
+  },
   { prefix: '/writing' }
 );
-fastify.register((instance) =>
-  dashboardController(instance, {
-    getStats: getDashboardStatsUseCase,
-    getActivity: getDashboardActivityUseCase,
-    getLearningAnalysis: getLearningAnalysisUseCase,
-    generateRecommendation: generateRecommendationUseCase,
-  })
+await fastify.register(
+  async (instance) => {
+    dashboardController(instance, {
+      getStats: getDashboardStatsUseCase,
+      getActivity: getDashboardActivityUseCase,
+      getLearningAnalysis: getLearningAnalysisUseCase,
+      generateRecommendation: generateRecommendationUseCase,
+    });
+  }
 );
 
 // エラーハンドリング

@@ -13,12 +13,12 @@ const loginSchema = z.object({
 // This file runs on server-side, so always use API_URL
 // Note: NextAuth.js may need explicit env var access
 const getApiUrl = () => {
-  // Try API_URL first (for Docker container-to-container)
-  if (process.env.API_URL) {
-    return process.env.API_URL;
-  }
-  // Fallback to api service name (Docker Compose)
-  return 'http://api:3001';
+  // Prefer explicit API_URL (Docker container-to-container)
+  if (process.env.API_URL) return process.env.API_URL;
+  // Fallback to frontend-exposed base URL if running locally
+  if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+  // Final fallback for local dev without env
+  return 'http://localhost:3001';
 };
 
 const API_URL = getApiUrl();

@@ -49,10 +49,12 @@ interface LearningAnalysis {
   cached: boolean;
 }
 
+const apiBase =
+  process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
 async function getDashboardStats(userId: string): Promise<DashboardStats | null> {
   try {
-    const apiUrl = process.env.API_URL || 'http://localhost:3001';
-    const response = await fetch(`${apiUrl}/dashboard/stats?userId=${userId}`, {
+    const response = await fetch(`${apiBase}/dashboard/stats?userId=${userId}`, {
       cache: 'no-store',
     });
     if (!response.ok) return null;
@@ -65,8 +67,7 @@ async function getDashboardStats(userId: string): Promise<DashboardStats | null>
 
 async function getLearningAnalysis(userId: string): Promise<LearningAnalysis | null> {
   try {
-    const apiUrl = process.env.API_URL || 'http://localhost:3001';
-    const response = await fetch(`${apiUrl}/dashboard/analysis?userId=${userId}`, {
+    const response = await fetch(`${apiBase}/dashboard/analysis?userId=${userId}`, {
       cache: 'no-store',
     });
     if (!response.ok) return null;
@@ -86,8 +87,7 @@ interface ActivityResponse {
 
 async function getDashboardActivity(userId: string): Promise<ActivityResponse | null> {
   try {
-    const apiUrl = process.env.API_URL || 'http://localhost:3001';
-    const response = await fetch(`${apiUrl}/dashboard/activity?userId=${userId}`, {
+    const response = await fetch(`${apiBase}/dashboard/activity?userId=${userId}`, {
       cache: 'no-store',
     });
     if (!response.ok) return null;
