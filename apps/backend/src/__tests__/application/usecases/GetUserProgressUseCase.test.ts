@@ -5,6 +5,12 @@ import { IExerciseRepository } from '@/domain/ports/IExerciseRepository';
 
 const mockSubmissionRepository: Mocked<ISubmissionRepository> = {
   findCompletedByUserId: vi.fn(),
+  listByUser: vi.fn(),
+  findById: vi.fn(),
+  updateAnswers: vi.fn(),
+  getEvaluationTarget: vi.fn(),
+  markStatus: vi.fn(),
+  updateAnswerEvaluation: vi.fn(),
 };
 
 const mockExerciseRepository: Mocked<IExerciseRepository> = {

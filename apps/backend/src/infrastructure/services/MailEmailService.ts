@@ -3,6 +3,7 @@ import {
   sendEmailVerification,
   sendPasswordResetEmail,
   sendWelcomeEmail,
+  sendEmailChangeConfirmation,
 } from '../../lib/mail';
 
 export class MailEmailService implements IEmailService {
@@ -16,5 +17,13 @@ export class MailEmailService implements IEmailService {
 
   async sendPasswordResetEmail(to: string, name: string | null, resetUrl: string): Promise<void> {
     await sendPasswordResetEmail(to, name ?? undefined, resetUrl);
+  }
+
+  async sendEmailChangeConfirmation(
+    currentEmail: string,
+    newEmail: string,
+    confirmUrl: string
+  ): Promise<void> {
+    await sendEmailChangeConfirmation(currentEmail, newEmail, confirmUrl);
   }
 }
