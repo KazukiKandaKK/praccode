@@ -44,8 +44,8 @@
 ┌─────────────────┐
 │   Fastify API   │  (バックエンド)
 │                 │
-│  ┌──────────┐   │
-│  │  Prisma  │   │
+│  ┌──────────┐   │  domain / application / infrastructure / web(controller)
+│  │  Prisma  │   │  (Clean Architecture ベース)
 │  └────┬─────┘   │
 └───────┼─────────┘
         │
@@ -81,10 +81,11 @@
 ```
 praccode/
 ├── apps/
-│   ├── web/          # Next.js フロントエンド
-│   └── api/          # Fastify バックエンド
+│   ├── frontend/     # Next.js フロントエンド (App Router)
+│   └── backend/      # Fastify バックエンド (Clean Architecture: domain/application/infrastructure/web)
 ├── packages/
 │   └── shared/       # 共通型定義
+├── docs/             # ドキュメント（デモ、設計メモ）
 ├── package.json      # pnpm workspace 設定
 └── turbo.json        # Turborepo 設定
 ```
@@ -269,18 +270,20 @@ make db-studio  # Prisma Studio 起動
 make clean      # クリーンアップ
 ```
 
-## テスト
+## テスト / Lint
 
 ### テストの実行
 
 ```bash
-# バックエンドのテスト
+# バックエンド
+pnpm --filter @praccode/api lint
 pnpm --filter @praccode/api test
 
-# フロントエンドのテスト
+# フロントエンド
+pnpm --filter @praccode/web lint
 pnpm --filter @praccode/web test
 
-# 全テスト + カバレッジ
+# カバレッジ付き
 pnpm --filter @praccode/api test --coverage
 pnpm --filter @praccode/web test --coverage
 ```
