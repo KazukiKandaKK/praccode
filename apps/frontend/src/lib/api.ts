@@ -1,4 +1,58 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001';
+
+export type LearningPlan = {
+  summary: string;
+  focusAreas: string[];
+  weeklyPlan: Array<{
+    title: string;
+    goals: string[];
+    activities: string[];
+    deliverables: string[];
+  }>;
+  quickTests: Array<{
+    name: string;
+    task: string;
+    expectedAnswer: string;
+    evaluationCriteria: string[];
+  }>;
+  checkpoints: Array<{
+    metric: string;
+    target: string;
+    when: string;
+  }>;
+  reminders?: string[];
+};
+
+export type LearningPlanRecord = {
+  id: string;
+  userId: string;
+  plan: LearningPlan;
+  presetAnswers: Array<{ question: string; answer: string }>;
+  targetLanguage: string | null;
+  modelId: string | null;
+  temperature: number | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type MentorFeedback = {
+  overall: string;
+  strengths: string[];
+  improvements: Array<{ area: string; advice: string; example?: string }>;
+  suggestedChecks?: Array<{ name: string; prompt: string; whatToLookFor: string[] }>;
+  nextFocus: string[];
+};
+
+export type MentorFeedbackRecord = {
+  id: string;
+  userId: string;
+  submissionId: string;
+  feedback: MentorFeedback;
+  modelId: string | null;
+  temperature: number | null;
+  createdAt: string;
+  updatedAt: string;
+};
 
 export class ApiError extends Error {
   constructor(
@@ -19,6 +73,44 @@ async function handleResponse<T>(response: Response): Promise<T> {
 }
 
 export const api = {
+  // Mentor
+  async generateLearningPlan(params: {
+    userId: string;
+    presetAnswers: Array<{ question: string; answer: string }>;
+    targetLanguage?: string;
+  }) {
+    const response = await fetch(`${API_BASE_URL}/mentor/learning-plan`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+    return handleResponse<LearningPlan>(response);
+  },
+
+  async getLatestLearningPlan(userId: string) {
+    const response = await fetch(
+      `${API_BASE_URL}/mentor/learning-plan/latest?userId=${encodeURIComponent(userId)}`,
+      { cache: 'no-store' }
+    );
+    return handleResponse<LearningPlanRecord>(response);
+  },
+
+  async getLearningPlanHistory(userId: string, limit = 20) {
+    const response = await fetch(
+      `${API_BASE_URL}/mentor/learning-plan/history?userId=${encodeURIComponent(userId)}&limit=${limit}`,
+      { cache: 'no-store' }
+    );
+    return handleResponse<LearningPlanRecord[]>(response);
+  },
+
+  async getMentorFeedbackHistory(userId: string, limit = 20) {
+    const response = await fetch(
+      `${API_BASE_URL}/mentor/feedback/history?userId=${encodeURIComponent(userId)}&limit=${limit}`,
+      { cache: 'no-store' }
+    );
+    return handleResponse<MentorFeedbackRecord[]>(response);
+  },
+
   // Exercises
   async getExercises(params?: { language?: string; difficulty?: number; page?: number }) {
     const searchParams = new URLSearchParams();

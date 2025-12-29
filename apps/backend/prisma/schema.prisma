@@ -32,6 +32,8 @@ model User {
   passwordResetTokens       PasswordResetToken[]
   writingSubmissions        WritingSubmission[]
   learningAnalysis          UserLearningAnalysis?
+  learningPlans             LearningPlan[]
+  mentorFeedbacks           MentorFeedbackLog[]
 
   @@map("users")
 }
@@ -178,6 +180,7 @@ model Submission {
   exercise Exercise           @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
   user     User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   answers  SubmissionAnswer[]
+  mentorFeedbacks MentorFeedbackLog[]
 
   @@map("submissions")
 }
@@ -309,3 +312,72 @@ model UserLearningAnalysis {
   @@map("user_learning_analyses")
 }
 
+// ========== 学習計画 ==========
+
+model LearningPlan {
+  id             String   @id @default(uuid())
+  userId         String   @map("user_id")
+  plan           Json
+  presetAnswers  Json     @default("[]") @map("preset_answers")
+  targetLanguage String?  @map("target_language")
+  modelId        String?  @map("model_id")
+  temperature    Float?   @map("temperature")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("learning_plans")
+}
+
+model MentorFeedbackLog {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  submissionId String   @map("submission_id")
+  feedback     Json
+  modelId      String?  @map("model_id")
+  temperature  Float?   @map("temperature")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([submissionId])
+  @@map("mentor_feedback_logs")
+}
+
+// ========== Mastra Memory ==========
+
+model MastraThread {
+  id         String          @id @default(uuid())
+  resourceId String          @map("resource_id")
+  title      String?
+  metadata   Json?
+  createdAt  DateTime        @default(now()) @map("created_at")
+  updatedAt  DateTime        @updatedAt @map("updated_at")
+
+  messages MastraMessage[]
+
+  @@index([resourceId])
+  @@map("mastra_threads")
+}
+
+model MastraMessage {
+  id          String   @id @default(uuid())
+  threadId    String   @map("thread_id")
+  role        String
+  content     Json
+  type        String   @default("text")
+  toolCallIds Json?    @map("tool_call_ids")
+  toolCallArgs Json?   @map("tool_call_args")
+  toolNames   Json?    @map("tool_names")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  thread MastraThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([threadId])
+  @@map("mastra_messages")
+}

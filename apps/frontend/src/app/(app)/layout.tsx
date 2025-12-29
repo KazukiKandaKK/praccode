@@ -17,7 +17,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950">
           <div className="flex min-h-screen">
             <Navigation user={session.user} />
-            <main className="flex-1 min-w-0 md:ml-64">{children}</main>
+            <main className="flex-1 min-w-0 md:ml-64 pt-14 md:pt-0">{children}</main>
           </div>
         </div>
       </EvaluationToastProvider>

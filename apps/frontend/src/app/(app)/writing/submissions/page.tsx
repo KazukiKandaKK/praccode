@@ -125,3 +125,4 @@ function StatCard({ label, value, icon }: { label: string; value: string; icon: 
     </Card>
   );
 }
+

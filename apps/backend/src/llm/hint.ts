@@ -27,3 +27,4 @@ export async function generateHint(input: GenerateHintInput): Promise<string> {
 
   return response.trim();
 }
+

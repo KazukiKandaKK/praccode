@@ -63,6 +63,16 @@ import { GenerateRecommendationUseCase } from './application/usecases/dashboard/
 import { dashboardController } from './infrastructure/web/dashboardController.js';
 import { ExerciseGeneratorService } from './infrastructure/services/ExerciseGeneratorService.js';
 import { LlmLearningAnalyzer } from './infrastructure/services/LlmLearningAnalyzer.js';
+import { MentorAgent } from './mastra/mentorAgent.js';
+import { GenerateLearningPlanWithAgentUseCase } from './application/usecases/mentor/GenerateLearningPlanWithAgentUseCase.js';
+import { GenerateSubmissionFeedbackWithAgentUseCase } from './application/usecases/mentor/GenerateSubmissionFeedbackWithAgentUseCase.js';
+import { mentorController } from './infrastructure/web/mentorController.js';
+import { PrismaLearningPlanRepository } from './infrastructure/persistence/PrismaLearningPlanRepository.js';
+import { GetLatestLearningPlanUseCase } from './application/usecases/mentor/GetLatestLearningPlanUseCase.js';
+import { PrismaMastraMemory } from './mastra/PrismaMastraMemory.js';
+import { PrismaMentorFeedbackRepository } from './infrastructure/persistence/PrismaMentorFeedbackRepository.js';
+import { ListLearningPlansUseCase } from './application/usecases/mentor/ListLearningPlansUseCase.js';
+import { ListMentorFeedbackUseCase } from './application/usecases/mentor/ListMentorFeedbackUseCase.js';
 
 const fastify = Fastify({
   logger: true,
@@ -126,6 +136,10 @@ const userAccountRepository = new PrismaUserAccountRepository();
 const emailChangeTokenRepository = new PrismaEmailChangeTokenRepository();
 const dashboardRepository = new PrismaDashboardRepository();
 const learningAnalyzer = new LlmLearningAnalyzer();
+const mentorMemory = new PrismaMastraMemory();
+const mentorAgent = new MentorAgent({ memory: mentorMemory });
+const learningPlanRepository = new PrismaLearningPlanRepository();
+const mentorFeedbackRepository = new PrismaMentorFeedbackRepository();
 const listWritingChallengesUseCase = new ListWritingChallengesUseCase(writingChallengeRepository);
 const getWritingChallengeUseCase = new GetWritingChallengeUseCase(writingChallengeRepository);
 const autoGenerateWritingChallengeUseCase = new AutoGenerateWritingChallengeUseCase(
@@ -182,6 +196,22 @@ const generateRecommendationUseCase = new GenerateRecommendationUseCase(
   writingChallengeGenerator,
   fastify.log
 );
+const generateLearningPlanWithAgentUseCase = new GenerateLearningPlanWithAgentUseCase(
+  userAccountRepository,
+  submissionRepository,
+  exerciseRepository,
+  learningPlanRepository,
+  mentorAgent
+);
+const generateSubmissionFeedbackWithAgentUseCase = new GenerateSubmissionFeedbackWithAgentUseCase(
+  submissionRepository,
+  exerciseRepository,
+  mentorFeedbackRepository,
+  mentorAgent
+);
+const getLatestLearningPlanUseCase = new GetLatestLearningPlanUseCase(learningPlanRepository);
+const listLearningPlansUseCase = new ListLearningPlansUseCase(learningPlanRepository);
+const listMentorFeedbackUseCase = new ListMentorFeedbackUseCase(mentorFeedbackRepository);
 const generateHintUseCase = new GenerateHintUseCase(
   exerciseRepository,
   hintRepository,
@@ -271,6 +301,17 @@ await fastify.register(
     });
   }
 );
+await fastify.register(
+  async (instance) => {
+    mentorController(instance, {
+      generateLearningPlan: generateLearningPlanWithAgentUseCase,
+      generateSubmissionFeedback: generateSubmissionFeedbackWithAgentUseCase,
+      getLatestLearningPlan: getLatestLearningPlanUseCase,
+      listLearningPlans: listLearningPlansUseCase,
+      listMentorFeedback: listMentorFeedbackUseCase,
+    });
+  }
+);
 
 // エラーハンドリング
 fastify.setErrorHandler((error, request, reply) => {
@@ -293,7 +334,8 @@ fastify.setErrorHandler((error, request, reply) => {
 const start = async () => {
   try {
     const port = parseInt(process.env.PORT || '3001', 10);
-    const host = process.env.HOST || '0.0.0.0';
+    // Bind to IPv6 any to allow ::1/localhost (covers IPv4 on most platforms)
+    const host = process.env.HOST || '::';
 
     await fastify.listen({ port, host });
     console.info(`Server running at http://${host}:${port}`);

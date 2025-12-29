@@ -30,3 +30,4 @@ export interface AspectScore {
   score: number;
   count: number;
 }
+

@@ -15,6 +15,7 @@ import {
   ChevronRight,
   PenTool,
   GraduationCap,
+  Sparkles,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { logout } from '@/app/actions/auth';
@@ -93,6 +94,7 @@ export function Navigation({ user }: NavigationProps) {
         { href: '/writing/submissions', label: 'コードライティング', icon: PenTool },
       ],
     },
+    { href: '/mentor', label: 'メンター', icon: Sparkles },
   ];
 
   const isMenuActive = (item: MenuItem): boolean => {
