@@ -1,5 +1,5 @@
 import { ICodeWritingFeedbackGenerator, CodeWritingFeedbackInput } from '../../domain/ports/ICodeWritingFeedbackGenerator';
-import { generateCodeReview } from '../../llm/code-reviewer';
+import { generateCodeReview } from '../llm/code-reviewer';
 
 export class CodeWritingFeedbackGenerator implements ICodeWritingFeedbackGenerator {
   async generate(input: CodeWritingFeedbackInput): Promise<string> {

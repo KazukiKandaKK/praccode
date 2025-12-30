@@ -6,8 +6,8 @@ import { UpdateSubmissionAnswersUseCase } from '../../application/usecases/submi
 import { EvaluateSubmissionUseCase } from '../../application/usecases/submissions/EvaluateSubmissionUseCase.js';
 import { IEvaluationEventPublisher } from '../../domain/ports/IEvaluationEventPublisher.js';
 import { ApplicationError } from '../../application/errors/ApplicationError.js';
-import { PromptSanitizer } from '../../llm/prompt-sanitizer.js';
-import { PromptInjectionError } from '../../llm/prompt-injection-error.js';
+import { PromptSanitizer } from '../llm/prompt-sanitizer.js';
+import { PromptInjectionError } from '../llm/prompt-injection-error.js';
 
 const answerInputSchema = z.object({
   answers: z.array(

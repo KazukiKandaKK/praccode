@@ -6,7 +6,7 @@ import type {
   LanguageModelV1StreamPart,
 } from '@ai-sdk/provider';
 import { ReadableStream } from 'node:stream/web';
-import { generateWithOllama } from '../llm/llm-client';
+import { generateWithOllama } from '../infrastructure/llm/llm-client';
 
 const FALLBACK_MODEL = process.env.OLLAMA_MODEL || 'qwen2.5:7b';
 const OLLAMA_TIMEOUT_MS = Number(process.env.OLLAMA_TIMEOUT_MS || 120_000);

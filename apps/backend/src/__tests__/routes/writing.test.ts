@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Fastify, { type FastifyRequest, type FastifyReply, FastifyInstance } from 'fastify';
-import { writingRoutes, WritingRouteDeps } from '@/routes/writing';
+import { writingRoutes, WritingRouteDeps } from '@/infrastructure/web/writingRoutes';
 
 type MockFn = ReturnType<typeof vi.fn>;
 

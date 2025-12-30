@@ -1,6 +1,6 @@
 import { IDashboardRepository } from '../../../domain/ports/IDashboardRepository';
 import { GetLearningAnalysisUseCase } from './GetLearningAnalysisUseCase';
-import { getRecommendedProblemContext } from '../../../llm/learning-analyzer';
+import { getRecommendedProblemContext } from '../../../infrastructure/llm/learning-analyzer';
 import { IExerciseGenerator } from '../../../domain/ports/IExerciseGenerator';
 import { IWritingChallengeGenerator } from '../../../domain/ports/IWritingChallengeGenerator';
 

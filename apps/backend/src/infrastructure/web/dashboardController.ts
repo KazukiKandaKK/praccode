@@ -4,8 +4,8 @@ import { GetDashboardStatsUseCase } from '../../application/usecases/dashboard/G
 import { GetDashboardActivityUseCase } from '../../application/usecases/dashboard/GetDashboardActivityUseCase.js';
 import { GetLearningAnalysisUseCase } from '../../application/usecases/dashboard/GetLearningAnalysisUseCase.js';
 import { GenerateRecommendationUseCase } from '../../application/usecases/dashboard/GenerateRecommendationUseCase.js';
-import { PromptSanitizer } from '../../llm/prompt-sanitizer.js';
-import { PromptInjectionError } from '../../llm/prompt-injection-error.js';
+import { PromptSanitizer } from '../llm/prompt-sanitizer.js';
+import { PromptInjectionError } from '../llm/prompt-injection-error.js';
 
 const statsQuerySchema = z.object({
   userId: z.string().uuid(),

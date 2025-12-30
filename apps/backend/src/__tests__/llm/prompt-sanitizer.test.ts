@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { PromptSanitizer } from '@/llm/prompt-sanitizer';
-import { PromptInjectionError } from '@/llm/prompt-injection-error';
+import { PromptSanitizer } from '@/infrastructure/llm/prompt-sanitizer';
+import { PromptInjectionError } from '@/infrastructure/llm/prompt-injection-error';
 
 describe('PromptSanitizer', () => {
   describe('validateLength', () => {

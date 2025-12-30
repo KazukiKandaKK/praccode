@@ -5,10 +5,10 @@ import {
   generateFallbackAnalysis,
   getRecommendedProblemContext,
   Stats,
-} from '@/llm/learning-analyzer';
-import * as llmClient from '@/llm/llm-client';
+} from '@/infrastructure/llm/learning-analyzer';
+import * as llmClient from '@/infrastructure/llm/llm-client';
 
-vi.mock('@/llm/llm-client');
+vi.mock('@/infrastructure/llm/llm-client');
 const mockLlmClient = llmClient as any;
 
 // ============================================

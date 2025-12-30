@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
-import { scoreToLevel, normalizeScore, evaluateAnswer } from '@/llm/evaluator';
-import * as llmClient from '@/llm/llm-client';
+import { scoreToLevel, normalizeScore, evaluateAnswer } from '@/infrastructure/llm/evaluator';
+import * as llmClient from '@/infrastructure/llm/llm-client';
 
-vi.mock('@/llm/llm-client');
+vi.mock('@/infrastructure/llm/llm-client');
 const mockLlmClient = llmClient as any;
 
 // ============================================

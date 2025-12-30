@@ -1,6 +1,6 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
-import { writingRoutes } from './routes/writing.js';
+import { writingRoutes } from './infrastructure/web/writingRoutes.js';
 import { hintController } from './infrastructure/web/hintController.js';
 import { GenerateHintUseCase } from './application/usecases/GenerateHintUseCase.js';
 import { PrismaExerciseRepository } from './infrastructure/persistence/PrismaExerciseRepository.js';
@@ -24,7 +24,7 @@ import { RegisterUserUseCase } from './application/usecases/RegisterUserUseCase.
 import { VerifyEmailUseCase } from './application/usecases/VerifyEmailUseCase.js';
 import { RequestPasswordResetUseCase } from './application/usecases/RequestPasswordResetUseCase.js';
 import { ResetPasswordUseCase } from './application/usecases/ResetPasswordUseCase.js';
-import { authRoutes } from './routes/auth.js';
+import { authRoutes } from './infrastructure/web/authRoutes.js';
 import { CodeExecutorService } from './infrastructure/services/CodeExecutorService.js';
 import { WritingChallengeGenerator } from './infrastructure/services/WritingChallengeGenerator.js';
 import { CodeWritingFeedbackGenerator } from './infrastructure/services/CodeWritingFeedbackGenerator.js';

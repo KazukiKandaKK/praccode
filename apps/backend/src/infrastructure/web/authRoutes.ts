@@ -1,14 +1,14 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import type { LoginInput, LoginResult } from '../application/usecases/LoginUseCase.js';
+import type { LoginInput, LoginResult } from '../../application/usecases/LoginUseCase.js';
 import type {
   RegisterUserInput,
   RegisterUserResult,
-} from '../application/usecases/RegisterUserUseCase.js';
-import type { VerifyEmailInput } from '../application/usecases/VerifyEmailUseCase.js';
-import type { RequestPasswordResetInput } from '../application/usecases/RequestPasswordResetUseCase.js';
-import type { ResetPasswordInput } from '../application/usecases/ResetPasswordUseCase.js';
-import { ApplicationError } from '../application/errors/ApplicationError.js';
+} from '../../application/usecases/RegisterUserUseCase.js';
+import type { VerifyEmailInput } from '../../application/usecases/VerifyEmailUseCase.js';
+import type { RequestPasswordResetInput } from '../../application/usecases/RequestPasswordResetUseCase.js';
+import type { ResetPasswordInput } from '../../application/usecases/ResetPasswordUseCase.js';
+import { ApplicationError } from '../../application/errors/ApplicationError.js';
 
 const loginSchema = z.object({
   email: z.string().email(),

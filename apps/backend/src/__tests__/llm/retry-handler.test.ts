@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { retryWithBackoff, isRateLimitError } from '@/llm/retry-handler';
+import { retryWithBackoff, isRateLimitError } from '@/infrastructure/llm/retry-handler';
 
 describe('retry-handler', () => {
   describe('isRateLimitError', () => {

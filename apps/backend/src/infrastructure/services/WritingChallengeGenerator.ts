@@ -1,5 +1,5 @@
 import { IWritingChallengeGenerator, WritingChallengeGenerateInput, WritingChallengeGenerated } from '../../domain/ports/IWritingChallengeGenerator';
-import { generateWritingChallenge } from '../../llm/writing-generator';
+import { generateWritingChallenge } from '../llm/writing-generator';
 
 export class WritingChallengeGenerator implements IWritingChallengeGenerator {
   async generate(input: WritingChallengeGenerateInput): Promise<WritingChallengeGenerated> {

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import Fastify, { FastifyInstance } from 'fastify';
-import { authRoutes, AuthControllerDeps } from '@/routes/auth';
+import { authRoutes, AuthControllerDeps } from '@/infrastructure/web/authRoutes';
 import { ApplicationError } from '@/application/errors/ApplicationError';
 import type { LoginInput, LoginResult } from '@/application/usecases/LoginUseCase';
 import type {

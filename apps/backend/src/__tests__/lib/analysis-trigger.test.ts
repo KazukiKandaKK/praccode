@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { triggerLearningAnalysis } from '@/lib/analysis-trigger';
+import { triggerLearningAnalysis } from '@/infrastructure/services/LearningAnalysisTrigger';
 import { prisma } from '@/lib/prisma';
-import * as learningAnalyzer from '@/llm/learning-analyzer';
+import * as learningAnalyzer from '@/infrastructure/llm/learning-analyzer';
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
@@ -20,7 +20,7 @@ vi.mock('@/lib/prisma', () => ({
   },
 }));
 
-vi.mock('@/llm/learning-analyzer');
+vi.mock('@/infrastructure/llm/learning-analyzer');
 
 const mockPrisma = prisma as any;
 const mockLearningAnalyzer = learningAnalyzer as any;

@@ -10,8 +10,8 @@ import { GetLatestLearningPlanUseCase } from '@/application/usecases/mentor/GetL
 import { ListLearningPlansUseCase } from '@/application/usecases/mentor/ListLearningPlansUseCase';
 import { ListMentorFeedbackUseCase } from '@/application/usecases/mentor/ListMentorFeedbackUseCase';
 import { UpdateMentorWorkflowStepUseCase } from '@/application/usecases/mentor/UpdateMentorWorkflowStepUseCase';
-import { PromptSanitizer } from '@/llm/prompt-sanitizer';
-import { PromptInjectionError } from '@/llm/prompt-injection-error';
+import { PromptSanitizer } from '@/infrastructure/llm/prompt-sanitizer';
+import { PromptInjectionError } from '@/infrastructure/llm/prompt-injection-error';
 
 const planSchema = z.object({
   userId: z.string().uuid(),

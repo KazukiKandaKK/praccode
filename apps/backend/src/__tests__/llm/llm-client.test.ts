@@ -1,15 +1,15 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
-import { OllamaProvider } from '@/llm/ollama-provider';
-import { GeminiProvider } from '@/llm/gemini-provider';
-import { OpenAIProvider } from '@/llm/openai-provider';
-import { getGlobalRateLimiter } from '@/llm/rate-limiter';
-import { retryWithBackoff } from '@/llm/retry-handler';
+import { OllamaProvider } from '@/infrastructure/llm/ollama-provider';
+import { GeminiProvider } from '@/infrastructure/llm/gemini-provider';
+import { OpenAIProvider } from '@/infrastructure/llm/openai-provider';
+import { getGlobalRateLimiter } from '@/infrastructure/llm/rate-limiter';
+import { retryWithBackoff } from '@/infrastructure/llm/retry-handler';
 
-vi.mock('@/llm/ollama-provider');
-vi.mock('@/llm/gemini-provider');
-vi.mock('@/llm/openai-provider');
-vi.mock('@/llm/rate-limiter');
-vi.mock('@/llm/retry-handler');
+vi.mock('@/infrastructure/llm/ollama-provider');
+vi.mock('@/infrastructure/llm/gemini-provider');
+vi.mock('@/infrastructure/llm/openai-provider');
+vi.mock('@/infrastructure/llm/rate-limiter');
+vi.mock('@/infrastructure/llm/retry-handler');
 
 describe('LLM Client', () => {
   afterEach(() => {
@@ -19,21 +19,21 @@ describe('LLM Client', () => {
 
   describe('getLLMProvider', () => {
     it('should return OllamaProvider by default', async () => {
-      const { getLLMProvider } = await import('@/llm/llm-client');
+      const { getLLMProvider } = await import('@/infrastructure/llm/llm-client');
       const provider = getLLMProvider();
       expect(provider).toBeInstanceOf(OllamaProvider);
     });
 
     it('should return GeminiProvider when env var is set', async () => {
       vi.stubEnv('LLM_PROVIDER', 'gemini');
-      const { getLLMProvider } = await import('@/llm/llm-client');
+      const { getLLMProvider } = await import('@/infrastructure/llm/llm-client');
       const provider = getLLMProvider();
       expect(provider).toBeInstanceOf(GeminiProvider);
     });
 
     it('should return OpenAIProvider when env var is set', async () => {
       vi.stubEnv('LLM_PROVIDER', 'openai');
-      const { getLLMProvider } = await import('@/llm/llm-client');
+      const { getLLMProvider } = await import('@/infrastructure/llm/llm-client');
       const provider = getLLMProvider();
       expect(provider).toBeInstanceOf(OpenAIProvider);
     });
@@ -42,7 +42,7 @@ describe('LLM Client', () => {
   describe('generateWithOllama', () => {
     const mockRateLimiter = {
       acquire: vi.fn().mockResolvedValue(undefined),
-    } as unknown as import('@/llm/rate-limiter').RateLimiter;
+    } as unknown as import('@/infrastructure/llm/rate-limiter').RateLimiter;
     const mockProvider = { generate: vi.fn().mockResolvedValue('response') };
 
     beforeEach(() => {
@@ -52,7 +52,7 @@ describe('LLM Client', () => {
     });
 
     it('should call its dependencies', async () => {
-      const { generateWithOllama } = await import('@/llm/llm-client');
+      const { generateWithOllama } = await import('@/infrastructure/llm/llm-client');
       await generateWithOllama('prompt');
       expect(mockRateLimiter.acquire).toHaveBeenCalled();
       expect(retryWithBackoff).toHaveBeenCalled();
@@ -63,7 +63,7 @@ describe('LLM Client', () => {
       const rateLimitError = new Error('429 rate limit');
       mockProvider.generate.mockRejectedValue(rateLimitError);
 
-      const { generateWithOllama } = await import('@/llm/llm-client');
+      const { generateWithOllama } = await import('@/infrastructure/llm/llm-client');
 
       // The retry handler will catch and re-throw, so we expect it to be thrown here
       await expect(generateWithOllama('prompt')).rejects.toThrow(rateLimitError);

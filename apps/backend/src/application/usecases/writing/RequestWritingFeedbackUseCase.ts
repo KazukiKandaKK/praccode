@@ -2,7 +2,7 @@ import { IWritingSubmissionRepository } from '../../../domain/ports/IWritingSubm
 import { ICodeWritingFeedbackGenerator } from '../../../domain/ports/ICodeWritingFeedbackGenerator';
 import { ILlmHealthChecker } from '../../../domain/ports/ILlmHealthChecker';
 import { ApplicationError } from '../../errors/ApplicationError';
-import { PromptSanitizer } from '../../../llm/prompt-sanitizer';
+import { PromptSanitizer } from '../../../infrastructure/llm/prompt-sanitizer';
 
 export class RequestWritingFeedbackUseCase {
   constructor(

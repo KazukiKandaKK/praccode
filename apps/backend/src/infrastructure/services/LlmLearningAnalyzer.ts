@@ -1,5 +1,5 @@
 import { ILearningAnalyzer, LearningAnalysisResult, ReadingAnalysisItem, WritingAnalysisItem } from '../../domain/ports/ILearningAnalyzer';
-import { analyzeLearningProgress } from '../../llm/learning-analyzer';
+import { analyzeLearningProgress } from '../llm/learning-analyzer';
 
 export class LlmLearningAnalyzer implements ILearningAnalyzer {
   async analyze(

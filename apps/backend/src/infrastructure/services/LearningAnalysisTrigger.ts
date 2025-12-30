@@ -3,7 +3,7 @@
  * 一定条件で学習分析を実行する
  */
 
-import { prisma } from './prisma.js';
+import { prisma } from '../../lib/prisma.js';
 import { analyzeLearningProgress } from '../llm/learning-analyzer.js';
 
 // 分析トリガー条件: N回提出ごと

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { OllamaProvider } from '@/llm/ollama-provider';
+import { OllamaProvider } from '@/infrastructure/llm/ollama-provider';
 
 // Mock global fetch
 const mockFetch = vi.fn();

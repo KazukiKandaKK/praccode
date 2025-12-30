@@ -1,5 +1,5 @@
 import { IAnswerEvaluationService, EvaluateAnswerInput, EvaluateAnswerResult } from '../../domain/ports/IAnswerEvaluationService';
-import { evaluateAnswer } from '../../llm/evaluator';
+import { evaluateAnswer } from '../llm/evaluator';
 
 export class AnswerEvaluationService implements IAnswerEvaluationService {
   async evaluate(input: EvaluateAnswerInput): Promise<EvaluateAnswerResult> {
