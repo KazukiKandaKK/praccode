@@ -63,27 +63,6 @@ export default function RegisterPage() {
                 </div>
               )}
 
-              {/* GitHub Register */}
-              <form action={loginWithGitHub}>
-                <button
-                  type="submit"
-                  className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-xl transition-colors mb-4"
-                >
-                  <Github className="w-5 h-5" />
-                  GitHub で登録
-                </button>
-              </form>
-
-              {/* Divider */}
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-slate-700"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-slate-800/50 text-slate-400">または</span>
-                </div>
-              </div>
-
               {/* Email Register Form */}
               <form
                 onSubmit={async (event) => {
