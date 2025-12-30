@@ -6,6 +6,7 @@ import {
   api,
   ApiError,
   LearningPlanRecord,
+  MentorAssessmentStatus,
   MentorFeedbackRecord,
   MentorSummary,
   MentorSprint,
@@ -13,6 +14,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { GenerateRecommendationButton } from '@/components/generate-recommendation-button';
 import {
   Sparkles,
   Brain,
@@ -20,8 +22,9 @@ import {
   ArrowUpRight,
   Clock,
   BookOpen,
+  ClipboardCheck,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, getDifficultyLabel, getLanguageLabel } from '@/lib/utils';
 import { MentorWorkflowNav } from '@/components/mentor/mentor-workflow-nav';
 
 type Props = {
@@ -37,6 +40,8 @@ export function MentorOverview({ userId, userName }: Props) {
   const [summaryError, setSummaryError] = useState<string | null>(null);
   const [sprint, setSprint] = useState<MentorSprint | null>(null);
   const [sprintError, setSprintError] = useState<string | null>(null);
+  const [assessment, setAssessment] = useState<MentorAssessmentStatus | null>(null);
+  const [assessmentError, setAssessmentError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -44,12 +49,20 @@ export function MentorOverview({ userId, userName }: Props) {
     const load = async () => {
       setLoading(true);
       try {
-        const [latest, plans, feedback, summaryResult, sprintResult] = await Promise.allSettled([
+        const [
+          latest,
+          plans,
+          feedback,
+          summaryResult,
+          sprintResult,
+          assessmentResult,
+        ] = await Promise.allSettled([
           api.getLatestLearningPlan(userId),
           api.getLearningPlanHistory(userId, 5),
           api.getMentorFeedbackHistory(userId, 5),
           api.getMentorSummary(userId),
           api.getCurrentMentorSprint(userId),
+          api.getMentorAssessmentStatus(userId),
         ]);
 
         if (cancelled) return;
@@ -92,6 +105,13 @@ export function MentorOverview({ userId, userName }: Props) {
         } else {
           setSprintError('スプリント情報の取得に失敗しました');
         }
+
+        if (assessmentResult.status === 'fulfilled') {
+          setAssessment(assessmentResult.value);
+          setAssessmentError(null);
+        } else {
+          setAssessmentError('初回レベルチェックの取得に失敗しました');
+        }
       } catch (error) {
         console.error('Failed to load mentor overview:', error);
       } finally {
@@ -107,6 +127,13 @@ export function MentorOverview({ userId, userName }: Props) {
     };
   }, [userId]);
 
+  const readingAssessments = assessment?.tasks.filter((task) => task.type === 'reading') ?? [];
+  const writingAssessments = assessment?.tasks.filter((task) => task.type === 'writing') ?? [];
+  const assessmentReady =
+    assessment !== null &&
+    assessment.summary.total > 0 &&
+    assessment.summary.completed >= assessment.summary.total;
+
   return (
     <div className="space-y-8">
       <header className="space-y-3">
@@ -120,6 +147,83 @@ export function MentorOverview({ userId, userName }: Props) {
         </p>
       </header>
       <MentorWorkflowNav userId={userId} />
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <ClipboardCheck className="w-5 h-5 text-slate-300" />
+            <CardTitle className="text-white text-lg">初回レベルチェック</CardTitle>
+          </div>
+          {assessment && (
+            <Badge variant="default">
+              {assessment.summary.completed}/{assessment.summary.total} 完了
+            </Badge>
+          )}
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-slate-400">
+            初回はコードリーディングとコードライティングを数問解いて、AIメンターがレベル感を把握します。
+          </p>
+          {assessmentError && <p className="text-sm text-rose-300">{assessmentError}</p>}
+          {loading ? (
+            <p className="text-sm text-slate-400">読み込み中...</p>
+          ) : assessment && assessment.tasks.length > 0 ? (
+            <div className="space-y-5">
+              <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400">
+                <span>
+                  コードリーディング {assessment.summary.reading.completed}/
+                  {assessment.summary.reading.total}
+                </span>
+                <span>
+                  コードライティング {assessment.summary.writing.completed}/
+                  {assessment.summary.writing.total}
+                </span>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <AssessmentTaskList
+                  title="コードリーディング"
+                  tasks={readingAssessments}
+                  emptyText="まだリーディング課題がありません"
+                />
+                <AssessmentTaskList
+                  title="コードライティング"
+                  tasks={writingAssessments}
+                  emptyText="まだライティング課題がありません"
+                />
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Link href="/exercises?from=mentor">
+                  <Button variant="outline">リーディングへ</Button>
+                </Link>
+                <Link href="/writing?from=mentor">
+                  <Button variant="outline">ライティングへ</Button>
+                </Link>
+                {assessmentReady && (
+                  <>
+                    <GenerateRecommendationButton userId={userId} />
+                    <Link href="/mentor/plan">
+                      <Button>学習計画を作成</Button>
+                    </Link>
+                  </>
+                )}
+              </div>
+              {assessmentReady ? (
+                <p className="text-xs text-slate-400">
+                  レベルチェックが完了しました。次の課題や学習計画を提案します。
+                </p>
+              ) : (
+                <p className="text-xs text-slate-500">
+                  全て完了するとAIメンターのレコメンドが表示されます。
+                </p>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-slate-400">
+              まだ初回レベルチェックが割り当てられていません。
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-3">
@@ -466,4 +570,69 @@ function getRemainingDays(endDate: string) {
   const now = new Date();
   const diffMs = end.getTime() - now.getTime();
   return Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+}
+
+function AssessmentTaskList({
+  title,
+  tasks,
+  emptyText,
+}: {
+  title: string;
+  tasks: MentorAssessmentStatus['tasks'];
+  emptyText: string;
+}) {
+  return (
+    <div className="space-y-3">
+      <div className="text-sm font-semibold text-slate-200">{title}</div>
+      {tasks.length === 0 ? (
+        <p className="text-sm text-slate-500">{emptyText}</p>
+      ) : (
+        <div className="space-y-2">
+          {tasks.map((task) => {
+            const href =
+              task.type === 'reading'
+                ? `/exercises/${task.id}?from=mentor`
+                : `/writing/${task.id}?from=mentor`;
+            return (
+              <Link
+                key={task.id}
+                href={href}
+                className="flex items-center justify-between gap-3 rounded-xl border border-slate-700/60 bg-slate-800/40 p-3 transition-colors hover:border-slate-500/70 hover:bg-slate-800/60"
+              >
+                <div>
+                  <div className="text-sm text-slate-100 font-semibold line-clamp-1">
+                    {task.title}
+                  </div>
+                  <div className="text-xs text-slate-400">
+                    {getLanguageLabel(task.language)} ・ {getDifficultyLabel(task.difficulty)}
+                  </div>
+                </div>
+                <AssessmentStatusBadge status={task.status} />
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AssessmentStatusBadge({ status }: { status: MentorAssessmentStatus['tasks'][number]['status'] }) {
+  const labels: Record<string, string> = {
+    NOT_STARTED: '未着手',
+    IN_PROGRESS: '進行中',
+    COMPLETED: '完了',
+    FAILED: '要再提出',
+  };
+  const variants: Record<string, 'default' | 'warning' | 'success' | 'danger'> = {
+    NOT_STARTED: 'default',
+    IN_PROGRESS: 'warning',
+    COMPLETED: 'success',
+    FAILED: 'danger',
+  };
+  return (
+    <Badge variant={variants[status] ?? 'default'} className="shrink-0">
+      {labels[status] ?? status}
+    </Badge>
+  );
 }

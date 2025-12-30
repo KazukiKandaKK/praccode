@@ -67,6 +67,7 @@ import { MentorAgent } from './mastra/mentorAgent.js';
 import { GenerateLearningPlanWithAgentUseCase } from './application/usecases/mentor/GenerateLearningPlanWithAgentUseCase.js';
 import { GenerateNextLearningPlanWithAgentUseCase } from './application/usecases/mentor/GenerateNextLearningPlanWithAgentUseCase.js';
 import { GenerateSubmissionFeedbackWithAgentUseCase } from './application/usecases/mentor/GenerateSubmissionFeedbackWithAgentUseCase.js';
+import { GetMentorAssessmentStatusUseCase } from './application/usecases/mentor/GetMentorAssessmentStatusUseCase.js';
 import { GetCurrentMentorSprintUseCase } from './application/usecases/mentor/GetCurrentMentorSprintUseCase.js';
 import { GetMentorWorkflowStepUseCase } from './application/usecases/mentor/GetMentorWorkflowStepUseCase.js';
 import { GetMentorMetadataSummaryUseCase } from './application/usecases/mentor/GetMentorMetadataSummaryUseCase.js';
@@ -77,6 +78,7 @@ import { PrismaMastraMemory } from './mastra/PrismaMastraMemory.js';
 import { PrismaMentorFeedbackRepository } from './infrastructure/persistence/PrismaMentorFeedbackRepository.js';
 import { PrismaMentorFeedbackInsightRepository } from './infrastructure/persistence/PrismaMentorFeedbackInsightRepository.js';
 import { PrismaMentorSprintRepository } from './infrastructure/persistence/PrismaMentorSprintRepository.js';
+import { PrismaMentorAssessmentRepository } from './infrastructure/persistence/PrismaMentorAssessmentRepository.js';
 import { PrismaMentorWorkflowRepository } from './infrastructure/persistence/PrismaMentorWorkflowRepository.js';
 import { ListLearningPlansUseCase } from './application/usecases/mentor/ListLearningPlansUseCase.js';
 import { ListMentorFeedbackUseCase } from './application/usecases/mentor/ListMentorFeedbackUseCase.js';
@@ -155,6 +157,7 @@ const learningPlanRepository = new PrismaLearningPlanRepository();
 const mentorFeedbackRepository = new PrismaMentorFeedbackRepository();
 const mentorFeedbackInsightRepository = new PrismaMentorFeedbackInsightRepository();
 const mentorSprintRepository = new PrismaMentorSprintRepository();
+const mentorAssessmentRepository = new PrismaMentorAssessmentRepository();
 const mentorWorkflowRepository = new PrismaMentorWorkflowRepository();
 const evaluationMetricRepository = new PrismaEvaluationMetricRepository();
 const learningTimeRepository = new PrismaLearningTimeRepository();
@@ -246,6 +249,9 @@ const generateSubmissionFeedbackWithAgentUseCase = new GenerateSubmissionFeedbac
 const getLatestLearningPlanUseCase = new GetLatestLearningPlanUseCase(learningPlanRepository);
 const listLearningPlansUseCase = new ListLearningPlansUseCase(learningPlanRepository);
 const listMentorFeedbackUseCase = new ListMentorFeedbackUseCase(mentorFeedbackRepository);
+const getMentorAssessmentStatusUseCase = new GetMentorAssessmentStatusUseCase(
+  mentorAssessmentRepository
+);
 const getCurrentMentorSprintUseCase = new GetCurrentMentorSprintUseCase(mentorSprintRepository);
 const getMentorWorkflowStepUseCase = new GetMentorWorkflowStepUseCase(
   mentorWorkflowRepository
@@ -362,6 +368,7 @@ await fastify.register(
       generateLearningPlan: generateLearningPlanWithAgentUseCase,
       generateNextLearningPlan: generateNextLearningPlanWithAgentUseCase,
       generateSubmissionFeedback: generateSubmissionFeedbackWithAgentUseCase,
+      getMentorAssessmentStatus: getMentorAssessmentStatusUseCase,
       getCurrentMentorSprint: getCurrentMentorSprintUseCase,
       getMentorMetadataSummary: getMentorMetadataSummaryUseCase,
       getMentorWorkflowStep: getMentorWorkflowStepUseCase,

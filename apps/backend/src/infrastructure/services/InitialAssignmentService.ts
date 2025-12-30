@@ -42,6 +42,7 @@ export class InitialAssignmentService implements IInitialAssignmentService {
           learningGoals: preset.learningGoals as unknown as Prisma.InputJsonValue,
           createdById: preset.createdById,
           assignedToId: userId,
+          isAssessment: true,
           questions: {
             create: preset.questions.map((q) => ({
               questionIndex: q.questionIndex,
@@ -74,6 +75,7 @@ export class InitialAssignmentService implements IInitialAssignmentService {
           sampleCode: preset.sampleCode,
           createdById: preset.createdById,
           assignedToId: userId,
+          isAssessment: true,
         },
       });
     }

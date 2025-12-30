@@ -77,6 +77,7 @@ async function main() {
               learningGoals: preset.learningGoals as unknown as Prisma.InputJsonValue,
               createdById: preset.createdById,
               assignedToId: user.id,
+              isAssessment: true,
               questions: {
                 create: preset.questions.map((q) => ({
                   questionIndex: q.questionIndex,
@@ -119,6 +120,7 @@ async function main() {
               sampleCode: preset.sampleCode,
               createdById: preset.createdById,
               assignedToId: user.id,
+              isAssessment: true,
             },
           });
         }
@@ -139,4 +141,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-

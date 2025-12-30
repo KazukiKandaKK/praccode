@@ -167,6 +167,7 @@ model Exercise {
   learningGoals  Json           @default("[]") @map("learning_goals")
   createdById    String         @map("created_by_id")
   assignedToId   String?        @map("assigned_to_id") // 排他的に割り当てられたユーザーID
+  isAssessment   Boolean        @default(false) @map("is_assessment")
   createdAt      DateTime       @default(now()) @map("created_at")
   updatedAt      DateTime       @updatedAt @map("updated_at")
 
@@ -273,6 +274,7 @@ model WritingChallenge {
   sampleCode  String?                 @map("sample_code") @db.Text // 参考実装（非公開）
   createdById String?                 @map("created_by_id")
   assignedToId String?                @map("assigned_to_id") // 排他的に割り当てられたユーザーID
+  isAssessment Boolean                @default(false) @map("is_assessment")
   createdAt   DateTime                @default(now()) @map("created_at")
   updatedAt   DateTime                @updatedAt @map("updated_at")
 

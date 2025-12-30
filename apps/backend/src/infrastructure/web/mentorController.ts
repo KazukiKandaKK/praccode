@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { GenerateLearningPlanWithAgentUseCase } from '@/application/usecases/mentor/GenerateLearningPlanWithAgentUseCase';
 import { GenerateNextLearningPlanWithAgentUseCase } from '@/application/usecases/mentor/GenerateNextLearningPlanWithAgentUseCase';
 import { GenerateSubmissionFeedbackWithAgentUseCase } from '@/application/usecases/mentor/GenerateSubmissionFeedbackWithAgentUseCase';
+import { GetMentorAssessmentStatusUseCase } from '@/application/usecases/mentor/GetMentorAssessmentStatusUseCase';
 import { GetCurrentMentorSprintUseCase } from '@/application/usecases/mentor/GetCurrentMentorSprintUseCase';
 import { GetMentorMetadataSummaryUseCase } from '@/application/usecases/mentor/GetMentorMetadataSummaryUseCase';
 import { GetMentorWorkflowStepUseCase } from '@/application/usecases/mentor/GetMentorWorkflowStepUseCase';
@@ -56,6 +57,7 @@ type MentorDeps = {
   generateLearningPlan: GenerateLearningPlanWithAgentUseCase;
   generateNextLearningPlan: GenerateNextLearningPlanWithAgentUseCase;
   generateSubmissionFeedback: GenerateSubmissionFeedbackWithAgentUseCase;
+  getMentorAssessmentStatus: GetMentorAssessmentStatusUseCase;
   getCurrentMentorSprint: GetCurrentMentorSprintUseCase;
   getMentorMetadataSummary: GetMentorMetadataSummaryUseCase;
   getMentorWorkflowStep: GetMentorWorkflowStepUseCase;
@@ -128,6 +130,23 @@ export function mentorController(fastify: FastifyInstance, deps: MentorDeps) {
         }
         fastify.log.error(error);
         return reply.status(500).send({ error: 'Failed to generate next learning plan' });
+      }
+    }
+  );
+
+  fastify.get(
+    '/mentor/assessment',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const query = z.object({ userId: z.string().uuid() }).parse(request.query);
+        const status = await deps.getMentorAssessmentStatus.execute(query.userId);
+        return reply.send(status);
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          return reply.status(400).send({ error: 'Invalid input', issues: error.issues });
+        }
+        fastify.log.error(error);
+        return reply.status(500).send({ error: 'Failed to fetch mentor assessment' });
       }
     }
   );

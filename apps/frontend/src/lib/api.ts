@@ -77,6 +77,34 @@ export type MentorSummary = {
   recentAdvice: Array<{ area: string; advice: string; createdAt: string }>;
 };
 
+export type MentorAssessmentTaskStatus =
+  | 'NOT_STARTED'
+  | 'IN_PROGRESS'
+  | 'COMPLETED'
+  | 'FAILED';
+
+export type MentorAssessmentTask = {
+  id: string;
+  type: 'reading' | 'writing';
+  title: string;
+  language: string;
+  difficulty: number;
+  genre?: string | null;
+  status: MentorAssessmentTaskStatus;
+};
+
+export type MentorAssessmentSummary = {
+  total: number;
+  completed: number;
+  reading: { total: number; completed: number };
+  writing: { total: number; completed: number };
+};
+
+export type MentorAssessmentStatus = {
+  tasks: MentorAssessmentTask[];
+  summary: MentorAssessmentSummary;
+};
+
 export type MentorSprint = {
   id: string;
   userId: string;
@@ -179,6 +207,14 @@ export const api = {
       { cache: 'no-store' }
     );
     return handleResponse<MentorSummary>(response);
+  },
+
+  async getMentorAssessmentStatus(userId: string) {
+    const response = await fetch(
+      `${API_BASE_URL}/mentor/assessment?userId=${encodeURIComponent(userId)}`,
+      { cache: 'no-store' }
+    );
+    return handleResponse<MentorAssessmentStatus>(response);
   },
 
   async getCurrentMentorSprint(userId: string) {
