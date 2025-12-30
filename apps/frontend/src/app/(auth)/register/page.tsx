@@ -85,7 +85,14 @@ export default function RegisterPage() {
               </div>
 
               {/* Email Register Form */}
-              <form action={handleSubmit} className="space-y-4">
+              <form
+                onSubmit={async (event) => {
+                  event.preventDefault();
+                  const formData = new FormData(event.currentTarget);
+                  await handleSubmit(formData);
+                }}
+                className="space-y-4"
+              >
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-slate-300 mb-2">
                     ユーザー名
