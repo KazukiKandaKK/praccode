@@ -17,8 +17,9 @@ import {
   AlertTriangle,
   Lightbulb,
   Zap,
+  Timer,
 } from 'lucide-react';
-import { getLearningGoalLabel } from '@/lib/utils';
+import { formatDuration, getLearningGoalLabel } from '@/lib/utils';
 import { GenerateRecommendationButton } from '@/components/generate-recommendation-button';
 import { DashboardActivityHeatmap } from '@/components/dashboard-activity-heatmap';
 
@@ -38,6 +39,11 @@ interface DashboardStats {
     date: string;
   }>;
   thisWeekCount: number;
+  weeklyLearningTimeSec?: number;
+  learningTimeDaily?: Array<{
+    date: string;
+    durationSec: number;
+  }>;
 }
 
 interface LearningAnalysis {
@@ -112,6 +118,11 @@ export default async function DashboardPage() {
 
   const totalSubmissions =
     (stats?.totalReadingSubmissions || 0) + (stats?.totalWritingSubmissions || 0);
+  const learningTimeDaily = stats?.learningTimeDaily ? [...stats.learningTimeDaily].reverse() : [];
+  const maxDailyDuration =
+    learningTimeDaily.length > 0
+      ? Math.max(...learningTimeDaily.map((d) => d.durationSec), 1)
+      : 1;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -126,7 +137,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid md:grid-cols-4 gap-4 mb-8">
+      <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         <StatCard
           icon={<BookOpen className="w-5 h-5" />}
           label="リーディング提出"
@@ -151,7 +162,72 @@ export default async function DashboardPage() {
           value={`${stats?.thisWeekCount || 0}回`}
           color="amber"
         />
+        <StatCard
+          icon={<Timer className="w-5 h-5" />}
+          label="今週の学習時間"
+          value={formatDuration(stats?.weeklyLearningTimeSec || 0)}
+          color="emerald"
+        />
       </div>
+
+      {/* Learning time */}
+      <Card className="mb-6">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center justify-between">
+            <span>最近の学習時間</span>
+            <Badge variant="outline" className="text-xs text-amber-300 border-amber-400/30">
+              自動計測
+            </Badge>
+          </CardTitle>
+          <p className="text-sm text-slate-400">
+            コード閲覧や提出編集のアクティブ時間を日別に集計しています
+          </p>
+        </CardHeader>
+        <CardContent>
+          {learningTimeDaily.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+              {learningTimeDaily.map((entry) => {
+                const date = new Date(entry.date);
+                const label = date.toLocaleDateString('ja-JP', {
+                  month: 'numeric',
+                  day: 'numeric',
+                });
+                const weekday = date.toLocaleDateString('ja-JP', { weekday: 'short' });
+                const width = Math.max(
+                  8,
+                  Math.min(100, (entry.durationSec / maxDailyDuration) * 100)
+                );
+
+                return (
+                  <div
+                    key={entry.date}
+                    className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50"
+                  >
+                    <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
+                      <span>
+                        {label} ({weekday})
+                      </span>
+                      <span className="text-slate-50 font-semibold">
+                        {formatDuration(entry.durationSec)}
+                      </span>
+                    </div>
+                    <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full transition-all"
+                        style={{ width: `${width}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-slate-400 text-sm">
+              まだ学習時間の記録がありません。学習ページに滞在すると自動でカウントされます。
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Activity Heatmap */}
       {activity && activity.activity.length > 0 && (

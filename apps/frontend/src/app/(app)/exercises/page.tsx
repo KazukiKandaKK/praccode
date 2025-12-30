@@ -87,6 +87,7 @@ export default async function ExercisesPage({ searchParams }: PageProps) {
     difficulty: typeof params.difficulty === 'string' ? params.difficulty : undefined,
     genre: typeof params.genre === 'string' ? params.genre : undefined,
   };
+  const fromMentor = params.from === 'mentor';
 
   const { exercises } = await getExercises(session.user.id, filters);
 
@@ -101,7 +102,7 @@ export default async function ExercisesPage({ searchParams }: PageProps) {
       {/* Exercise Grid */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {exercises.map((exercise) => (
-          <ExerciseCard key={exercise.id} exercise={exercise} />
+          <ExerciseCard key={exercise.id} exercise={exercise} fromMentor={fromMentor} />
         ))}
       </div>
 
@@ -119,7 +120,11 @@ export default async function ExercisesPage({ searchParams }: PageProps) {
   );
 }
 
-function ExerciseCard({ exercise }: { exercise: Exercise }) {
+function ExerciseCard({ exercise, fromMentor }: { exercise: Exercise; fromMentor?: boolean }) {
+  const detailHref = fromMentor
+    ? `/exercises/${exercise.id}?from=mentor`
+    : `/exercises/${exercise.id}`;
+
   return (
     <Card className="group hover:border-cyan-500/30 transition-colors">
       <CardContent className="p-6">
@@ -147,7 +152,7 @@ function ExerciseCard({ exercise }: { exercise: Exercise }) {
         </div>
 
         {/* Action */}
-        <Link href={`/exercises/${exercise.id}`}>
+        <Link href={detailHref}>
           <Button
             variant="secondary"
             className="w-full group-hover:bg-cyan-500 group-hover:text-slate-900 transition-colors"

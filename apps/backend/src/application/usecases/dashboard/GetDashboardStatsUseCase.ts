@@ -1,12 +1,17 @@
 import { IDashboardRepository } from '../../../domain/ports/IDashboardRepository';
+import { ILearningTimeRepository } from '../../../domain/ports/ILearningTimeRepository';
 
 export class GetDashboardStatsUseCase {
-  constructor(private readonly dashboardRepo: IDashboardRepository) {}
+  constructor(
+    private readonly dashboardRepo: IDashboardRepository,
+    private readonly learningTimeRepo?: ILearningTimeRepository
+  ) {}
 
   async execute(userId: string) {
-    const [readingSubmissions, writingSubmissions] = await Promise.all([
+    const [readingSubmissions, writingSubmissions, learningTimeDaily] = await Promise.all([
       this.dashboardRepo.getReadingSubmissions(userId),
       this.dashboardRepo.getWritingSubmissions(userId),
+      this.learningTimeRepo?.getDailyTotals(userId, 14) ?? Promise.resolve([]),
     ]);
 
     const totalReadingSubmissions = readingSubmissions.length;
@@ -93,6 +98,9 @@ export class GetDashboardStatsUseCase {
     const thisWeekWritingCount = writingSubmissions.filter(
       (s) => new Date(s.createdAt) >= oneWeekAgo
     ).length;
+    const weeklyLearningTimeSec = learningTimeDaily
+      .slice(-7)
+      .reduce((sum, entry) => sum + entry.durationSec, 0);
 
     return {
       totalReadingSubmissions,
@@ -102,6 +110,11 @@ export class GetDashboardStatsUseCase {
       aspectAverages,
       recentActivity,
       thisWeekCount: thisWeekReadingCount + thisWeekWritingCount,
+      weeklyLearningTimeSec,
+      learningTimeDaily: learningTimeDaily.map((entry) => ({
+        date: entry.date.toISOString(),
+        durationSec: entry.durationSec,
+      })),
     };
   }
 }

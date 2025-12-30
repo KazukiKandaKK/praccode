@@ -6,6 +6,7 @@ import {
 import { IAnswerEvaluationService } from '../../../domain/ports/IAnswerEvaluationService';
 import { IEvaluationEventPublisher } from '../../../domain/ports/IEvaluationEventPublisher';
 import { ILearningAnalysisScheduler } from '../../../domain/ports/ILearningAnalysisScheduler';
+import { IEvaluationMetricRepository } from '../../../domain/ports/IEvaluationMetricRepository';
 
 type Logger = { info: (...args: unknown[]) => void; error: (...args: unknown[]) => void };
 
@@ -15,6 +16,7 @@ export class EvaluateSubmissionUseCase {
     private readonly evaluationService: IAnswerEvaluationService,
     private readonly eventPublisher: IEvaluationEventPublisher,
     private readonly learningAnalysisScheduler: ILearningAnalysisScheduler,
+    private readonly evaluationMetricRepository: IEvaluationMetricRepository,
     private readonly logger: Logger
   ) {}
 
@@ -39,6 +41,8 @@ export class EvaluateSubmissionUseCase {
         const jobTarget = await this.submissions.getEvaluationTarget(id);
         if (!jobTarget) return;
 
+        const aspectTotals = new Map<string, { sum: number; count: number }>();
+
         for (const answer of jobTarget.answers) {
           const question = jobTarget.exercise.questions.find(
             (q) => q.questionIndex === answer.questionIndex
@@ -62,6 +66,17 @@ export class EvaluateSubmissionUseCase {
               llmFeedback: result.feedback,
               aspects: result.aspects || {},
             });
+
+            if (result.aspects) {
+              for (const [aspect, rawScore] of Object.entries(result.aspects)) {
+                const score = typeof rawScore === 'number' ? rawScore : Number(rawScore);
+                if (Number.isNaN(score)) continue;
+                const entry = aspectTotals.get(aspect) || { sum: 0, count: 0 };
+                entry.sum += score;
+                entry.count += 1;
+                aspectTotals.set(aspect, entry);
+              }
+            }
           } catch (error) {
             this.logger.error(error, `Failed to evaluate answer ${answer.id}`);
             await this.submissions.updateAnswerEvaluation(answer.id, {
@@ -71,6 +86,19 @@ export class EvaluateSubmissionUseCase {
               aspects: {},
             });
           }
+        }
+
+        if (aspectTotals.size > 0) {
+          const metrics = Array.from(aspectTotals.entries()).map(([aspect, entry]) => ({
+            aspect,
+            score: entry.count > 0 ? entry.sum / entry.count : 0,
+          }));
+          await this.evaluationMetricRepository.saveMetrics({
+            userId: jobTarget.userId,
+            sourceType: 'READING',
+            submissionId: jobTarget.id,
+            metrics,
+          });
         }
 
         await this.submissions.markStatus(id, 'EVALUATED');

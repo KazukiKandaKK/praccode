@@ -1,11 +1,13 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { OllamaProvider } from '@/llm/ollama-provider';
 import { GeminiProvider } from '@/llm/gemini-provider';
+import { OpenAIProvider } from '@/llm/openai-provider';
 import { getGlobalRateLimiter } from '@/llm/rate-limiter';
 import { retryWithBackoff } from '@/llm/retry-handler';
 
 vi.mock('@/llm/ollama-provider');
 vi.mock('@/llm/gemini-provider');
+vi.mock('@/llm/openai-provider');
 vi.mock('@/llm/rate-limiter');
 vi.mock('@/llm/retry-handler');
 
@@ -27,6 +29,13 @@ describe('LLM Client', () => {
       const { getLLMProvider } = await import('@/llm/llm-client');
       const provider = getLLMProvider();
       expect(provider).toBeInstanceOf(GeminiProvider);
+    });
+
+    it('should return OpenAIProvider when env var is set', async () => {
+      vi.stubEnv('LLM_PROVIDER', 'openai');
+      const { getLLMProvider } = await import('@/llm/llm-client');
+      const provider = getLLMProvider();
+      expect(provider).toBeInstanceOf(OpenAIProvider);
     });
   });
 

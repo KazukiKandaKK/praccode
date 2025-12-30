@@ -4,6 +4,8 @@ import { GetDashboardStatsUseCase } from '../../application/usecases/dashboard/G
 import { GetDashboardActivityUseCase } from '../../application/usecases/dashboard/GetDashboardActivityUseCase.js';
 import { GetLearningAnalysisUseCase } from '../../application/usecases/dashboard/GetLearningAnalysisUseCase.js';
 import { GenerateRecommendationUseCase } from '../../application/usecases/dashboard/GenerateRecommendationUseCase.js';
+import { PromptSanitizer } from '../../llm/prompt-sanitizer.js';
+import { PromptInjectionError } from '../../llm/prompt-injection-error.js';
 
 const statsQuerySchema = z.object({
   userId: z.string().uuid(),
@@ -51,12 +53,30 @@ export const dashboardController = (fastify: FastifyInstance, deps: DashboardCon
   });
 
   fastify.post('/dashboard/generate-recommendation', async (request, reply) => {
-    const body = generateRecommendationSchema.parse(request.body);
-    const result = await deps.generateRecommendation.execute({
-      userId: body.userId,
-      language: body.language,
-      type: body.type ?? 'writing',
-    });
-    return reply.send(result);
+    try {
+      const body = generateRecommendationSchema.parse(request.body);
+      if (body.language) {
+        PromptSanitizer.sanitize(body.language, 'language');
+      }
+      const result = await deps.generateRecommendation.execute({
+        userId: body.userId,
+        language: body.language,
+        type: body.type ?? 'writing',
+      });
+      return reply.send(result);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send({ error: 'Invalid input', issues: error.issues });
+      }
+      if (error instanceof PromptInjectionError) {
+        return reply.status(400).send({
+          error: 'Invalid input',
+          message: '入力に禁止表現が含まれています',
+          field: error.fieldName,
+          reasons: error.detectedPatterns,
+        });
+      }
+      throw error;
+    }
   });
 };

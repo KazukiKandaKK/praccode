@@ -50,7 +50,7 @@ docker compose -f docker-compose.dev.yml exec -T backend sh -c "cd /app/apps/bac
     docker compose -f docker-compose.dev.yml exec -T backend sh -c "cd /app/apps/backend && pnpm db:push"
 }
 
-echo -e "${YELLOW}[5/5]${NC} サンプルデータを投入中..."
+echo -e "${YELLOW}[5/5]${NC} サンプルデータとメタデータを投入中..."
 docker compose -f docker-compose.dev.yml exec -T backend sh -c "cd /app/apps/backend && pnpm db:seed"
 
 # Frontend コンテナを起動
@@ -83,5 +83,4 @@ echo -e "     ${CYAN}./llm/scripts/ollama_setup.sh qwen2.5-coder:14b${NC}"
 echo -e "  3) Dockerから疎通確認:"
 echo -e "     ${CYAN}docker compose -f docker-compose.dev.yml run --rm llm${NC}"
 echo ""
-
 

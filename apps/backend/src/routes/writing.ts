@@ -1,6 +1,8 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { ApplicationError } from '../application/errors/ApplicationError.js';
+import { PromptInjectionError } from '../llm/prompt-injection-error.js';
+import { PromptSanitizer } from '../llm/prompt-sanitizer.js';
 import type { WritingChallenge } from '../domain/entities/WritingChallenge.js';
 import type { WritingSubmission } from '../domain/entities/WritingSubmission.js';
 
@@ -133,9 +135,10 @@ export async function writingRoutes(fastify: FastifyInstance, deps: WritingRoute
 
   // POST /writing/submissions - コード提出
   fastify.post('/submissions', async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = submitCodeSchema.parse(request.body);
-
     try {
+      const body = submitCodeSchema.parse(request.body);
+      PromptSanitizer.sanitize(body.code, 'code', { allowBase64: true });
+
       const result = await deps.submitCode.execute(body);
 
       return reply.status(202).send({
@@ -144,6 +147,17 @@ export async function writingRoutes(fastify: FastifyInstance, deps: WritingRoute
         message: 'Submission queued for execution',
       });
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send({ error: 'Invalid input', issues: error.issues });
+      }
+      if (error instanceof PromptInjectionError) {
+        return reply.status(400).send({
+          error: 'Invalid input',
+          message: '入力に禁止表現が含まれています',
+          field: error.fieldName,
+          reasons: error.detectedPatterns,
+        });
+      }
       if (error instanceof ApplicationError) {
         return reply.status(error.statusCode).send({ error: error.message });
       }
@@ -202,6 +216,14 @@ export async function writingRoutes(fastify: FastifyInstance, deps: WritingRoute
           message: 'Feedback generation started',
         });
       } catch (error) {
+        if (error instanceof PromptInjectionError) {
+          return reply.status(400).send({
+            error: 'Invalid input',
+            message: '入力に禁止表現が含まれています',
+            field: error.fieldName,
+            reasons: error.detectedPatterns,
+          });
+        }
         if (error instanceof ApplicationError) {
           return reply.status(error.statusCode).send({ error: error.message });
         }

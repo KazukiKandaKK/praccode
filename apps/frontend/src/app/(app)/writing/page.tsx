@@ -39,13 +39,19 @@ async function getChallenges(userId: string): Promise<{ challenges: WritingChall
   }
 }
 
-export default async function WritingPage() {
+interface PageProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+export default async function WritingPage({ searchParams }: PageProps) {
   const session = await auth();
 
   if (!session?.user?.id) {
     redirect('/login');
   }
 
+  const params = await searchParams;
+  const fromMentor = params.from === 'mentor';
   const { challenges } = await getChallenges(session.user.id);
 
   return (
@@ -56,7 +62,7 @@ export default async function WritingPage() {
       {/* Challenge Grid */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {challenges.map((challenge) => (
-          <ChallengeCard key={challenge.id} challenge={challenge} />
+          <ChallengeCard key={challenge.id} challenge={challenge} fromMentor={fromMentor} />
         ))}
       </div>
 
@@ -74,7 +80,17 @@ export default async function WritingPage() {
   );
 }
 
-function ChallengeCard({ challenge }: { challenge: WritingChallenge }) {
+function ChallengeCard({
+  challenge,
+  fromMentor,
+}: {
+  challenge: WritingChallenge;
+  fromMentor?: boolean;
+}) {
+  const detailHref = fromMentor
+    ? `/writing/${challenge.id}?from=mentor`
+    : `/writing/${challenge.id}`;
+
   return (
     <Card className="group hover:border-violet-500/30 transition-colors">
       <CardContent className="p-6">
@@ -95,7 +111,7 @@ function ChallengeCard({ challenge }: { challenge: WritingChallenge }) {
         <p className="text-sm text-slate-400 mb-4 line-clamp-3">{challenge.description}</p>
 
         {/* Action */}
-        <Link href={`/writing/${challenge.id}`}>
+        <Link href={detailHref}>
           <Button
             variant="secondary"
             className="w-full group-hover:bg-violet-500 group-hover:text-white transition-colors"

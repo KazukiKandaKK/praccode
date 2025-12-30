@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001';
 
 export type LearningPlan = {
   summary: string;
@@ -54,6 +54,42 @@ export type MentorFeedbackRecord = {
   updatedAt: string;
 };
 
+export type MentorWorkflowStep = 'PLAN' | 'DO' | 'CHECK' | 'NEXT_PLAN';
+
+export type MentorWorkflowState = {
+  userId: string;
+  step: MentorWorkflowStep;
+  updatedAt: string;
+};
+
+export type MentorMetricSummary = {
+  aspect: string;
+  currentAvg: number;
+  previousAvg: number | null;
+  delta: number | null;
+  sampleSize: number;
+};
+
+export type MentorSummary = {
+  metrics: MentorMetricSummary[];
+  strengths: Array<{ label: string; count: number }>;
+  improvements: Array<{ label: string; count: number }>;
+  recentAdvice: Array<{ area: string; advice: string; createdAt: string }>;
+};
+
+export type MentorSprint = {
+  id: string;
+  userId: string;
+  learningPlanId: string | null;
+  sequence: number;
+  goal: string;
+  focusAreas: string[];
+  startDate: string;
+  endDate: string;
+  status: 'ACTIVE' | 'COMPLETED';
+  updatedAt: string;
+};
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -87,6 +123,15 @@ export const api = {
     return handleResponse<LearningPlan>(response);
   },
 
+  async generateNextLearningPlan(params: { userId: string }) {
+    const response = await fetch(`${API_BASE_URL}/mentor/learning-plan/next`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+    return handleResponse<LearningPlan>(response);
+  },
+
   async getLatestLearningPlan(userId: string) {
     const response = await fetch(
       `${API_BASE_URL}/mentor/learning-plan/latest?userId=${encodeURIComponent(userId)}`,
@@ -109,6 +154,62 @@ export const api = {
       { cache: 'no-store' }
     );
     return handleResponse<MentorFeedbackRecord[]>(response);
+  },
+
+  async getMentorWorkflowState(userId: string) {
+    const response = await fetch(
+      `${API_BASE_URL}/mentor/workflow?userId=${encodeURIComponent(userId)}`,
+      { cache: 'no-store' }
+    );
+    return handleResponse<MentorWorkflowState>(response);
+  },
+
+  async updateMentorWorkflowState(params: { userId: string; step: MentorWorkflowStep }) {
+    const response = await fetch(`${API_BASE_URL}/mentor/workflow`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+    return handleResponse<MentorWorkflowState>(response);
+  },
+
+  async getMentorSummary(userId: string) {
+    const response = await fetch(
+      `${API_BASE_URL}/mentor/summary?userId=${encodeURIComponent(userId)}`,
+      { cache: 'no-store' }
+    );
+    return handleResponse<MentorSummary>(response);
+  },
+
+  async getCurrentMentorSprint(userId: string) {
+    const response = await fetch(
+      `${API_BASE_URL}/mentor/sprint/current?userId=${encodeURIComponent(userId)}`,
+      { cache: 'no-store' }
+    );
+    return handleResponse<MentorSprint>(response);
+  },
+
+  async logLearningTime(params: {
+    userId: string;
+    durationSec: number;
+    source: string;
+    startedAt?: string;
+    endedAt?: string;
+  }) {
+    const response = await fetch(`${API_BASE_URL}/learning-time`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+    return handleResponse<{ ok: boolean }>(response);
+  },
+
+  async getLearningTimeDaily(userId: string, days = 14) {
+    const response = await fetch(
+      `${API_BASE_URL}/learning-time/daily?userId=${encodeURIComponent(userId)}&days=${days}`,
+      { cache: 'no-store' }
+    );
+    return handleResponse<Array<{ date: string; durationSec: number }>>(response);
   },
 
   // Exercises

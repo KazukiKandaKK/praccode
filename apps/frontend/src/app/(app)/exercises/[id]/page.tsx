@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { CodeViewer } from '@/components/code-viewer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +16,10 @@ import { Lightbulb, Send, Loader2, ChevronLeft, CheckCircle } from 'lucide-react
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useEvaluationToast } from '@/components/evaluation-toast-provider';
+import { API_BASE_URL } from '@/lib/api';
+import { findLlmInputViolation } from '@/lib/llm-input-guard';
+import { useLearningTimeTracker } from '@/hooks/use-learning-time-tracker';
+import { useMentorWorkflowTracker } from '@/hooks/use-mentor-workflow-tracker';
 
 interface Exercise {
   id: string;
@@ -34,9 +38,11 @@ interface Exercise {
 export default function ExerciseDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const exerciseId = params.id as string;
   const { data: session, status: sessionStatus } = useSession();
   const { startEvaluationWatch } = useEvaluationToast();
+  const apiUrl = API_BASE_URL;
 
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [answers, setAnswers] = useState<Record<number, string>>({});
@@ -48,6 +54,14 @@ export default function ExerciseDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const fromMentor = searchParams.get('from') === 'mentor';
+  const listHref = fromMentor ? '/exercises?from=mentor' : '/exercises';
+
+  useLearningTimeTracker({
+    userId: session?.user?.id,
+    source: 'reading_exercise',
+  });
+  useMentorWorkflowTracker({ userId: session?.user?.id, step: 'DO' });
 
   useEffect(() => {
     async function fetchExercise() {
@@ -61,7 +75,6 @@ export default function ExerciseDetailPage() {
           return;
         }
 
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
         const response = await fetch(`${apiUrl}/exercises/${exerciseId}?userId=${session.user.id}`);
 
         if (!response.ok) {
@@ -113,7 +126,6 @@ export default function ExerciseDetailPage() {
     setHintErrors((prev) => ({ ...prev, [questionIndex]: '' }));
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
       // backendは /hints prefix で controller path が /hints のため /hints/hints となる
       const res = await fetch(`${apiUrl}/hints/hints`, {
         method: 'POST',
@@ -153,12 +165,22 @@ export default function ExerciseDetailPage() {
       return;
     }
 
+    const inputViolation = findLlmInputViolation(
+      Object.entries(answers).map(([questionIndex, answerText]) => ({
+        field: `回答${Number(questionIndex) + 1}`,
+        value: answerText,
+      }))
+    );
+
+    if (inputViolation) {
+      setSubmitError(`入力に禁止表現が含まれています: ${inputViolation.field}`);
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmitError(null);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-
       // 1) submission 作成
       const createRes = await fetch(`${apiUrl}/exercises/${exerciseId}/submissions`, {
         method: 'POST',
@@ -233,12 +255,21 @@ export default function ExerciseDetailPage() {
         <div className="text-center">
           <p className="text-red-400 mb-4">{fetchError || '問題が見つかりません'}</p>
           <Link
-            href="/exercises"
+            href={listHref}
             className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300"
           >
             <ChevronLeft className="w-4 h-4" />
             学習一覧に戻る
           </Link>
+          {fromMentor && (
+            <Link
+              href="/mentor"
+              className="inline-flex items-center gap-2 text-slate-400 hover:text-white mt-3 transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              AIメンターに戻る
+            </Link>
+          )}
         </div>
       </div>
     );
@@ -247,13 +278,24 @@ export default function ExerciseDetailPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Back Button */}
-      <Link
-        href="/exercises"
-        className="inline-flex items-center gap-2 text-slate-400 hover:text-white mb-6 transition-colors"
-      >
-        <ChevronLeft className="w-4 h-4" />
-        学習一覧に戻る
-      </Link>
+      <div className="flex flex-wrap items-center gap-3 mb-6">
+        <Link
+          href={listHref}
+          className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          学習一覧に戻る
+        </Link>
+        {fromMentor && (
+          <Link
+            href="/mentor"
+            className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            AIメンターに戻る
+          </Link>
+        )}
+      </div>
 
       {/* Header */}
       <div className="mb-6">

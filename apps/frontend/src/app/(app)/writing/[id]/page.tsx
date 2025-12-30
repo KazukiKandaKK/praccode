@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +19,10 @@ import {
   Clock,
 } from 'lucide-react';
 import Link from 'next/link';
+import { API_BASE_URL } from '@/lib/api';
+import { findLlmInputViolation } from '@/lib/llm-input-guard';
+import { useLearningTimeTracker } from '@/hooks/use-learning-time-tracker';
+import { useMentorWorkflowTracker } from '@/hooks/use-mentor-workflow-tracker';
 
 interface WritingChallenge {
   id: string;
@@ -117,8 +121,11 @@ func ${functionName}(args ...interface{}) interface{} {
 export default function WritingChallengePage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: session } = useSession();
   const challengeId = params.id as string;
+  const fromMentor = searchParams.get('from') === 'mentor';
+  const listHref = fromMentor ? '/writing?from=mentor' : '/writing';
 
   const [challenge, setChallenge] = useState<WritingChallenge | null>(null);
   const [code, setCode] = useState('');
@@ -126,7 +133,13 @@ export default function WritingChallengePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submission, setSubmission] = useState<WritingSubmission | null>(null);
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const apiUrl = API_BASE_URL;
+
+  useLearningTimeTracker({
+    userId: session?.user?.id,
+    source: 'writing_challenge',
+  });
+  useMentorWorkflowTracker({ userId: session?.user?.id, step: 'DO' });
 
   // お題取得
   useEffect(() => {
@@ -140,10 +153,10 @@ export default function WritingChallengePage() {
         if (!res.ok) {
           if (res.status === 403) {
             toast.error('このお題にアクセスする権限がありません');
-            router.push('/writing');
+            router.push(listHref);
           } else {
             toast.error('お題が見つかりません');
-            router.push('/writing');
+            router.push(listHref);
           }
           return;
         }
@@ -163,7 +176,7 @@ export default function WritingChallengePage() {
     };
 
     fetchChallenge();
-  }, [challengeId, apiUrl, router, session?.user?.id]);
+  }, [challengeId, apiUrl, router, session?.user?.id, listHref]);
 
   // 提出ポーリング
   const pollSubmission = useCallback(
@@ -202,6 +215,12 @@ export default function WritingChallengePage() {
   const handleRequestFeedback = async () => {
     if (!submission) return;
 
+    const inputViolation = findLlmInputViolation([{ field: 'コード', value: code }]);
+    if (inputViolation) {
+      toast.error('入力に禁止表現が含まれています');
+      return;
+    }
+
     try {
       const res = await fetch(`${apiUrl}/writing/submissions/${submission.id}/feedback`, {
         method: 'POST',
@@ -231,6 +250,13 @@ export default function WritingChallengePage() {
 
     setIsSubmitting(true);
     setSubmission(null);
+
+    const inputViolation = findLlmInputViolation([{ field: 'コード', value: code }]);
+    if (inputViolation) {
+      toast.error('入力に禁止表現が含まれています');
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       const res = await fetch(`${apiUrl}/writing/submissions`, {
@@ -273,13 +299,24 @@ export default function WritingChallengePage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Back Link */}
-      <Link
-        href="/writing"
-        className="inline-flex items-center gap-2 text-slate-400 hover:text-white mb-6 transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        お題一覧に戻る
-      </Link>
+      <div className="flex flex-wrap items-center gap-3 mb-6">
+        <Link
+          href={listHref}
+          className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          お題一覧に戻る
+        </Link>
+        {fromMentor && (
+          <Link
+            href="/mentor"
+            className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            AIメンターに戻る
+          </Link>
+        )}
+      </div>
 
       {/* Header */}
       <div className="mb-8">

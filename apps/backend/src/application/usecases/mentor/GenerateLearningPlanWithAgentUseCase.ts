@@ -1,5 +1,6 @@
 import type { IExerciseRepository } from '@/domain/ports/IExerciseRepository';
 import type { ILearningPlanRepository } from '@/domain/ports/ILearningPlanRepository';
+import type { IMentorSprintRepository } from '@/domain/ports/IMentorSprintRepository';
 import type { ISubmissionRepository } from '@/domain/ports/ISubmissionRepository';
 import type { IUserAccountRepository } from '@/domain/ports/IUserAccountRepository';
 import type { LearningPlan, PresetAnswer } from '@/mastra/mentorAgent';
@@ -18,6 +19,7 @@ export class GenerateLearningPlanWithAgentUseCase {
     private readonly submissionRepository: ISubmissionRepository,
     private readonly exerciseRepository: IExerciseRepository,
     private readonly learningPlanRepository: ILearningPlanRepository,
+    private readonly mentorSprintRepository: IMentorSprintRepository,
     private readonly mentorAgent: MentorAgent
   ) {}
 
@@ -46,13 +48,24 @@ export class GenerateLearningPlanWithAgentUseCase {
       threadId: `plan-${params.userId}`,
     });
 
-    await this.learningPlanRepository.savePlan({
+    const saved = await this.learningPlanRepository.savePlan({
       userId: params.userId,
       plan,
       presetAnswers: params.presetAnswers,
       targetLanguage: params.targetLanguage,
       modelId: this.mentorAgent.getModelId(),
       temperature: 0.2,
+    });
+
+    const startDate = new Date();
+    const endDate = new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+    await this.mentorSprintRepository.startSprint({
+      userId: params.userId,
+      learningPlanId: saved.id,
+      goal: plan.summary,
+      focusAreas: plan.focusAreas,
+      startDate,
+      endDate,
     });
 
     return plan;

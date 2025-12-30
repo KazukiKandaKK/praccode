@@ -6,11 +6,10 @@ import type {
   LanguageModelV1StreamPart,
 } from '@ai-sdk/provider';
 import { ReadableStream } from 'node:stream/web';
-import { OllamaProvider } from '../llm/ollama-provider';
+import { generateWithOllama } from '../llm/llm-client';
 
 const FALLBACK_MODEL = process.env.OLLAMA_MODEL || 'qwen2.5:7b';
 const OLLAMA_TIMEOUT_MS = Number(process.env.OLLAMA_TIMEOUT_MS || 120_000);
-
 /**
  * Minimal Ollama adapter that satisfies the AI SDK LanguageModelV1 interface
  * so Mastra Agents can run against the existing Ollama provider.
@@ -21,15 +20,13 @@ export class MastraOllamaModel implements LanguageModelV1 {
   readonly modelId = FALLBACK_MODEL;
   readonly defaultObjectGenerationMode = 'json';
 
-  private readonly ollama = new OllamaProvider();
-
   async doGenerate(options: LanguageModelV1CallOptions) {
     const promptText = this.buildPrompt(options.prompt);
     const now = new Date();
     const wantsJson =
       options.responseFormat?.type === 'json' || options.mode?.type === 'object-json';
 
-    const text = await this.ollama.generate(promptText, {
+    const text = await generateWithOllama(promptText, {
       temperature: options.temperature,
       maxTokens: options.maxTokens,
       jsonMode: wantsJson,

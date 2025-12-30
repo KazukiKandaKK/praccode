@@ -13,14 +13,14 @@ describe('RateLimiter', () => {
   });
 
   it('インスタンス化: カスタム設定が正しく適用される', () => {
-    const limiter = new RateLimiter(10000, 5);
+    const limiter = new RateLimiter(10000, 5, 0, 0);
     const status = limiter.getStatus();
     expect(status.windowMs).toBe(10000);
     expect(status.maxRequests).toBe(5);
   });
 
   it('acquire: 制限に達していない場合、待機しない', async () => {
-    const limiter = new RateLimiter(1000, 3);
+    const limiter = new RateLimiter(1000, 3, 0, 0);
     const sleepSpy = vi.spyOn(limiter as any, 'sleep');
 
     await limiter.acquire();
@@ -33,7 +33,7 @@ describe('RateLimiter', () => {
   it('acquire: 制限に達した場合、適切な時間待機する', async () => {
     const windowMs = 1000;
     const maxRequests = 2;
-    const limiter = new RateLimiter(windowMs, maxRequests);
+    const limiter = new RateLimiter(windowMs, maxRequests, 0, 0);
     const sleepSpy = vi.spyOn(limiter as any, 'sleep');
 
     // 2回のリクエストを記録
@@ -45,14 +45,14 @@ describe('RateLimiter', () => {
 
     // 3回目のリクエスト（制限超過）
     const acquirePromise = limiter.acquire();
-
-    // 待機時間が正しく計算されているか確認
-    // 最初のreqから1000ms後まで待つので、残り900ms
-    expect(sleepSpy).toHaveBeenCalledWith(900);
+    await Promise.resolve();
 
     // 時間を進めて待機を完了させる
     vi.advanceTimersByTime(900);
     await acquirePromise;
+    // 待機時間が正しく計算されているか確認
+    // 最初のreqから1000ms後まで待つので、残り900ms
+    expect(sleepSpy).toHaveBeenCalledWith(900);
 
     // 待機後にリクエストが記録され、古いものが削除されているか確認
     // time: 1000
@@ -61,7 +61,7 @@ describe('RateLimiter', () => {
   });
 
   it('acquire: 複数のリクエストが同時に発生しても正しく処理する', async () => {
-    const limiter = new RateLimiter(1000, 2);
+    const limiter = new RateLimiter(1000, 2, 0, 0);
     const sleepSpy = vi.spyOn(limiter as any, 'sleep');
 
     await limiter.acquire(); // time: 0
@@ -72,17 +72,42 @@ describe('RateLimiter', () => {
 
     // 3rd request should wait
     const p3 = limiter.acquire();
-    expect(sleepSpy).toHaveBeenCalledWith(990); // Waits until time 1000
+    await Promise.resolve();
 
     vi.advanceTimersByTime(990); // time: 1000
     await p3;
+    expect(sleepSpy).toHaveBeenCalledWith(990); // Waits until time 1000
 
     // After waiting, request at time 0 is cleaned, and request at 1000 is added.
     expect(limiter.getStatus().currentRequests).toBe(2); // requests at 10, 1000
   });
 
+  it('acquire: 同時リクエストはキューに入りウィンドウに従って待機する', async () => {
+    const limiter = new RateLimiter(1000, 1, 0, 0);
+
+    const first = limiter.acquire(); // time: 0
+    const second = limiter.acquire(); // queued
+    let secondResolved = false;
+    second.then(() => {
+      secondResolved = true;
+    });
+
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(secondResolved).toBe(false);
+
+    vi.advanceTimersByTime(999);
+    await Promise.resolve();
+    expect(secondResolved).toBe(false);
+
+    vi.advanceTimersByTime(1);
+    await Promise.all([first, second]);
+    expect(secondResolved).toBe(true);
+    expect(limiter.getStatus().currentRequests).toBe(1);
+  });
+
   it('cleanup: ウィンドウ外の古いリクエストを正しく削除する', async () => {
-    const limiter = new RateLimiter(1000, 5);
+    const limiter = new RateLimiter(1000, 5, 0, 0);
 
     await limiter.acquire(); // time: 0
     vi.advanceTimersByTime(500);
@@ -102,22 +127,23 @@ describe('RateLimiter', () => {
 
   describe('境界値分析', () => {
     it('maxRequestsが1の場合、リクエストごとに待機する', async () => {
-      const limiter = new RateLimiter(1000, 1);
+      const limiter = new RateLimiter(1000, 1, 0, 0);
       const sleepSpy = vi.spyOn(limiter as any, 'sleep');
 
       await limiter.acquire(); // time: 0
       expect(limiter.getStatus().currentRequests).toBe(1);
 
       const secondAcquire = limiter.acquire();
-      expect(sleepSpy).toHaveBeenCalledWith(1000);
+      await Promise.resolve();
       vi.advanceTimersByTime(1000);
       await secondAcquire;
+      expect(sleepSpy).toHaveBeenCalledWith(1000);
 
       expect(limiter.getStatus().currentRequests).toBe(1);
     });
 
     it('windowMsが0の場合、レート制限がかからない', async () => {
-      const limiter = new RateLimiter(0, 5);
+      const limiter = new RateLimiter(0, 5, 0, 0);
       const sleepSpy = vi.spyOn(limiter as any, 'sleep');
 
       for (let i = 0; i < 10; i++) {
@@ -131,15 +157,42 @@ describe('RateLimiter', () => {
   });
 
   describe('異常系', () => {
+    it('queueMaxに達した場合、即時に拒否する', async () => {
+      const limiter = new RateLimiter(1000, 1, 0, 0, 1, 0);
+
+      const first = limiter.acquire();
+      const second = limiter.acquire();
+
+      await expect(second).rejects.toThrow('queue overflow');
+      await first;
+    });
+
+    it('queue timeoutが超過した場合、待機中のリクエストを拒否する', async () => {
+      const limiter = new RateLimiter(1000, 1, 0, 0, 10, 500);
+
+      await limiter.acquire(); // 1つ消費して待機を発生させる
+      const first = limiter.acquire();
+      const second = limiter.acquire();
+
+      await Promise.resolve();
+      vi.advanceTimersByTime(500);
+      await Promise.resolve();
+
+      await expect(second).rejects.toThrow('queue timeout');
+
+      vi.advanceTimersByTime(500);
+      await first;
+    });
+
     it('コンストラクタに負の数が渡されてもエラーを投げない', () => {
-      const limiter = new RateLimiter(-1000, -5);
+      const limiter = new RateLimiter(-1000, -5, 0, 0);
       const status = limiter.getStatus();
       expect(status.windowMs).toBe(-1000);
       expect(status.maxRequests).toBe(-5);
     });
 
     it('maxRequestsが0の場合、何もしない', async () => {
-      const limiter = new RateLimiter(1000, 0);
+      const limiter = new RateLimiter(1000, 0, 0, 0);
       const sleepSpy = vi.spyOn(limiter as any, 'sleep');
 
       await limiter.acquire();

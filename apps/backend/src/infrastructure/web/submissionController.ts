@@ -6,6 +6,8 @@ import { UpdateSubmissionAnswersUseCase } from '../../application/usecases/submi
 import { EvaluateSubmissionUseCase } from '../../application/usecases/submissions/EvaluateSubmissionUseCase.js';
 import { IEvaluationEventPublisher } from '../../domain/ports/IEvaluationEventPublisher.js';
 import { ApplicationError } from '../../application/errors/ApplicationError.js';
+import { PromptSanitizer } from '../../llm/prompt-sanitizer.js';
+import { PromptInjectionError } from '../../llm/prompt-injection-error.js';
 
 const answerInputSchema = z.object({
   answers: z.array(
@@ -56,15 +58,30 @@ export function submissionController(fastify: FastifyInstance, deps: SubmissionC
   // PUT /submissions/:id/answers - 回答保存
   fastify.put('/:id/answers', async (request, reply) => {
     const { id } = request.params as { id: string };
-    const body = answerInputSchema.parse(request.body);
 
     try {
+      const body = answerInputSchema.parse(request.body);
+      body.answers.forEach((answer, index) => {
+        PromptSanitizer.sanitize(answer.answerText, `answers[${index}].answerText`);
+      });
+
       const updated = await deps.updateSubmissionAnswers.execute({
         submissionId: id,
         answers: body.answers,
       });
       return reply.send(updated);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send({ error: 'Invalid input', issues: error.issues });
+      }
+      if (error instanceof PromptInjectionError) {
+        return reply.status(400).send({
+          error: 'Invalid input',
+          message: '入力に禁止表現が含まれています',
+          field: error.fieldName,
+          reasons: error.detectedPatterns,
+        });
+      }
       if (error instanceof ApplicationError) {
         return reply.status(error.statusCode).send({ error: error.message });
       }

@@ -12,10 +12,11 @@ async function main() {
     where: { email: 'user@example.com' },
     update: {
       password: hashedPassword,
+      name: 'user',
     },
     create: {
       email: 'user@example.com',
-      name: 'Sample User',
+      name: 'user',
       password: hashedPassword,
       role: 'LEARNER',
     },
@@ -612,6 +613,341 @@ func IsPrime(n int) bool {
   });
 
   console.log('Created writing challenge 4:', writingChallenge4.id);
+
+  // ========== メタデータ（成長サマリ） ==========
+  const now = new Date();
+  const daysAgo = (days: number) => new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+
+  const dayMs = 24 * 60 * 60 * 1000;
+  const weeks = 52;
+  const makeId = (prefix: string, index: number) =>
+    `${prefix}-0000-0000-0000-${index.toString().padStart(12, '0')}`;
+  const readingSubmissions: Array<{ id: string; createdAt: Date }> = [];
+  const writingSubmissions: Array<{ id: string; createdAt: Date; passed: boolean }> = [];
+  const exercises = [exercise1, exercise2, exercise3];
+  const challenges = [writingChallenge1, writingChallenge2, writingChallenge3, writingChallenge4];
+  const firstWeek = new Date(now.getTime() - (weeks - 1) * 7 * dayMs);
+
+  for (let i = 0; i < weeks; i += 1) {
+    const createdAt = new Date(firstWeek.getTime() + i * 7 * dayMs);
+    const readingId = makeId('20000000', i + 1);
+    const exercise = exercises[i % exercises.length];
+
+    await prisma.submission.upsert({
+      where: { id: readingId },
+      update: { status: 'EVALUATED' },
+      create: {
+        id: readingId,
+        exerciseId: exercise.id,
+        userId: sampleUser.id,
+        status: 'EVALUATED',
+        createdAt,
+      },
+    });
+
+    readingSubmissions.push({ id: readingId, createdAt });
+
+    const writingId = makeId('30000000', i + 1);
+    const challenge = challenges[i % challenges.length];
+    const writingScore = i < 10 ? 0 : i < 26 ? 50 : 100;
+    const passed = writingScore >= 100;
+
+    await prisma.writingSubmission.upsert({
+      where: { id: writingId },
+      update: {
+        status: 'COMPLETED',
+        passed,
+      },
+      create: {
+        id: writingId,
+        challengeId: challenge.id,
+        userId: sampleUser.id,
+        language: challenge.language,
+        code: challenge.sampleCode || challenge.starterCode || '',
+        status: 'COMPLETED',
+        stdout: passed ? 'tests passed' : 'tests failed',
+        stderr: '',
+        exitCode: passed ? 0 : 1,
+        passed,
+        executedAt: createdAt,
+        llmFeedback: passed
+          ? '要件通りに実装できています。可読性の向上を意識しましょう。'
+          : '境界ケースの洗い出しと条件分岐の整理を意識しましょう。',
+        llmFeedbackStatus: 'COMPLETED',
+        llmFeedbackAt: createdAt,
+        createdAt,
+      },
+    });
+
+    writingSubmissions.push({ id: writingId, createdAt, passed });
+  }
+
+  const samplePlan = {
+    summary: '1週間で責務理解とデータフローの説明力を高める',
+    focusAreas: ['responsibility', 'data_flow', 'error_handling'],
+    weeklyPlan: [
+      {
+        title: '責務理解の強化と構造整理',
+        goals: ['クラス/関数の役割を整理して説明できる'],
+        activities: ['毎日1問のリーディング', '提出前に責務分解メモを作成'],
+        deliverables: ['責務分解の要約メモ', 'レビュー付き提出'],
+      },
+    ],
+    quickTests: [
+      {
+        name: '責務説明テスト',
+        task: '対象コードの責務を3点で説明する',
+        expectedAnswer: '役割/入出力/副作用を網羅する',
+        evaluationCriteria: ['責務が具体的', '入出力が明確', '副作用に言及'],
+      },
+    ],
+    checkpoints: [
+      {
+        metric: '責務理解スコア',
+        target: '70点以上',
+        when: 'スプリント終了時',
+      },
+    ],
+    reminders: ['1日1問を継続する'],
+  };
+
+  const learningPlan = await prisma.learningPlan.upsert({
+    where: { id: '70000000-0000-0000-0000-000000000001' },
+    update: {
+      plan: samplePlan,
+    },
+    create: {
+      id: '70000000-0000-0000-0000-000000000001',
+      userId: sampleUser.id,
+      plan: samplePlan,
+      presetAnswers: [
+        { question: 'いまの課題や伸ばしたい領域は？', answer: '責務理解とデータフロー' },
+        { question: '好きな/得意な言語・フレームワークは？', answer: 'TypeScript' },
+        { question: '週あたりの学習時間は？', answer: '6時間' },
+      ],
+      targetLanguage: 'TypeScript',
+      modelId: 'seed',
+      temperature: 0.2,
+      createdAt: daysAgo(9),
+      updatedAt: daysAgo(9),
+    },
+  });
+
+  await prisma.mentorSprint.upsert({
+    where: { id: '80000000-0000-0000-0000-000000000001' },
+    update: {
+      goal: samplePlan.summary,
+      focusAreas: samplePlan.focusAreas,
+      startDate: daysAgo(2),
+      endDate: daysAgo(-5),
+      status: 'ACTIVE',
+    },
+    create: {
+      id: '80000000-0000-0000-0000-000000000001',
+      userId: sampleUser.id,
+      learningPlanId: learningPlan.id,
+      sequence: 1,
+      goal: samplePlan.summary,
+      focusAreas: samplePlan.focusAreas,
+      startDate: daysAgo(2),
+      endDate: daysAgo(-5),
+      status: 'ACTIVE',
+      createdAt: daysAgo(2),
+      updatedAt: daysAgo(2),
+    },
+  });
+
+  const feedbackTemplates = [
+    {
+      overall: '基礎理解が安定してきました。改善点を整理しながら積み上げられています。',
+      strengths: ['責務の切り分けが明確', '説明が端的で読みやすい'],
+      improvements: [
+        { area: 'エラーハンドリング', advice: '例外の種類と復旧パターンを整理しましょう。' },
+        { area: 'データフロー', advice: '入力→処理→出力の図解を添えるとより明確です。' },
+      ],
+      nextFocus: ['error_handling', 'data_flow'],
+    },
+    {
+      overall: '応用的な観点が増えてきました。次は品質と速度の両立を意識しましょう。',
+      strengths: ['データフローの追跡が安定', '改善案の粒度が適切'],
+      improvements: [
+        { area: 'パフォーマンス', advice: 'ボトルネックになりやすい処理を先に洗い出しましょう。' },
+        { area: '設計選択', advice: 'トレードオフと採用理由を明記しましょう。' },
+      ],
+      nextFocus: ['performance', 'responsibility'],
+    },
+    {
+      overall: '品質面の安定感が出ています。次は再現性の高い改善提案を目指しましょう。',
+      strengths: ['パフォーマンス観点の指摘が増えた', '根拠のある提案ができている'],
+      improvements: [
+        { area: 'テスト観点', advice: '境界ケースの網羅性を上げましょう。' },
+        { area: '運用面', advice: 'ログ/監視の観点を追加しましょう。' },
+      ],
+      nextFocus: ['error_handling', 'performance'],
+    },
+  ];
+
+  const feedbackInsights: Array<{
+    id: string;
+    userId: string;
+    mentorFeedbackId: string;
+    type: 'STRENGTH' | 'IMPROVEMENT';
+    label: string;
+    detail: string | null;
+    example: string | null;
+    createdAt: Date;
+  }> = [];
+  let insightIndex = 1;
+
+  const feedbackCount = 12;
+  for (let i = 0; i < feedbackCount; i += 1) {
+    const feedbackId = makeId('40000000', i + 1);
+    const monthIndex = i + 1;
+    const submissionIndex = Math.min(i * 4 + 3, readingSubmissions.length - 1);
+    const submission = readingSubmissions[submissionIndex];
+    const template = feedbackTemplates[Math.min(Math.floor(i / 4), feedbackTemplates.length - 1)];
+    const feedback = {
+      overall: `${template.overall} ${monthIndex}ヶ月目の振り返りです。`,
+      strengths: template.strengths,
+      improvements: template.improvements,
+      nextFocus: template.nextFocus,
+    };
+
+    await prisma.mentorFeedbackLog.upsert({
+      where: { id: feedbackId },
+      update: {
+        feedback,
+        submissionId: submission.id,
+        modelId: 'seed',
+        temperature: 0.1,
+      },
+      create: {
+        id: feedbackId,
+        userId: sampleUser.id,
+        submissionId: submission.id,
+        feedback,
+        modelId: 'seed',
+        temperature: 0.1,
+        createdAt: submission.createdAt,
+      },
+    });
+
+    template.strengths.forEach((label) => {
+      feedbackInsights.push({
+        id: makeId('60000000', insightIndex),
+        userId: sampleUser.id,
+        mentorFeedbackId: feedbackId,
+        type: 'STRENGTH',
+        label,
+        detail: null,
+        example: null,
+        createdAt: submission.createdAt,
+      });
+      insightIndex += 1;
+    });
+
+    template.improvements.forEach((improvement) => {
+      feedbackInsights.push({
+        id: makeId('60000000', insightIndex),
+        userId: sampleUser.id,
+        mentorFeedbackId: feedbackId,
+        type: 'IMPROVEMENT',
+        label: improvement.area,
+        detail: improvement.advice,
+        example: null,
+        createdAt: submission.createdAt,
+      });
+      insightIndex += 1;
+    });
+  }
+
+  await prisma.mentorFeedbackInsight.createMany({
+    data: feedbackInsights,
+    skipDuplicates: true,
+  });
+
+  const clampScore = (score: number) => Math.max(35, Math.min(95, score));
+  const evaluationMetrics: Array<{
+    id: string;
+    userId: string;
+    sourceType: 'READING' | 'WRITING';
+    aspect: string;
+    score: number;
+    submissionId?: string | null;
+    writingSubmissionId?: string | null;
+    createdAt: Date;
+  }> = [];
+  let metricIndex = 1;
+
+  for (let i = 0; i < readingSubmissions.length; i += 1) {
+    const progress = i / Math.max(1, readingSubmissions.length - 1);
+    const base = 55 + progress * 25;
+    const wobble = (i % 4) - 1.5;
+    const submission = readingSubmissions[i];
+
+    evaluationMetrics.push({
+      id: makeId('50000000', metricIndex),
+      userId: sampleUser.id,
+      sourceType: 'READING',
+      aspect: 'responsibility',
+      score: clampScore(Math.round(base + 6 + wobble)),
+      submissionId: submission.id,
+      createdAt: submission.createdAt,
+    });
+    metricIndex += 1;
+
+    evaluationMetrics.push({
+      id: makeId('50000000', metricIndex),
+      userId: sampleUser.id,
+      sourceType: 'READING',
+      aspect: 'data_flow',
+      score: clampScore(Math.round(base + 3 + wobble)),
+      submissionId: submission.id,
+      createdAt: submission.createdAt,
+    });
+    metricIndex += 1;
+
+    evaluationMetrics.push({
+      id: makeId('50000000', metricIndex),
+      userId: sampleUser.id,
+      sourceType: 'READING',
+      aspect: 'error_handling',
+      score: clampScore(Math.round(base - 1 + wobble)),
+      submissionId: submission.id,
+      createdAt: submission.createdAt,
+    });
+    metricIndex += 1;
+
+    evaluationMetrics.push({
+      id: makeId('50000000', metricIndex),
+      userId: sampleUser.id,
+      sourceType: 'READING',
+      aspect: 'performance',
+      score: clampScore(Math.round(base - 6 + wobble)),
+      submissionId: submission.id,
+      createdAt: submission.createdAt,
+    });
+    metricIndex += 1;
+
+    const writingSubmission = writingSubmissions[i];
+    const writingScore = i < 10 ? 0 : i < 26 ? 50 : 100;
+
+    evaluationMetrics.push({
+      id: makeId('50000000', metricIndex),
+      userId: sampleUser.id,
+      sourceType: 'WRITING',
+      aspect: 'tests_passed',
+      score: writingScore,
+      writingSubmissionId: writingSubmission.id,
+      createdAt: writingSubmission.createdAt,
+    });
+    metricIndex += 1;
+  }
+
+  await prisma.evaluationMetric.createMany({
+    data: evaluationMetrics,
+    skipDuplicates: true,
+  });
 
   console.log('Seeding completed!');
 }

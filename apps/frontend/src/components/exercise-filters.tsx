@@ -40,6 +40,7 @@ export function ExerciseFilters() {
   const language = searchParams.get('language') || '';
   const difficulty = searchParams.get('difficulty') || '';
   const genre = searchParams.get('genre') || '';
+  const fromMentor = searchParams.get('from') === 'mentor';
 
   const updateFilter = useCallback(
     (key: string, value: string) => {
@@ -61,8 +62,8 @@ export function ExerciseFilters() {
   );
 
   const clearFilters = useCallback(() => {
-    router.push('/exercises');
-  }, [router]);
+    router.push(fromMentor ? '/exercises?from=mentor' : '/exercises');
+  }, [router, fromMentor]);
 
   const hasFilters = language || difficulty || genre;
 
@@ -119,4 +120,3 @@ export function ExerciseFilters() {
     </div>
   );
 }
-

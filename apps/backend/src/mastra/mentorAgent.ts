@@ -101,6 +101,11 @@ type FeedbackInput = {
   threadId?: string;
 };
 
+type NextLearningPlanInput = LearningPlanInput & {
+  previousPlan: LearningPlan;
+  latestFeedback: MentorFeedback;
+};
+
 export class MentorAgent {
   private readonly agent: Agent;
 
@@ -124,6 +129,21 @@ export class MentorAgent {
   async generateLearningPlan(input: LearningPlanInput): Promise<LearningPlan> {
     const message = this.buildPlanPrompt(input);
     const threadId = input.threadId || `plan-${input.profile.id}`;
+    const result = await this.agent.generate(
+      [{ role: 'user', content: message }],
+      {
+        output: learningPlanSchema,
+        temperature: 0.2,
+        resourceId: input.profile.id,
+        threadId,
+      }
+    );
+    return result.object;
+  }
+
+  async generateNextLearningPlan(input: NextLearningPlanInput): Promise<LearningPlan> {
+    const message = this.buildNextPlanPrompt(input);
+    const threadId = input.threadId || `plan-next-${input.profile.id}`;
     const result = await this.agent.generate(
       [{ role: 'user', content: message }],
       {
@@ -181,7 +201,7 @@ export class MentorAgent {
       `- 弱点候補: ${weakPoints}`,
       '直近の提出:',
       recent || '- なし',
-      'プリセット質問と回答:',
+      '事前質問と回答:',
       answers || '- なし',
       '出力要件:',
       '1) focusAreas に弱点と目標をまとめる',
@@ -190,6 +210,82 @@ export class MentorAgent {
       '4) checkpoints で測定指標といつ確認するかを示す',
       '5) reminders は短いメモで良い（任意）',
       '常にJSONスキーマに沿って簡潔に。'
+    ]
+      .filter(Boolean)
+      .join('\n');
+  }
+
+  private buildNextPlanPrompt(input: NextLearningPlanInput): string {
+    const { profile, progress, presetAnswers, targetLanguage, previousPlan, latestFeedback } =
+      input;
+
+    const weakPoints =
+      progress.weakAspects.length > 0
+        ? progress.weakAspects.map((a) => `${a.aspect}: ${a.score}`).join(', ')
+        : '未評価';
+
+    const recent = progress.recentSubmissions
+      .map(
+        (s) =>
+          `- ${s.exerciseTitle} (score: ${s.averageScore}, updated: ${s.updatedAt})`
+      )
+      .join('\n');
+
+    const answers = presetAnswers
+      .map((qa, idx) => `${idx + 1}. Q: ${qa.question}\n   A: ${qa.answer}`)
+      .join('\n');
+
+    const previousPlanSummary = [
+      `- summary: ${previousPlan.summary}`,
+      `- focusAreas: ${previousPlan.focusAreas.join(', ')}`,
+      `- weeklyPlan: ${previousPlan.weeklyPlan
+        .map((week, idx) => `${idx + 1}. ${week.title}`)
+        .join(' / ')}`,
+      `- quickTests: ${previousPlan.quickTests.map((test) => test.name).join(', ')}`,
+      `- checkpoints: ${previousPlan.checkpoints
+        .map((cp) => `${cp.metric} (${cp.when})`)
+        .join(', ')}`,
+      previousPlan.reminders && previousPlan.reminders.length > 0
+        ? `- reminders: ${previousPlan.reminders.join(', ')}`
+        : '',
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    const feedbackSummary = [
+      `- overall: ${latestFeedback.overall}`,
+      `- strengths: ${latestFeedback.strengths.join(', ')}`,
+      `- improvements: ${latestFeedback.improvements
+        .map((item) => `${item.area}: ${item.advice}`)
+        .join(' / ')}`,
+      `- nextFocus: ${latestFeedback.nextFocus.join(', ')}`,
+    ].join('\n');
+
+    return [
+      `学習者: ${profile.name ?? '未設定'} (${profile.email}, role: ${profile.role})`,
+      targetLanguage ? `希望言語/重点: ${targetLanguage}` : '',
+      '進捗サマリ:',
+      `- 全問題数: ${progress.totalExercises}`,
+      `- 完了: ${progress.completedExercises}`,
+      `- 平均スコア: ${progress.averageScore}`,
+      `- 観点別: ${JSON.stringify(progress.aspectScores)}`,
+      `- 弱点候補: ${weakPoints}`,
+      '直近の提出:',
+      recent || '- なし',
+      '事前質問と回答:',
+      answers || '- なし',
+      '直近の学習計画:',
+      previousPlanSummary || '- なし',
+      '最新のフィードバック:',
+      feedbackSummary || '- なし',
+      '出力要件:',
+      '1) 最新フィードバックを踏まえて次の学習計画に更新する',
+      '2) focusAreas に弱点と次の目標をまとめる',
+      '3) weeklyPlan は週ごとのフォーカス/具体的活動/アウトプットを含める（最大4週想定で短く）',
+      '4) quickTests は理解確認用の即席課題と採点観点を示す',
+      '5) checkpoints で測定指標といつ確認するかを示す',
+      '6) reminders は短いメモで良い（任意）',
+      '常にJSONスキーマに沿って簡潔に。',
     ]
       .filter(Boolean)
       .join('\n');

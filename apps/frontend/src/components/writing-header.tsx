@@ -1,9 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { CreateWritingChallengeDialog } from '@/components/create-writing-challenge-dialog';
-import { Plus, PenTool } from 'lucide-react';
+import { ChevronLeft, PenTool, Plus } from 'lucide-react';
+import { useMentorWorkflowTracker } from '@/hooks/use-mentor-workflow-tracker';
 
 interface WritingHeaderProps {
   userId: string;
@@ -11,11 +14,24 @@ interface WritingHeaderProps {
 
 export function WritingHeader({ userId }: WritingHeaderProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const searchParams = useSearchParams();
+  const fromMentor = searchParams.get('from') === 'mentor';
+
+  useMentorWorkflowTracker({ userId, step: 'DO' });
 
   return (
     <>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
+          {fromMentor && (
+            <Link
+              href="/mentor"
+              className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors mb-2"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              AIメンターに戻る
+            </Link>
+          )}
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2 bg-violet-500/10 rounded-xl">
               <PenTool className="w-6 h-6 text-violet-400" />
@@ -41,4 +57,3 @@ export function WritingHeader({ userId }: WritingHeaderProps) {
     </>
   );
 }
-

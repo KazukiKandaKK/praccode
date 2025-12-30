@@ -3,6 +3,7 @@ import { IWritingChallengeRepository } from '../../../domain/ports/IWritingChall
 import { ICodeExecutor } from '../../../domain/ports/ICodeExecutor';
 import { ILearningAnalysisScheduler } from '../../../domain/ports/ILearningAnalysisScheduler';
 import { ApplicationError } from '../../errors/ApplicationError';
+import { IEvaluationMetricRepository } from '../../../domain/ports/IEvaluationMetricRepository';
 
 export interface SubmitWritingCodeInput {
   userId: string;
@@ -21,7 +22,8 @@ export class SubmitWritingCodeUseCase {
     private readonly challengeRepo: IWritingChallengeRepository,
     private readonly submissionRepo: IWritingSubmissionRepository,
     private readonly executor: ICodeExecutor,
-    private readonly learningAnalysisScheduler: ILearningAnalysisScheduler
+    private readonly learningAnalysisScheduler: ILearningAnalysisScheduler,
+    private readonly evaluationMetricRepository: IEvaluationMetricRepository
   ) {}
 
   async execute(input: SubmitWritingCodeInput): Promise<SubmitWritingCodeResult> {
@@ -57,6 +59,18 @@ export class SubmitWritingCodeUseCase {
           stderr: result.stderr,
           exitCode: result.exitCode,
           passed: result.passed,
+        });
+
+        await this.evaluationMetricRepository.saveMetrics({
+          userId: updated.userId,
+          sourceType: 'WRITING',
+          writingSubmissionId: updated.id,
+          metrics: [
+            {
+              aspect: 'tests_passed',
+              score: updated.passed ? 100 : 0,
+            },
+          ],
         });
 
         await this.learningAnalysisScheduler.trigger(updated.userId);

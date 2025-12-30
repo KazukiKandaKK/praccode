@@ -65,14 +65,27 @@ import { ExerciseGeneratorService } from './infrastructure/services/ExerciseGene
 import { LlmLearningAnalyzer } from './infrastructure/services/LlmLearningAnalyzer.js';
 import { MentorAgent } from './mastra/mentorAgent.js';
 import { GenerateLearningPlanWithAgentUseCase } from './application/usecases/mentor/GenerateLearningPlanWithAgentUseCase.js';
+import { GenerateNextLearningPlanWithAgentUseCase } from './application/usecases/mentor/GenerateNextLearningPlanWithAgentUseCase.js';
 import { GenerateSubmissionFeedbackWithAgentUseCase } from './application/usecases/mentor/GenerateSubmissionFeedbackWithAgentUseCase.js';
+import { GetCurrentMentorSprintUseCase } from './application/usecases/mentor/GetCurrentMentorSprintUseCase.js';
+import { GetMentorWorkflowStepUseCase } from './application/usecases/mentor/GetMentorWorkflowStepUseCase.js';
+import { GetMentorMetadataSummaryUseCase } from './application/usecases/mentor/GetMentorMetadataSummaryUseCase.js';
 import { mentorController } from './infrastructure/web/mentorController.js';
 import { PrismaLearningPlanRepository } from './infrastructure/persistence/PrismaLearningPlanRepository.js';
 import { GetLatestLearningPlanUseCase } from './application/usecases/mentor/GetLatestLearningPlanUseCase.js';
 import { PrismaMastraMemory } from './mastra/PrismaMastraMemory.js';
 import { PrismaMentorFeedbackRepository } from './infrastructure/persistence/PrismaMentorFeedbackRepository.js';
+import { PrismaMentorFeedbackInsightRepository } from './infrastructure/persistence/PrismaMentorFeedbackInsightRepository.js';
+import { PrismaMentorSprintRepository } from './infrastructure/persistence/PrismaMentorSprintRepository.js';
+import { PrismaMentorWorkflowRepository } from './infrastructure/persistence/PrismaMentorWorkflowRepository.js';
 import { ListLearningPlansUseCase } from './application/usecases/mentor/ListLearningPlansUseCase.js';
 import { ListMentorFeedbackUseCase } from './application/usecases/mentor/ListMentorFeedbackUseCase.js';
+import { UpdateMentorWorkflowStepUseCase } from './application/usecases/mentor/UpdateMentorWorkflowStepUseCase.js';
+import { PrismaEvaluationMetricRepository } from './infrastructure/persistence/PrismaEvaluationMetricRepository.js';
+import { PrismaLearningTimeRepository } from './infrastructure/persistence/PrismaLearningTimeRepository.js';
+import { LogLearningTimeUseCase } from './application/usecases/learning-time/LogLearningTimeUseCase.js';
+import { GetDailyLearningTimeUseCase } from './application/usecases/learning-time/GetDailyLearningTimeUseCase.js';
+import { learningTimeController } from './infrastructure/web/learningTimeController.js';
 
 const fastify = Fastify({
   logger: true,
@@ -140,6 +153,11 @@ const mentorMemory = new PrismaMastraMemory();
 const mentorAgent = new MentorAgent({ memory: mentorMemory });
 const learningPlanRepository = new PrismaLearningPlanRepository();
 const mentorFeedbackRepository = new PrismaMentorFeedbackRepository();
+const mentorFeedbackInsightRepository = new PrismaMentorFeedbackInsightRepository();
+const mentorSprintRepository = new PrismaMentorSprintRepository();
+const mentorWorkflowRepository = new PrismaMentorWorkflowRepository();
+const evaluationMetricRepository = new PrismaEvaluationMetricRepository();
+const learningTimeRepository = new PrismaLearningTimeRepository();
 const listWritingChallengesUseCase = new ListWritingChallengesUseCase(writingChallengeRepository);
 const getWritingChallengeUseCase = new GetWritingChallengeUseCase(writingChallengeRepository);
 const autoGenerateWritingChallengeUseCase = new AutoGenerateWritingChallengeUseCase(
@@ -152,7 +170,8 @@ const submitWritingCodeUseCase = new SubmitWritingCodeUseCase(
   writingChallengeRepository,
   writingSubmissionRepository,
   codeExecutor,
-  learningAnalysisScheduler
+  learningAnalysisScheduler,
+  evaluationMetricRepository
 );
 const listWritingSubmissionsUseCase = new ListWritingSubmissionsUseCase(writingSubmissionRepository);
 const getWritingSubmissionUseCase = new GetWritingSubmissionUseCase(writingSubmissionRepository);
@@ -169,6 +188,7 @@ const evaluateSubmissionUseCase = new EvaluateSubmissionUseCase(
   answerEvaluationService,
   evaluationEventPublisher,
   learningAnalysisScheduler,
+  evaluationMetricRepository,
   fastify.log
 );
 const getUserProfileUseCase = new GetUserProfileUseCase(userAccountRepository);
@@ -183,7 +203,10 @@ const confirmEmailChangeUseCase = new ConfirmEmailChangeUseCase(
   emailChangeTokenRepository
 );
 const changePasswordUseCase = new ChangePasswordUseCase(userAccountRepository, passwordHasher);
-const getDashboardStatsUseCase = new GetDashboardStatsUseCase(dashboardRepository);
+const getDashboardStatsUseCase = new GetDashboardStatsUseCase(
+  dashboardRepository,
+  learningTimeRepository
+);
 const getDashboardActivityUseCase = new GetDashboardActivityUseCase(dashboardRepository);
 const getLearningAnalysisUseCase = new GetLearningAnalysisUseCase(
   dashboardRepository,
@@ -201,22 +224,46 @@ const generateLearningPlanWithAgentUseCase = new GenerateLearningPlanWithAgentUs
   submissionRepository,
   exerciseRepository,
   learningPlanRepository,
+  mentorSprintRepository,
+  mentorAgent
+);
+const generateNextLearningPlanWithAgentUseCase = new GenerateNextLearningPlanWithAgentUseCase(
+  userAccountRepository,
+  submissionRepository,
+  exerciseRepository,
+  learningPlanRepository,
+  mentorFeedbackRepository,
+  mentorSprintRepository,
   mentorAgent
 );
 const generateSubmissionFeedbackWithAgentUseCase = new GenerateSubmissionFeedbackWithAgentUseCase(
   submissionRepository,
   exerciseRepository,
   mentorFeedbackRepository,
+  mentorFeedbackInsightRepository,
   mentorAgent
 );
 const getLatestLearningPlanUseCase = new GetLatestLearningPlanUseCase(learningPlanRepository);
 const listLearningPlansUseCase = new ListLearningPlansUseCase(learningPlanRepository);
 const listMentorFeedbackUseCase = new ListMentorFeedbackUseCase(mentorFeedbackRepository);
+const getCurrentMentorSprintUseCase = new GetCurrentMentorSprintUseCase(mentorSprintRepository);
+const getMentorWorkflowStepUseCase = new GetMentorWorkflowStepUseCase(
+  mentorWorkflowRepository
+);
+const updateMentorWorkflowStepUseCase = new UpdateMentorWorkflowStepUseCase(
+  mentorWorkflowRepository
+);
+const getMentorMetadataSummaryUseCase = new GetMentorMetadataSummaryUseCase(
+  evaluationMetricRepository,
+  mentorFeedbackInsightRepository
+);
 const generateHintUseCase = new GenerateHintUseCase(
   exerciseRepository,
   hintRepository,
   hintGenerator
 );
+const logLearningTimeUseCase = new LogLearningTimeUseCase(learningTimeRepository);
+const getDailyLearningTimeUseCase = new GetDailyLearningTimeUseCase(learningTimeRepository);
 const listExercisesUseCase = new ListExercisesUseCase(exerciseRepository);
 const getExerciseByIdUseCase = new GetExerciseByIdUseCase(exerciseRepository);
 const getUserProgressUseCase = new GetUserProgressUseCase(submissionRepository, exerciseRepository);
@@ -293,6 +340,14 @@ await fastify.register(
 );
 await fastify.register(
   async (instance) => {
+    learningTimeController(instance, {
+      logLearningTime: logLearningTimeUseCase,
+      getDailyLearningTime: getDailyLearningTimeUseCase,
+    });
+  }
+);
+await fastify.register(
+  async (instance) => {
     dashboardController(instance, {
       getStats: getDashboardStatsUseCase,
       getActivity: getDashboardActivityUseCase,
@@ -305,7 +360,12 @@ await fastify.register(
   async (instance) => {
     mentorController(instance, {
       generateLearningPlan: generateLearningPlanWithAgentUseCase,
+      generateNextLearningPlan: generateNextLearningPlanWithAgentUseCase,
       generateSubmissionFeedback: generateSubmissionFeedbackWithAgentUseCase,
+      getCurrentMentorSprint: getCurrentMentorSprintUseCase,
+      getMentorMetadataSummary: getMentorMetadataSummaryUseCase,
+      getMentorWorkflowStep: getMentorWorkflowStepUseCase,
+      updateMentorWorkflowStep: updateMentorWorkflowStepUseCase,
       getLatestLearningPlan: getLatestLearningPlanUseCase,
       listLearningPlans: listLearningPlansUseCase,
       listMentorFeedback: listMentorFeedbackUseCase,

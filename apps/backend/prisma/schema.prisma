@@ -34,6 +34,11 @@ model User {
   learningAnalysis          UserLearningAnalysis?
   learningPlans             LearningPlan[]
   mentorFeedbacks           MentorFeedbackLog[]
+  learningTimeLogs          LearningTimeLog[]
+  mentorWorkflowState       MentorWorkflowState?
+  evaluationMetrics         EvaluationMetric[]
+  mentorFeedbackInsights    MentorFeedbackInsight[]
+  mentorSprints             MentorSprint[]
 
   @@map("users")
 }
@@ -41,6 +46,28 @@ model User {
 enum UserRole {
   ADMIN
   LEARNER
+}
+
+enum MentorWorkflowStep {
+  PLAN
+  DO
+  CHECK
+  NEXT_PLAN
+}
+
+enum MentorSprintStatus {
+  ACTIVE
+  COMPLETED
+}
+
+enum EvaluationMetricSource {
+  READING
+  WRITING
+}
+
+enum MentorFeedbackInsightType {
+  STRENGTH
+  IMPROVEMENT
 }
 
 // NextAuth.js用アカウント
@@ -181,6 +208,7 @@ model Submission {
   user     User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   answers  SubmissionAnswer[]
   mentorFeedbacks MentorFeedbackLog[]
+  evaluationMetrics EvaluationMetric[]
 
   @@map("submissions")
 }
@@ -280,8 +308,9 @@ model WritingSubmission {
   llmFeedbackAt     DateTime?              @map("llm_feedback_at")
   createdAt         DateTime               @default(now()) @map("created_at")
 
-  challenge WritingChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge        WritingChallenge  @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  evaluationMetrics EvaluationMetric[]
 
   @@map("writing_submissions")
 }
@@ -326,6 +355,7 @@ model LearningPlan {
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mentorSprints MentorSprint[]
 
   @@index([userId])
   @@map("learning_plans")
@@ -343,10 +373,96 @@ model MentorFeedbackLog {
 
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  insights   MentorFeedbackInsight[]
 
   @@index([userId])
   @@index([submissionId])
   @@map("mentor_feedback_logs")
+}
+
+model LearningTimeLog {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  source      String
+  durationSec Int      @map("duration_sec")
+  startedAt   DateTime @default(now()) @map("started_at")
+  endedAt     DateTime @default(now()) @map("ended_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, startedAt])
+  @@map("learning_time_logs")
+}
+
+model EvaluationMetric {
+  id                  String                 @id @default(uuid())
+  userId              String                 @map("user_id")
+  sourceType          EvaluationMetricSource @map("source_type")
+  aspect              String
+  score               Int
+  submissionId        String?                @map("submission_id")
+  writingSubmissionId String?                @map("writing_submission_id")
+  createdAt           DateTime               @default(now()) @map("created_at")
+
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  submission        Submission?       @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  writingSubmission WritingSubmission? @relation(fields: [writingSubmissionId], references: [id], onDelete: Cascade)
+
+  @@index([userId, sourceType, createdAt])
+  @@index([submissionId])
+  @@index([writingSubmissionId])
+  @@map("evaluation_metrics")
+}
+
+model MentorFeedbackInsight {
+  id              String                   @id @default(uuid())
+  userId          String                   @map("user_id")
+  mentorFeedbackId String                  @map("mentor_feedback_id")
+  type            MentorFeedbackInsightType @map("type")
+  label           String
+  detail          String?                  @db.Text
+  example         String?                  @db.Text
+  createdAt       DateTime                 @default(now()) @map("created_at")
+
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mentorFeedback MentorFeedbackLog @relation(fields: [mentorFeedbackId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type, createdAt])
+  @@index([mentorFeedbackId])
+  @@map("mentor_feedback_insights")
+}
+
+model MentorSprint {
+  id             String              @id @default(uuid())
+  userId         String              @map("user_id")
+  learningPlanId String?             @map("learning_plan_id")
+  sequence       Int
+  goal           String              @db.Text
+  focusAreas     Json                @default("[]") @map("focus_areas")
+  startDate      DateTime            @map("start_date")
+  endDate        DateTime            @map("end_date")
+  status         MentorSprintStatus  @default(ACTIVE)
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  learningPlan LearningPlan? @relation(fields: [learningPlanId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status, startDate])
+  @@map("mentor_sprints")
+}
+
+model MentorWorkflowState {
+  id          String             @id @default(uuid())
+  userId      String             @unique @map("user_id")
+  currentStep MentorWorkflowStep @map("current_step")
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("mentor_workflow_states")
 }
 
 // ========== Mastra Memory ==========

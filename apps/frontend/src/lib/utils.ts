@@ -84,3 +84,14 @@ export function getGenreLabel(genre: string): string {
   };
   return labels[genre] || genre;
 }
+
+export function formatDuration(durationSec: number): string {
+  const totalMinutes = Math.round(durationSec / 60);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours > 0) {
+    return `${hours}時間${minutes}分`;
+  }
+  return `${minutes}分`;
+}
