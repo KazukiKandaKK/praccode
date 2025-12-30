@@ -296,6 +296,8 @@ pnpm --filter @praccode/api test --coverage
 pnpm --filter @praccode/web test --coverage
 ```
 
+※ 登録〜メール認証のE2Eは `DATABASE_URL` が設定されている場合のみ実行されます。
+
 ### テスト範囲
 
 **現状カバーしている範囲**:
@@ -303,10 +305,10 @@ pnpm --filter @praccode/web test --coverage
 - ✅ LLMロジック（評価、問題生成、学習分析）
 - ✅ ユーティリティ関数（境界値・エッジケース含む）
 - ✅ APIエンドポイント（主要なルート）
+- ✅ 登録〜メール認証のE2E（DBがあるときのみ）
 
 **今後の課題**:
 
-- ⏳ E2Eテスト（Playwright等）
 - ⏳ フロントエンドコンポーネントの統合テスト
 - ⏳ エラーハンドリングの網羅的なテスト
 
