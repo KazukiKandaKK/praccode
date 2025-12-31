@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="PracCode">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="12" fill="url(#grad)"/>
+  <path fill="#38bdf8" d="M16 19c0-2 1.7-4 4-4h14c7 0 11 5 11 10 0 6-4.5 10-11 10h-8v10c0 1.7-1.3 3-3 3s-3-1.3-3-3V19Zm8 12h9c3 0 4.5-1.8 4.5-4s-1.5-4-4.5-4h-9v8Z"/>
+  <path fill="#a5b4fc" d="M34 47c0-1.7 1.3-3 3-3h6c2 0 3.5-1.4 3.5-3.3 0-1.8-1.5-3.2-3.5-3.2h-5c-1.7 0-3-1.3-3-3s1.3-3 3-3h5c5 0 8.5 3.5 8.5 9.1C51.5 51 47 55 42 55h-5c-1.7 0-3-1.3-3-3Z"/>
+</svg>

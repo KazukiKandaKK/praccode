@@ -16,6 +16,9 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'PracCode - コードリーディング・トレーニング',
   description: '実務コードが読めるエンジニアを増やすためのトレーニングプラットフォーム',
+  icons: {
+    icon: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({
