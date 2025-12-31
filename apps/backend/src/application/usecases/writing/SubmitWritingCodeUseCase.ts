@@ -54,7 +54,7 @@ export class SubmitWritingCodeUseCase {
           language: input.language,
         });
 
-        const updated = await this.submissionRepo.updateExecutionResult(submission.id, {
+        await this.submissionRepo.updateExecutionResult(submission.id, {
           stdout: result.stdout,
           stderr: result.stderr,
           exitCode: result.exitCode,
@@ -62,18 +62,18 @@ export class SubmitWritingCodeUseCase {
         });
 
         await this.evaluationMetricRepository.saveMetrics({
-          userId: updated.userId,
+          userId: submission.userId,
           sourceType: 'WRITING',
-          writingSubmissionId: updated.id,
+          writingSubmissionId: submission.id,
           metrics: [
             {
               aspect: 'tests_passed',
-              score: updated.passed ? 100 : 0,
+              score: result.passed ? 100 : 0,
             },
           ],
         });
 
-        await this.learningAnalysisScheduler.trigger(updated.userId);
+        await this.learningAnalysisScheduler.trigger(submission.userId);
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';
         await this.submissionRepo.markError(submission.id, message);

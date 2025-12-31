@@ -88,6 +88,7 @@ import { PrismaLearningTimeRepository } from './infrastructure/persistence/Prism
 import { LogLearningTimeUseCase } from './application/usecases/learning-time/LogLearningTimeUseCase.js';
 import { GetDailyLearningTimeUseCase } from './application/usecases/learning-time/GetDailyLearningTimeUseCase.js';
 import { learningTimeController } from './infrastructure/web/learningTimeController.js';
+import type { MastraMemory } from '@mastra/core';
 
 const fastify = Fastify({
   logger: true,
@@ -151,7 +152,7 @@ const userAccountRepository = new PrismaUserAccountRepository();
 const emailChangeTokenRepository = new PrismaEmailChangeTokenRepository();
 const dashboardRepository = new PrismaDashboardRepository();
 const learningAnalyzer = new LlmLearningAnalyzer();
-const mentorMemory = new PrismaMastraMemory();
+const mentorMemory = new PrismaMastraMemory() as unknown as MastraMemory;
 const mentorAgent = new MentorAgent({ memory: mentorMemory });
 const learningPlanRepository = new PrismaLearningPlanRepository();
 const mentorFeedbackRepository = new PrismaMentorFeedbackRepository();

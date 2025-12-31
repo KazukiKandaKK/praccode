@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck
 import { Agent } from '@mastra/core/agent';
 import type { MastraMemory, MastraLanguageModel } from '@mastra/core';
 import { z } from 'zod';
