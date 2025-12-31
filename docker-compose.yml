@@ -46,8 +46,6 @@ services:
     environment:
       NEXTAUTH_URL: http://localhost:3000
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-change-me}
-      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
-      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
       NEXT_PUBLIC_API_URL: http://localhost:3001
       API_URL: http://backend:3001
       DATABASE_URL: postgresql://postgres:postgres@db:5432/praccode?schema=public
@@ -56,4 +54,3 @@ services:
 
 volumes:
   postgres_data:
-

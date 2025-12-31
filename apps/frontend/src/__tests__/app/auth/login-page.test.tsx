@@ -3,11 +3,9 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import LoginPage from '@/app/(auth)/login/page';
 
 const mockLoginWithCredentials = vi.fn();
-const mockLoginWithGitHub = vi.fn();
 
 vi.mock('@/app/actions/auth', () => ({
   loginWithCredentials: (...args: unknown[]) => mockLoginWithCredentials(...args),
-  loginWithGitHub: (...args: unknown[]) => mockLoginWithGitHub(...args),
 }));
 
 const mockUseSearchParams = vi.fn();
@@ -24,7 +22,6 @@ describe('LoginPage', () => {
   beforeEach(() => {
     mockUseSearchParams.mockReturnValue(new URLSearchParams());
     mockLoginWithCredentials.mockReset();
-    mockLoginWithGitHub.mockReset();
   });
 
   it('shows registered success message when query param exists', () => {

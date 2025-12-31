@@ -3,8 +3,8 @@
 import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { loginWithCredentials, loginWithGitHub } from '@/app/actions/auth';
-import { Code2, Github, Mail, Lock, AlertCircle, CheckCircle } from 'lucide-react';
+import { loginWithCredentials } from '@/app/actions/auth';
+import { Code2, Mail, Lock, AlertCircle, CheckCircle } from 'lucide-react';
 
 function LoginForm() {
   const [error, setError] = useState<string | null>(null);
@@ -61,27 +61,6 @@ function LoginForm() {
               <p className="text-sm text-red-300">{error}</p>
             </div>
           )}
-
-          {/* GitHub Login */}
-          <form action={loginWithGitHub}>
-            <button
-              type="submit"
-              className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-xl transition-colors mb-4"
-            >
-              <Github className="w-5 h-5" />
-              GitHub でログイン
-            </button>
-          </form>
-
-          {/* Divider */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-700"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-slate-800/50 text-slate-400">または</span>
-            </div>
-          </div>
 
           {/* Email Login Form */}
           <form

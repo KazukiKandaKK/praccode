@@ -3,17 +3,14 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import RegisterPage from '@/app/(auth)/register/page';
 
 const mockRegisterUser = vi.fn();
-const mockLoginWithGitHub = vi.fn();
 
 vi.mock('@/app/actions/auth', () => ({
   registerUser: (...args: unknown[]) => mockRegisterUser(...args),
-  loginWithGitHub: (...args: unknown[]) => mockLoginWithGitHub(...args),
 }));
 
 describe('RegisterPage', () => {
   beforeEach(() => {
     mockRegisterUser.mockReset();
-    mockLoginWithGitHub.mockReset();
   });
 
   it('renders registration form fields', () => {

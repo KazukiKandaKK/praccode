@@ -110,7 +110,7 @@ export default function ExerciseDetailPage() {
     if (exerciseId && session?.user?.id) {
       fetchExercise();
     }
-  }, [exerciseId, session?.user?.id, sessionStatus]);
+  }, [apiUrl, exerciseId, session?.user?.id, sessionStatus]);
 
   const handleAnswerChange = (questionIndex: number, value: string) => {
     setAnswers((prev) => ({ ...prev, [questionIndex]: value }));

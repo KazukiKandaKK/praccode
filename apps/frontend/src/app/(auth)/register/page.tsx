@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { registerUser, loginWithGitHub } from '@/app/actions/auth';
-import { Code2, Github, Mail, Lock, User, AlertCircle, CheckCircle } from 'lucide-react';
+import { registerUser } from '@/app/actions/auth';
+import { Code2, Mail, Lock, User, AlertCircle, CheckCircle } from 'lucide-react';
 
 export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);

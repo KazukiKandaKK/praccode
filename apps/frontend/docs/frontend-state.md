@@ -9,7 +9,7 @@ stateDiagram-v2
     Unauthenticated --> Registering : POST /auth/register
     Registering --> PendingEmailVerification : 201 OK
     PendingEmailVerification --> EmailVerified : POST /auth/verify-email (成功)
-    Unauthenticated --> LoggingIn : signIn(credentials/github)
+    Unauthenticated --> LoggingIn : signIn(credentials)
     LoggingIn --> Authenticated : 成功
     LoggingIn --> Unauthenticated : 失敗/未認証/入力エラー
     Unauthenticated --> RequestingReset : POST /auth/forgot-password

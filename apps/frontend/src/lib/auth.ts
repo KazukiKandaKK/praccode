@@ -1,5 +1,4 @@
 import NextAuth from 'next-auth';
-import GitHub from 'next-auth/providers/github';
 import Credentials from 'next-auth/providers/credentials';
 import { z } from 'zod';
 
@@ -32,10 +31,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     error: '/login',
   },
   providers: [
-    GitHub({
-      clientId: process.env.GITHUB_CLIENT_ID!,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-    }),
     Credentials({
       name: 'credentials',
       credentials: {

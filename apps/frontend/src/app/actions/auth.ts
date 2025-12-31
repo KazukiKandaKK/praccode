@@ -85,10 +85,6 @@ export async function loginWithCredentials(formData: FormData) {
   }
 }
 
-export async function loginWithGitHub() {
-  await signIn('github', { redirectTo: '/dashboard' });
-}
-
 export async function logout() {
   await signOut({ redirectTo: '/' });
 }

@@ -248,8 +248,6 @@ PORT=3001
 # apps/frontend/.env.local
 NEXTAUTH_URL="http://localhost:3000"
 NEXTAUTH_SECRET="your-secret-key"
-GITHUB_CLIENT_ID="your-github-client-id"
-GITHUB_CLIENT_SECRET="your-github-client-secret"
 NEXT_PUBLIC_API_URL="http://localhost:3001"
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/praccode?schema=public"
 
@@ -366,7 +364,7 @@ pnpm --filter @praccode/web test --coverage
 
 ## MVP スコープ
 
-- [x] 認証（GitHub OAuth + メール/パスワード）
+- [x] 認証（メール/パスワード）
 - [x] 学習一覧・詳細表示
 - [x] 回答入力 → LLM 評価
 - [x] 評価結果の保存・表示
