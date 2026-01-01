@@ -96,7 +96,7 @@ export default async function HomePage() {
       {/* Footer */}
       <footer className="py-8 border-t border-slate-800">
         <div className="max-w-7xl mx-auto px-4 text-center text-slate-500">
-          <p>&copy; 2024 PracCode. All rights reserved.</p>
+          <p>&copy; 2025 PracCode. All rights reserved.</p>
         </div>
       </footer>
     </div>
