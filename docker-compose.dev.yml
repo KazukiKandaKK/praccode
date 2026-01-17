@@ -37,15 +37,16 @@ services:
       HOST: '::'
       CORS_ORIGIN: http://localhost:3000
       # LLM Provider設定（ollama または gemini）
-      LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
+      # Gemini (API Key) を既定にする
+      LLM_PROVIDER: ${LLM_PROVIDER:-gemini}
+      # Gemini設定（API Key 方式）
+      GEMINI_AUTH_MODE: ${GEMINI_AUTH_MODE:-api_key}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash-lite}
       # Ollama設定（LLM_PROVIDER=ollamaの場合）
       OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:7b}
       OLLAMA_TIMEOUT_MS: ${OLLAMA_TIMEOUT_MS:-240000}
-      # Gemini設定（LLM_PROVIDER=geminiの場合）
-      # GEMINI_API_KEY: ${GEMINI_API_KEY:-foo}
-      # GEMINI_API_URL: ${GEMINI_API_URL:-hogehoge}
-      # GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-pro}
       # レート制限設定
       LLM_RATE_LIMIT_WINDOW_MS: ${LLM_RATE_LIMIT_WINDOW_MS:-60000} # 60秒
       LLM_RATE_LIMIT_MAX_REQUESTS: ${LLM_RATE_LIMIT_MAX_REQUESTS:-10} # 10リクエスト/分
@@ -59,8 +60,10 @@ services:
       - ./apps/backend/src:/app/apps/backend/src
       - ./apps/backend/prisma:/app/apps/backend/prisma
       - ./apps/backend/eslint.config.js:/app/apps/backend/eslint.config.js
+      - ./apps/backend/tsconfig.json:/app/apps/backend/tsconfig.json
       - ./apps/backend/vitest.config.ts:/app/apps/backend/vitest.config.ts
       - ./packages/shared/src:/app/packages/shared/src
+      - ./tsconfig.json:/app/tsconfig.json
       # Docker-outside-of-Docker: ホストのDockerソケットをマウント
       - /var/run/docker.sock:/var/run/docker.sock
       # コードランナー用の一時ディレクトリをホストと共有（バインドマウント）
@@ -80,7 +83,7 @@ services:
       - '3000:3000'
     environment:
       NEXTAUTH_URL: http://localhost:3000
-      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-development-secret-key}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-your-nextauth-secret-key}
       NEXT_PUBLIC_API_URL: http://127.0.0.1:3001
       API_URL: http://backend:3001
       DATABASE_URL: postgresql://postgres:postgres@db:5432/praccode?schema=public

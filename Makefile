@@ -55,11 +55,11 @@ logs:
 db-setup:
 	docker compose -f docker-compose.dev.yml up -d db
 	sleep 3
-	cd apps/api && pnpm db:generate && pnpm db:push
+	cd apps/backend && pnpm db:generate && pnpm db:migrate
 
 # シードデータ投入
 db-seed:
-	cd apps/api && pnpm db:seed
+	cd apps/backend && pnpm db:seed
 
 # Prisma Studio
 db-studio:
@@ -74,4 +74,3 @@ clean:
 	rm -rf apps/api/node_modules
 	rm -rf packages/shared/node_modules
 	docker compose down -v
-

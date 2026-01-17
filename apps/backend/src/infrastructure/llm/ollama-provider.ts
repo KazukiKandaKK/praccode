@@ -107,7 +107,7 @@ export class OllamaProvider implements LLMProvider {
 
     // セパレータがない場合は全体をサニタイズ
     if (!prompt.includes(separatorStart)) {
-      return PromptSanitizer.sanitize(prompt, 'prompt');
+      return PromptSanitizer.sanitizeTemplate(prompt, 'prompt');
     }
 
     // セパレータで分割して、ユーザー入力部分のみサニタイズ

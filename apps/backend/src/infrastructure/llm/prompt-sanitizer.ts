@@ -85,6 +85,21 @@ export class PromptSanitizer {
   }
 
   /**
+   * テンプレート全体の安全性チェック（インジェクション検出は行わない）
+   * プロンプト本体は社内テンプレート前提のため、長さと制御文字のみ検証する。
+   */
+  static sanitizeTemplate(
+    input: string,
+    fieldName: string = 'prompt',
+    options: { maxLength?: number } = {}
+  ): string {
+    const maxLength = options.maxLength ?? MAX_INPUT_LENGTH;
+    this.validateLength(input, maxLength, fieldName);
+    this.validateControlCharacters(input, fieldName);
+    return input;
+  }
+
+  /**
    * base64エンコードされた文字列を検出
    */
   static detectBase64(input: string): boolean {

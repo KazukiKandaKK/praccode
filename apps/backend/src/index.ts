@@ -32,6 +32,7 @@ import { LlmHealthChecker } from './infrastructure/services/LlmHealthChecker.js'
 import { LearningAnalysisScheduler } from './infrastructure/services/LearningAnalysisScheduler.js';
 import { AnswerEvaluationService } from './infrastructure/services/AnswerEvaluationService.js';
 import { EvaluationEventPublisher } from './infrastructure/services/EvaluationEventPublisher.js';
+import { ExerciseGenerationEventPublisher } from './infrastructure/services/ExerciseGenerationEventPublisher.js';
 import { PrismaWritingChallengeRepository } from './infrastructure/persistence/PrismaWritingChallengeRepository.js';
 import { PrismaWritingSubmissionRepository } from './infrastructure/persistence/PrismaWritingSubmissionRepository.js';
 import { ListWritingChallengesUseCase } from './application/usecases/writing/ListWritingChallengesUseCase.js';
@@ -72,6 +73,7 @@ import { GetCurrentMentorSprintUseCase } from './application/usecases/mentor/Get
 import { GetMentorWorkflowStepUseCase } from './application/usecases/mentor/GetMentorWorkflowStepUseCase.js';
 import { GetMentorMetadataSummaryUseCase } from './application/usecases/mentor/GetMentorMetadataSummaryUseCase.js';
 import { mentorController } from './infrastructure/web/mentorController.js';
+import { mentorChatController } from './infrastructure/web/mentorChatController.js';
 import { PrismaLearningPlanRepository } from './infrastructure/persistence/PrismaLearningPlanRepository.js';
 import { GetLatestLearningPlanUseCase } from './application/usecases/mentor/GetLatestLearningPlanUseCase.js';
 import { PrismaMastraMemory } from './mastra/PrismaMastraMemory.js';
@@ -80,6 +82,7 @@ import { PrismaMentorFeedbackInsightRepository } from './infrastructure/persiste
 import { PrismaMentorSprintRepository } from './infrastructure/persistence/PrismaMentorSprintRepository.js';
 import { PrismaMentorAssessmentRepository } from './infrastructure/persistence/PrismaMentorAssessmentRepository.js';
 import { PrismaMentorWorkflowRepository } from './infrastructure/persistence/PrismaMentorWorkflowRepository.js';
+import { PrismaMentorThreadRepository } from './infrastructure/persistence/PrismaMentorThreadRepository.js';
 import { ListLearningPlansUseCase } from './application/usecases/mentor/ListLearningPlansUseCase.js';
 import { ListMentorFeedbackUseCase } from './application/usecases/mentor/ListMentorFeedbackUseCase.js';
 import { UpdateMentorWorkflowStepUseCase } from './application/usecases/mentor/UpdateMentorWorkflowStepUseCase.js';
@@ -89,6 +92,10 @@ import { LogLearningTimeUseCase } from './application/usecases/learning-time/Log
 import { GetDailyLearningTimeUseCase } from './application/usecases/learning-time/GetDailyLearningTimeUseCase.js';
 import { learningTimeController } from './infrastructure/web/learningTimeController.js';
 import type { MastraMemory } from '@mastra/core';
+import { LLMMentorChatGenerator } from './infrastructure/llm/LLMMentorChatGenerator.js';
+import { CreateMentorThreadUseCase } from './application/usecases/mentor-chat/CreateMentorThreadUseCase.js';
+import { GetMentorThreadUseCase } from './application/usecases/mentor-chat/GetMentorThreadUseCase.js';
+import { PostMentorMessageUseCase } from './application/usecases/mentor-chat/PostMentorMessageUseCase.js';
 
 const fastify = Fastify({
   logger: true,
@@ -146,6 +153,7 @@ const llmHealthChecker = new LlmHealthChecker();
 const learningAnalysisScheduler = new LearningAnalysisScheduler();
 const answerEvaluationService = new AnswerEvaluationService();
 const evaluationEventPublisher = new EvaluationEventPublisher();
+const exerciseGenerationEventPublisher = new ExerciseGenerationEventPublisher();
 const writingChallengeRepository = new PrismaWritingChallengeRepository();
 const writingSubmissionRepository = new PrismaWritingSubmissionRepository();
 const userAccountRepository = new PrismaUserAccountRepository();
@@ -160,8 +168,10 @@ const mentorFeedbackInsightRepository = new PrismaMentorFeedbackInsightRepositor
 const mentorSprintRepository = new PrismaMentorSprintRepository();
 const mentorAssessmentRepository = new PrismaMentorAssessmentRepository();
 const mentorWorkflowRepository = new PrismaMentorWorkflowRepository();
+const mentorThreadRepository = new PrismaMentorThreadRepository();
 const evaluationMetricRepository = new PrismaEvaluationMetricRepository();
 const learningTimeRepository = new PrismaLearningTimeRepository();
+const mentorChatGenerator = new LLMMentorChatGenerator();
 const listWritingChallengesUseCase = new ListWritingChallengesUseCase(writingChallengeRepository);
 const getWritingChallengeUseCase = new GetWritingChallengeUseCase(writingChallengeRepository);
 const autoGenerateWritingChallengeUseCase = new AutoGenerateWritingChallengeUseCase(
@@ -221,6 +231,7 @@ const generateRecommendationUseCase = new GenerateRecommendationUseCase(
   getLearningAnalysisUseCase,
   exerciseGeneratorService,
   writingChallengeGenerator,
+  exerciseGenerationEventPublisher,
   fastify.log
 );
 const generateLearningPlanWithAgentUseCase = new GenerateLearningPlanWithAgentUseCase(
@@ -264,6 +275,18 @@ const getMentorMetadataSummaryUseCase = new GetMentorMetadataSummaryUseCase(
   evaluationMetricRepository,
   mentorFeedbackInsightRepository
 );
+const createMentorThreadUseCase = new CreateMentorThreadUseCase(
+  mentorThreadRepository,
+  exerciseRepository,
+  submissionRepository
+);
+const getMentorThreadUseCase = new GetMentorThreadUseCase(mentorThreadRepository);
+const postMentorMessageUseCase = new PostMentorMessageUseCase(
+  mentorThreadRepository,
+  submissionRepository,
+  exerciseRepository,
+  mentorChatGenerator
+);
 const generateHintUseCase = new GenerateHintUseCase(
   exerciseRepository,
   hintRepository,
@@ -290,7 +313,12 @@ await fastify.register(
 );
 await fastify.register(
   async (instance) => {
-    exerciseController(instance, listExercisesUseCase, getExerciseByIdUseCase);
+    exerciseController(
+      instance,
+      listExercisesUseCase,
+      getExerciseByIdUseCase,
+      exerciseGenerationEventPublisher
+    );
   },
   { prefix: '/exercises' }
 );
@@ -377,6 +405,15 @@ await fastify.register(
       getLatestLearningPlan: getLatestLearningPlanUseCase,
       listLearningPlans: listLearningPlansUseCase,
       listMentorFeedback: listMentorFeedbackUseCase,
+    });
+  }
+);
+await fastify.register(
+  async (instance) => {
+    mentorChatController(instance, {
+      createThread: createMentorThreadUseCase,
+      getThread: getMentorThreadUseCase,
+      postMessage: postMentorMessageUseCase,
     });
   }
 );

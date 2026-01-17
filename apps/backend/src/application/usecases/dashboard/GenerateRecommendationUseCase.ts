@@ -3,6 +3,7 @@ import { GetLearningAnalysisUseCase } from './GetLearningAnalysisUseCase';
 import { getRecommendedProblemContext } from '../../../infrastructure/llm/learning-analyzer';
 import { IExerciseGenerator } from '../../../domain/ports/IExerciseGenerator';
 import { IWritingChallengeGenerator } from '../../../domain/ports/IWritingChallengeGenerator';
+import { IExerciseGenerationEventPublisher } from '../../../domain/ports/IExerciseGenerationEventPublisher';
 
 type Logger = { info: (...args: unknown[]) => void; error: (...args: unknown[]) => void };
 
@@ -18,6 +19,7 @@ export class GenerateRecommendationUseCase {
     private readonly getLearningAnalysis: GetLearningAnalysisUseCase,
     private readonly exerciseGenerator: IExerciseGenerator,
     private readonly writingChallengeGenerator: IWritingChallengeGenerator,
+    private readonly exerciseEventPublisher: IExerciseGenerationEventPublisher,
     private readonly logger: Logger
   ) {}
 
@@ -57,10 +59,12 @@ export class GenerateRecommendationUseCase {
           });
 
           await this.dashboardRepo.saveGeneratedExercise(exerciseId, generated);
+          this.exerciseEventPublisher.emitExerciseReady(exerciseId, generated.title);
           this.logger.info(`Reading exercise generated: ${exerciseId}`);
         } catch (error) {
           this.logger.error('Failed to generate reading exercise', error);
           await this.dashboardRepo.markExerciseFailed(exerciseId);
+          this.exerciseEventPublisher.emitExerciseFailed(exerciseId);
         }
       });
 

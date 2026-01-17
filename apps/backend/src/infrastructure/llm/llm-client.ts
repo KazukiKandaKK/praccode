@@ -66,7 +66,23 @@ function isServiceUnavailableError(error: Error): boolean {
 
 function shouldSkipProvider(name: ProviderName): boolean {
   if (name === 'gemini') {
-    return !process.env.GEMINI_API_KEY;
+    const authMode = (process.env.GEMINI_AUTH_MODE || 'auto').toLowerCase();
+    const hasApiKey = Boolean(process.env.GEMINI_API_KEY);
+    const hasVertexCreds = Boolean(
+      process.env.GOOGLE_APPLICATION_CREDENTIALS || process.env.GOOGLE_APPLICATION_CREDENTIALS_FILE
+    );
+    const hasVertexProject = Boolean(
+      process.env.GOOGLE_CLOUD_PROJECT || process.env.GCP_PROJECT || process.env.VERTEX_PROJECT
+    );
+    const hasVertex = hasVertexCreds && hasVertexProject;
+
+    if (authMode === 'api_key') {
+      return !hasApiKey;
+    }
+    if (authMode === 'vertex') {
+      return !hasVertex;
+    }
+    return !(hasApiKey || hasVertex);
   }
   if (name === 'openai') {
     return !process.env.OPENAI_API_KEY;

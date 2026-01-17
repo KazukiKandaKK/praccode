@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { getScoreLevelColor, getScoreLevelBgColor, getLearningGoalLabel } from '@/lib/utils';
 import { ChevronLeft, Trophy, Target, TrendingUp, ArrowRight, Loader2 } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { MentorChat } from '@/components/mentor-chat';
 
 type ScoreLevel = 'A' | 'B' | 'C' | 'D';
 type SubmissionStatus = 'DRAFT' | 'SUBMITTED' | 'EVALUATED';
@@ -39,6 +41,7 @@ interface SubmissionDto {
 export default function SubmissionResultPage() {
   const params = useParams();
   const submissionId = params.id as string;
+  const { data: session } = useSession();
   const [submission, setSubmission] = useState<SubmissionDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -406,6 +409,16 @@ export default function SubmissionResultPage() {
               </Button>
             </Link>
           </div>
+
+          {session?.user?.id && (
+            <div className="pt-4">
+              <MentorChat
+                userId={session.user.id}
+                exerciseId={submission.exerciseId}
+                submissionId={submission.id}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>

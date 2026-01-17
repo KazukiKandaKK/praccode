@@ -3,7 +3,7 @@ import {
   IExerciseRepository,
   Pagination,
 } from '../../domain/ports/IExerciseRepository';
-import { Exercise, ExerciseEntity } from '../../domain/entities/Exercise';
+import { Exercise, ExerciseEntity, ExerciseStatus } from '../../domain/entities/Exercise';
 import { prisma } from '../../lib/prisma';
 
 export class PrismaExerciseRepository implements IExerciseRepository {
@@ -23,6 +23,11 @@ export class PrismaExerciseRepository implements IExerciseRepository {
 
     return new ExerciseEntity(
       exerciseData.id,
+      exerciseData.title,
+      exerciseData.language,
+      exerciseData.difficulty,
+      exerciseData.genre ?? null,
+      exerciseData.status as ExerciseStatus,
       exerciseData.code,
       exerciseData.learningGoals as string[],
       exerciseData.questions.map((q) => ({
@@ -42,7 +47,18 @@ export class PrismaExerciseRepository implements IExerciseRepository {
     });
 
     return exercisesData.map(
-      (data) => new ExerciseEntity(data.id, data.code, data.learningGoals as string[], [])
+      (data) =>
+        new ExerciseEntity(
+          data.id,
+          data.title,
+          data.language,
+          data.difficulty,
+          data.genre ?? null,
+          data.status as ExerciseStatus,
+          data.code,
+          data.learningGoals as string[],
+          []
+        )
     ); // Assuming questions are not needed for list view
   }
 

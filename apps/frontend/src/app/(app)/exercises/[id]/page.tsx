@@ -20,6 +20,7 @@ import { API_BASE_URL } from '@/lib/api';
 import { findLlmInputViolation } from '@/lib/llm-input-guard';
 import { useLearningTimeTracker } from '@/hooks/use-learning-time-tracker';
 import { useMentorWorkflowTracker } from '@/hooks/use-mentor-workflow-tracker';
+import { MentorChat } from '@/components/mentor-chat';
 
 interface Exercise {
   id: string;
@@ -448,6 +449,12 @@ export default function ExerciseDetailPage() {
           )}
         </div>
       </div>
+
+      {session?.user?.id && (
+        <div className="mt-10">
+          <MentorChat userId={session.user.id} exerciseId={exercise.id} />
+        </div>
+      )}
     </div>
   );
 }

@@ -39,6 +39,7 @@ model User {
   evaluationMetrics         EvaluationMetric[]
   mentorFeedbackInsights    MentorFeedbackInsight[]
   mentorSprints             MentorSprint[]
+  mentorThreads             MentorThread[]
 
   @@map("users")
 }
@@ -176,6 +177,7 @@ model Exercise {
   questions   ExerciseReferenceAnswer[]
   submissions Submission[]
   hints       Hint[]
+  mentorThreads MentorThread[]
 
   @@index([assignedToId])
   @@map("exercises")
@@ -210,6 +212,7 @@ model Submission {
   answers  SubmissionAnswer[]
   mentorFeedbacks MentorFeedbackLog[]
   evaluationMetrics EvaluationMetric[]
+  mentorThreads MentorThread[]
 
   @@map("submissions")
 }
@@ -465,6 +468,45 @@ model MentorWorkflowState {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("mentor_workflow_states")
+}
+
+// ========== Mentor Chat ==========
+
+model MentorThread {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  exerciseId   String?  @map("exercise_id")
+  submissionId String?  @map("submission_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exercise   Exercise?   @relation(fields: [exerciseId], references: [id], onDelete: SetNull)
+  submission Submission? @relation(fields: [submissionId], references: [id], onDelete: SetNull)
+  messages   MentorMessage[]
+
+  @@index([userId])
+  @@index([userId, updatedAt])
+  @@index([exerciseId])
+  @@index([submissionId])
+  @@unique([userId, exerciseId])
+  @@unique([userId, submissionId])
+  @@map("mentor_threads")
+}
+
+model MentorMessage {
+  id        String   @id @default(uuid())
+  threadId  String   @map("thread_id")
+  role      String
+  content   String   @db.Text
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  thread MentorThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([threadId])
+  @@index([threadId, createdAt])
+  @@map("mentor_messages")
 }
 
 // ========== Mastra Memory ==========

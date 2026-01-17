@@ -3,6 +3,7 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import { exerciseController } from '@/infrastructure/web/exerciseController';
 import { ListExercisesUseCase } from '@/application/usecases/ListExercisesUseCase';
 import { GetExerciseByIdUseCase } from '@/application/usecases/GetExerciseByIdUseCase';
+import { IExerciseGenerationEventPublisher } from '@/domain/ports/IExerciseGenerationEventPublisher';
 
 const mockListExercisesUseCase = {
   execute: vi.fn(),
@@ -12,13 +13,24 @@ const mockGetExerciseByIdUseCase = {
   execute: vi.fn(),
 } as unknown as Mocked<GetExerciseByIdUseCase>;
 
+const mockExerciseEventPublisher = {
+  emitExerciseReady: vi.fn(),
+  emitExerciseFailed: vi.fn(),
+  onExerciseEvent: vi.fn(),
+} as unknown as Mocked<IExerciseGenerationEventPublisher>;
+
 describe('exerciseController', () => {
   let app: ReturnType<typeof Fastify>;
 
   beforeEach(async () => {
     app = Fastify();
     app.register((instance: FastifyInstance, _opts: unknown, done: (err?: Error) => void) => {
-      exerciseController(instance, mockListExercisesUseCase, mockGetExerciseByIdUseCase);
+      exerciseController(
+        instance,
+        mockListExercisesUseCase,
+        mockGetExerciseByIdUseCase,
+        mockExerciseEventPublisher
+      );
       done();
     });
     vi.clearAllMocks();

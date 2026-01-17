@@ -20,7 +20,17 @@ describe('GetExerciseByIdUseCase', () => {
   });
 
   it('should return an exercise if found', async () => {
-    const mockExercise = new ExerciseEntity('1', 'code', [], []);
+    const mockExercise = new ExerciseEntity(
+      '1',
+      'title',
+      'typescript',
+      3,
+      'error_handling',
+      'READY',
+      'code',
+      [],
+      []
+    );
     mockExerciseRepository.findById.mockResolvedValue(mockExercise);
 
     const result = await useCase.execute({ exerciseId: '1', userId: 'user-1' });

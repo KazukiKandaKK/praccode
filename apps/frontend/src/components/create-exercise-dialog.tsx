@@ -55,20 +55,19 @@ export function CreateExerciseDialog({ isOpen, onClose, userId }: CreateExercise
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-      const response = await fetch(`${apiUrl}/exercises/generate`, {
+      const response = await fetch(`${apiUrl}/dashboard/generate-recommendation`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          language,
-          difficulty,
-          genre,
           userId,
+          language,
+          type: 'reading',
         }),
       });
 
-      if (!response.ok && response.status !== 202) {
+      if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to generate exercise');
       }
@@ -76,7 +75,7 @@ export function CreateExerciseDialog({ isOpen, onClose, userId }: CreateExercise
       const data = await response.json();
 
       // 非同期生成開始: ダイアログを閉じてバックグラウンド監視開始
-      startGenerationWatch(data.id);
+      startGenerationWatch(data.exerciseId);
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : '問題の生成に失敗しました');

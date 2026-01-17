@@ -28,12 +28,18 @@ services:
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/praccode?schema=public
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      # Gemini (API Key)
+      LLM_PROVIDER: ${LLM_PROVIDER:-gemini}
+      GEMINI_AUTH_MODE: ${GEMINI_AUTH_MODE:-api_key}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash-lite}
       PORT: 3001
       HOST: 0.0.0.0
       CORS_ORIGIN: http://localhost:3000
     depends_on:
       db:
         condition: service_healthy
+    volumes: []
 
   frontend:
     build:
@@ -51,6 +57,7 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/praccode?schema=public
     depends_on:
       - backend
+    volumes: []
 
 volumes:
   postgres_data:

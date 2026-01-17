@@ -55,7 +55,7 @@ export function EvaluationToastProvider({ children }: { children: React.ReactNod
     WritingChallengeGenJob[]
   >([]);
   const evaluationPollingRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
-  const generationPollingRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const generationEventSourceRef = useRef<Map<string, EventSource>>(new Map());
   const writingPollingRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const writingChallengePollingRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
@@ -132,93 +132,72 @@ export function EvaluationToastProvider({ children }: { children: React.ReactNod
     [pollSubmission]
   );
 
-  // ========== 問題生成監視 ==========
-  const pollExercise = useCallback(
-    async (job: GenerationJob) => {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-      const userId = session?.user?.id;
-
-      if (!userId) {
-        toast.error('セッションが無効です');
+  const startGenerationWatch = useCallback(
+    (exerciseId: string) => {
+      if (generationEventSourceRef.current.has(exerciseId)) {
         return;
       }
 
-      try {
-        const res = await fetch(`${apiUrl}/exercises/${job.exerciseId}?userId=${userId}`, {
-          cache: 'no-store',
-        });
-
-        if (!res.ok) {
-          const timer = generationPollingRef.current.get(job.exerciseId);
-          if (timer) {
-            clearInterval(timer);
-            generationPollingRef.current.delete(job.exerciseId);
-          }
-          setPendingGenerations((prev) => prev.filter((g) => g.exerciseId !== job.exerciseId));
-          toast.error('問題の生成に失敗しました');
-          return;
-        }
-
-        const data = await res.json();
-
-        if (data.status === 'READY') {
-          const timer = generationPollingRef.current.get(job.exerciseId);
-          if (timer) {
-            clearInterval(timer);
-            generationPollingRef.current.delete(job.exerciseId);
-          }
-
-          setPendingGenerations((prev) => prev.filter((g) => g.exerciseId !== job.exerciseId));
-
-          toast.success(`問題「${data.title}」が作成されました`, {
-            duration: 10000,
-            action: {
-              label: '問題を解く',
-              onClick: () => {
-                router.push(`/exercises/${job.exerciseId}`);
-              },
-            },
-          });
-          router.refresh(); // リスト更新
-        } else if (data.status === 'FAILED') {
-          const timer = generationPollingRef.current.get(job.exerciseId);
-          if (timer) {
-            clearInterval(timer);
-            generationPollingRef.current.delete(job.exerciseId);
-          }
-
-          setPendingGenerations((prev) => prev.filter((g) => g.exerciseId !== job.exerciseId));
-
-          toast.error('問題の生成に失敗しました');
-        }
-      } catch (err) {
-        console.error('Generation polling error:', err);
-      }
-    },
-    [router, session]
-  );
-
-  const startGenerationWatch = useCallback(
-    (exerciseId: string) => {
-      if (generationPollingRef.current.has(exerciseId)) {
+      const userId = session?.user?.id;
+      if (!userId) {
+        toast.error('セッションが無効です');
         return;
       }
 
       const job: GenerationJob = { exerciseId };
       setPendingGenerations((prev) => [...prev, job]);
 
-      // 即時チェックはせず、少し待ってからポーリング開始
-      const timer = setInterval(() => {
-        pollExercise(job);
-      }, 2000);
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const eventSource = new EventSource(
+        `${apiUrl}/exercises/${exerciseId}/events?userId=${userId}`
+      );
+      generationEventSourceRef.current.set(exerciseId, eventSource);
 
-      generationPollingRef.current.set(exerciseId, timer);
+      const cleanup = () => {
+        eventSource.close();
+        generationEventSourceRef.current.delete(exerciseId);
+        setPendingGenerations((prev) => prev.filter((g) => g.exerciseId !== exerciseId));
+      };
+
+      eventSource.addEventListener('ready', (event) => {
+        const data = JSON.parse((event as MessageEvent).data) as {
+          exerciseId: string;
+          status: 'READY';
+          title?: string;
+        };
+        cleanup();
+        toast.success(`問題「${data.title ?? '新しい問題'}」が作成されました`, {
+          duration: 10000,
+          action: {
+            label: '問題を解く',
+            onClick: () => {
+              router.push(`/exercises/${exerciseId}`);
+            },
+          },
+        });
+        router.refresh();
+      });
+
+      eventSource.addEventListener('failed', () => {
+        cleanup();
+        toast.error('問題の生成に失敗しました');
+      });
+
+      eventSource.addEventListener('timeout', () => {
+        cleanup();
+        toast.error('問題の生成がタイムアウトしました');
+      });
+
+      eventSource.onerror = () => {
+        cleanup();
+        toast.error('問題の生成通知に失敗しました');
+      };
 
       toast.info('問題を生成中です...', {
         duration: 3000,
       });
     },
-    [pollExercise]
+    [router, session]
   );
 
   // ========== ライティング提出監視 ==========
@@ -390,15 +369,15 @@ export function EvaluationToastProvider({ children }: { children: React.ReactNod
   useEffect(() => {
     // refの値を変数にコピー（クリーンアップ関数で使用するため）
     const evaluationTimers = evaluationPollingRef.current;
-    const generationTimers = generationPollingRef.current;
+    const generationSources = generationEventSourceRef.current;
     const writingTimers = writingPollingRef.current;
     const writingChallengeTimers = writingChallengePollingRef.current;
 
     return () => {
       evaluationTimers.forEach((timer) => clearInterval(timer));
       evaluationTimers.clear();
-      generationTimers.forEach((timer) => clearInterval(timer));
-      generationTimers.clear();
+      generationSources.forEach((source) => source.close());
+      generationSources.clear();
       writingTimers.forEach((timer) => clearInterval(timer));
       writingTimers.clear();
       writingChallengeTimers.forEach((timer) => clearInterval(timer));

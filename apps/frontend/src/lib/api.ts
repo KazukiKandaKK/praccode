@@ -1,3 +1,5 @@
+import type { MentorPostMessageResult, MentorThreadWithMessages } from '@praccode/shared';
+
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001';
 
 export type LearningPlan = {
@@ -136,6 +138,8 @@ async function handleResponse<T>(response: Response): Promise<T> {
   return response.json();
 }
 
+const userIdHeader = (userId: string) => ({ 'x-user-id': userId });
+
 export const api = {
   // Mentor
   async generateLearningPlan(params: {
@@ -223,6 +227,39 @@ export const api = {
       { cache: 'no-store' }
     );
     return handleResponse<MentorSprint>(response);
+  },
+
+  async createMentorThread(params: {
+    userId: string;
+    exerciseId?: string;
+    submissionId?: string;
+  }) {
+    const response = await fetch(`${API_BASE_URL}/mentor/threads`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...userIdHeader(params.userId) },
+      body: JSON.stringify({
+        exerciseId: params.exerciseId,
+        submissionId: params.submissionId,
+      }),
+    });
+    return handleResponse<{ threadId: string }>(response);
+  },
+
+  async getMentorThread(threadId: string, userId: string) {
+    const response = await fetch(`${API_BASE_URL}/mentor/threads/${threadId}`, {
+      cache: 'no-store',
+      headers: userIdHeader(userId),
+    });
+    return handleResponse<MentorThreadWithMessages>(response);
+  },
+
+  async postMentorMessage(threadId: string, userId: string, content: string) {
+    const response = await fetch(`${API_BASE_URL}/mentor/threads/${threadId}/messages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...userIdHeader(userId) },
+      body: JSON.stringify({ content }),
+    });
+    return handleResponse<MentorPostMessageResult>(response);
   },
 
   async logLearningTime(params: {

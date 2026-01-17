@@ -5,9 +5,12 @@
 import type { LLMProvider, LLMGenerateOptions } from './llm-provider.js';
 import { parseRetryAfter } from './retry-handler.js';
 import { PromptSanitizer } from './prompt-sanitizer.js';
+import { promises as fs } from 'fs';
+import { createSign } from 'crypto';
 
 type GeminiGenerateRequest = {
   contents: {
+    role: 'user' | 'model';
     parts: {
       text: string;
     }[];
@@ -20,13 +23,11 @@ type GeminiGenerateRequest = {
 };
 
 export class GeminiProvider implements LLMProvider {
-  async generate(prompt: string, options?: LLMGenerateOptions): Promise<string> {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error('GEMINI_API_KEY environment variable is not set');
-    }
+  private cachedToken: { value: string; expiresAt: number } | null = null;
 
-    const apiUrl = process.env.GEMINI_API_URL || 'https://aiplatform.googleapis.com/v1';
+  async generate(prompt: string, options?: LLMGenerateOptions): Promise<string> {
+    const mode = (process.env.GEMINI_AUTH_MODE || 'auto').toLowerCase();
+    const authMode = mode === 'vertex' || mode === 'api_key' ? mode : 'auto';
     const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
 
     // プロンプト全体をサニタイズ（既に構造化されている前提）
@@ -36,6 +37,7 @@ export class GeminiProvider implements LLMProvider {
     const requestBody: GeminiGenerateRequest = {
       contents: [
         {
+          role: 'user',
           parts: [
             {
               text: sanitizedPrompt,
@@ -56,12 +58,12 @@ export class GeminiProvider implements LLMProvider {
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-      // 新しいAI Platform APIエンドポイントを使用
-      const url = `${apiUrl}/publishers/google/models/${model}:streamGenerateContent?key=${encodeURIComponent(apiKey)}`;
+      const { url, headers } = await this.buildRequestContext(authMode, model);
       const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...headers,
         },
         body: JSON.stringify(requestBody),
         signal: controller.signal,
@@ -162,24 +164,173 @@ export class GeminiProvider implements LLMProvider {
   }
 
   async checkHealth(): Promise<boolean> {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return false;
-    }
-
-    const apiUrl = process.env.GEMINI_API_URL || 'https://aiplatform.googleapis.com/v1';
+    const mode = (process.env.GEMINI_AUTH_MODE || 'auto').toLowerCase();
+    const authMode = mode === 'vertex' || mode === 'api_key' ? mode : 'auto';
     const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
 
     try {
-      // 簡単なリクエストでヘルスチェック（新しいAI Platform APIエンドポイント）
-      const url = `${apiUrl}/publishers/google/models/${model}?key=${encodeURIComponent(apiKey)}`;
+      const { url, headers } = await this.buildHealthcheckContext(authMode, model);
       const response = await fetch(url, {
         method: 'GET',
+        headers,
       });
       return response.ok;
     } catch {
       return false;
     }
+  }
+
+  private async buildRequestContext(
+    mode: 'vertex' | 'api_key' | 'auto',
+    model: string
+  ): Promise<{ url: string; headers: Record<string, string> }> {
+    if (mode === 'api_key' || (mode === 'auto' && process.env.GEMINI_API_KEY)) {
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new Error('GEMINI_API_KEY environment variable is not set');
+      }
+      const apiUrl = process.env.GEMINI_API_URL || 'https://aiplatform.googleapis.com/v1';
+      return {
+        url: `${apiUrl}/publishers/google/models/${model}:streamGenerateContent?key=${encodeURIComponent(
+          apiKey
+        )}`,
+        headers: {},
+      };
+    }
+
+    const project =
+      process.env.GOOGLE_CLOUD_PROJECT ||
+      process.env.GCP_PROJECT ||
+      process.env.VERTEX_PROJECT;
+    const location =
+      process.env.GOOGLE_CLOUD_LOCATION ||
+      process.env.GCP_LOCATION ||
+      process.env.VERTEX_LOCATION ||
+      'us-central1';
+    if (!project) {
+      throw new Error('GOOGLE_CLOUD_PROJECT environment variable is not set');
+    }
+
+    const baseUrl = `https://${location}-aiplatform.googleapis.com/v1/projects/${project}/locations/${location}`;
+    const token = await this.getAccessToken();
+    return {
+      url: `${baseUrl}/publishers/google/models/${model}:streamGenerateContent`,
+      headers: { Authorization: `Bearer ${token}` },
+    };
+  }
+
+  private async buildHealthcheckContext(
+    mode: 'vertex' | 'api_key' | 'auto',
+    model: string
+  ): Promise<{ url: string; headers: Record<string, string> }> {
+    if (mode === 'api_key' || (mode === 'auto' && process.env.GEMINI_API_KEY)) {
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        return { url: '', headers: {} };
+      }
+      const apiUrl = process.env.GEMINI_API_URL || 'https://aiplatform.googleapis.com/v1';
+      return {
+        url: `${apiUrl}/publishers/google/models/${model}?key=${encodeURIComponent(apiKey)}`,
+        headers: {},
+      };
+    }
+
+    const project =
+      process.env.GOOGLE_CLOUD_PROJECT ||
+      process.env.GCP_PROJECT ||
+      process.env.VERTEX_PROJECT;
+    const location =
+      process.env.GOOGLE_CLOUD_LOCATION ||
+      process.env.GCP_LOCATION ||
+      process.env.VERTEX_LOCATION ||
+      'us-central1';
+    if (!project) {
+      return { url: '', headers: {} };
+    }
+
+    const baseUrl = `https://${location}-aiplatform.googleapis.com/v1/projects/${project}/locations/${location}`;
+    const token = await this.getAccessToken();
+    return {
+      url: `${baseUrl}/publishers/google/models/${model}`,
+      headers: { Authorization: `Bearer ${token}` },
+    };
+  }
+
+  private async getAccessToken(): Promise<string> {
+    const now = Date.now();
+    if (this.cachedToken && this.cachedToken.expiresAt > now + 60_000) {
+      return this.cachedToken.value;
+    }
+
+    const credentialsPath =
+      process.env.GOOGLE_APPLICATION_CREDENTIALS ||
+      process.env.GOOGLE_CREDENTIALS_FILE;
+    if (!credentialsPath) {
+      throw new Error('GOOGLE_APPLICATION_CREDENTIALS environment variable is not set');
+    }
+
+    const raw = await fs.readFile(credentialsPath, 'utf-8');
+    const credentials = JSON.parse(raw) as {
+      client_email: string;
+      private_key: string;
+    };
+
+    if (!credentials.client_email || !credentials.private_key) {
+      throw new Error('Invalid service account credentials file');
+    }
+
+    const tokenUri = 'https://oauth2.googleapis.com/token';
+    const iat = Math.floor(now / 1000);
+    const exp = iat + 3600;
+
+    const header = { alg: 'RS256', typ: 'JWT' };
+    const payload = {
+      iss: credentials.client_email,
+      sub: credentials.client_email,
+      scope: 'https://www.googleapis.com/auth/cloud-platform',
+      aud: tokenUri,
+      iat,
+      exp,
+    };
+
+    const encodedHeader = this.base64UrlEncode(JSON.stringify(header));
+    const encodedPayload = this.base64UrlEncode(JSON.stringify(payload));
+    const unsignedToken = `${encodedHeader}.${encodedPayload}`;
+
+    const signer = createSign('RSA-SHA256');
+    signer.update(unsignedToken);
+    signer.end();
+
+    const signature = signer.sign(credentials.private_key);
+    const jwt = `${unsignedToken}.${this.base64UrlEncode(signature)}`;
+
+    const response = await fetch(tokenUri, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+        assertion: jwt,
+      }).toString(),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Vertex AI auth error: ${response.status} - ${errorText}`);
+    }
+
+    const data = (await response.json()) as { access_token: string; expires_in: number };
+    const expiresAt = now + (data.expires_in ?? 3600) * 1000;
+    this.cachedToken = { value: data.access_token, expiresAt };
+    return data.access_token;
+  }
+
+  private base64UrlEncode(input: string | Buffer): string {
+    const buffer = typeof input === 'string' ? Buffer.from(input, 'utf-8') : input;
+    return buffer
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
   }
 
   /**
@@ -192,7 +343,7 @@ export class GeminiProvider implements LLMProvider {
 
     // セパレータがない場合は全体をサニタイズ
     if (!prompt.includes(separatorStart)) {
-      return PromptSanitizer.sanitize(prompt, 'prompt');
+      return PromptSanitizer.sanitizeTemplate(prompt, 'prompt');
     }
 
     // セパレータで分割して、ユーザー入力部分のみサニタイズ

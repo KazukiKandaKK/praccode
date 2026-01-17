@@ -3,8 +3,15 @@ export interface Question {
   questionText: string;
 }
 
+export type ExerciseStatus = 'GENERATING' | 'READY' | 'FAILED';
+
 export interface Exercise {
   id: string;
+  title: string;
+  language: string;
+  difficulty: number;
+  genre?: string | null;
+  status: ExerciseStatus;
   code: string;
   learningGoals: string[];
   questions: Question[];
@@ -15,6 +22,11 @@ export interface Exercise {
 export class ExerciseEntity implements Exercise {
   constructor(
     public readonly id: string,
+    public readonly title: string,
+    public readonly language: string,
+    public readonly difficulty: number,
+    public readonly genre: string | null,
+    public readonly status: ExerciseStatus,
     public readonly code: string,
     public readonly learningGoals: string[],
     public readonly questions: Question[]

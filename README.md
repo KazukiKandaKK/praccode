@@ -107,7 +107,7 @@ praccode/
 
 ### LLMプロバイダーの設定
 
-#### Ollama（ローカルLLM）を使う場合（デフォルト）
+#### Ollama（ローカルLLM）を使う場合
 
 macでOllamaを起動し、Dockerコンテナから `host.docker.internal:11434` 経由で叩けるようにしています。
 
@@ -124,18 +124,18 @@ docker compose -f docker-compose.dev.yml run --rm llm-tools
 
 環境変数（オプション）:
 
-- `LLM_PROVIDER=ollama` (デフォルト)
+- `LLM_PROVIDER=ollama`
 - `OLLAMA_HOST=http://host.docker.internal:11434` (デフォルト)
 - `OLLAMA_MODEL=qwen2.5-coder:14b` (デフォルト)
 
-#### Google Gemini APIを使う場合
+#### Gemini API Key を使う場合（推奨）
 
 ```bash
 # 環境変数を設定
 export LLM_PROVIDER=gemini
-export GEMINI_API_KEY=your-api-key-here
+export GEMINI_AUTH_MODE=api_key
+export GEMINI_API_KEY=your-gemini-api-key
 export GEMINI_MODEL=gemini-2.5-flash-lite  # オプション（デフォルト: gemini-2.5-flash-lite）
-export GEMINI_API_URL=https://aiplatform.googleapis.com/v1  # オプション
 
 # Docker Composeで起動
 docker compose -f docker-compose.dev.yml up
@@ -144,9 +144,27 @@ docker compose -f docker-compose.dev.yml up
 環境変数:
 
 - `LLM_PROVIDER=gemini` - Gemini APIを使用
-- `GEMINI_API_KEY` - Gemini APIキー（必須）
-- `GEMINI_API_URL` - APIエンドポイント（オプション、デフォルト: https://aiplatform.googleapis.com/v1）
+- `GEMINI_AUTH_MODE=api_key` - API Key 方式（推奨）
+- `GEMINI_API_KEY` - Gemini API Key（必須）
 - `GEMINI_MODEL` - 使用するモデル（オプション、デフォルト: gemini-2.5-flash-lite）
+
+#### Vertex AI (Gemini) を使う場合（任意）
+
+```bash
+export LLM_PROVIDER=gemini
+export GEMINI_AUTH_MODE=vertex
+export GOOGLE_CLOUD_PROJECT=your-gcp-project-id
+export GOOGLE_CLOUD_LOCATION=us-central1
+export GOOGLE_APPLICATION_CREDENTIALS_FILE=./secrets/gcp-sa.json
+export GEMINI_MODEL=gemini-2.5-flash-lite
+```
+
+環境変数:
+
+- `GEMINI_AUTH_MODE=vertex` - Vertex AI 方式
+- `GOOGLE_CLOUD_PROJECT` - GCPプロジェクトID（必須）
+- `GOOGLE_CLOUD_LOCATION` - Vertexリージョン（オプション、デフォルト: us-central1）
+- `GOOGLE_APPLICATION_CREDENTIALS_FILE` - サービスアカウントJSON（必須）
 
 #### レート制限の設定
 
@@ -212,7 +230,8 @@ chmod +x scripts/setup.sh
 cp env.example .env
 # .env ファイルを編集して LLMプロバイダーの設定を行う
 # - Ollama使用時: LLM_PROVIDER=ollama（デフォルト）
-# - Gemini使用時: LLM_PROVIDER=gemini, GEMINI_API_KEY=your-api-key
+# - Gemini API Key使用時: LLM_PROVIDER=gemini, GEMINI_AUTH_MODE=api_key, GEMINI_API_KEY=...
+# - Vertex AI使用時: LLM_PROVIDER=gemini, GEMINI_AUTH_MODE=vertex, GOOGLE_CLOUD_PROJECT=..., GOOGLE_APPLICATION_CREDENTIALS_FILE=...
 
 # 2. 開発サーバーを起動
 make dev
@@ -240,9 +259,11 @@ pnpm install
 # 2. 環境変数の設定
 # apps/backend/.env
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/praccode?schema=public"
-LLM_PROVIDER="ollama"  # または "gemini"
+LLM_PROVIDER="gemini"  # または "ollama"
+GEMINI_AUTH_MODE="api_key"
+GEMINI_API_KEY="your-gemini-api-key"
+GEMINI_MODEL="gemini-2.5-flash-lite"
 OLLAMA_MODEL="qwen2.5-coder:14b"  # Ollama使用時
-GEMINI_API_KEY="your-api-key"  # Gemini使用時
 PORT=3001
 
 # apps/frontend/.env.local
@@ -253,8 +274,9 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/praccode?schema=publ
 
 # 3. データベースのセットアップ
 make db-setup
-# または
-pnpm db:generate && pnpm db:push && pnpm db:seed
+# または（推奨: migrate）
+pnpm db:generate && pnpm db:migrate && pnpm db:seed
+# db:push は補助的な同期手段（初期検証用途）として残しています
 
 # 4. 開発サーバーの起動
 pnpm dev

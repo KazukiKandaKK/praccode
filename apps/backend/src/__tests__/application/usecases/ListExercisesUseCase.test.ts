@@ -19,7 +19,19 @@ describe('ListExercisesUseCase', () => {
   });
 
   it('should return exercises and pagination', async () => {
-    const mockExercises = [new ExerciseEntity('1', 'code', [], [])];
+    const mockExercises = [
+      new ExerciseEntity(
+        '1',
+        'title',
+        'typescript',
+        2,
+        'error_handling',
+        'READY',
+        'code',
+        [],
+        []
+      ),
+    ];
     mockExerciseRepository.find.mockResolvedValue(mockExercises);
     mockExerciseRepository.count.mockResolvedValue(1);
 
