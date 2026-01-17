@@ -97,6 +97,8 @@ import { CreateMentorThreadUseCase } from './application/usecases/mentor-chat/Cr
 import { GetMentorThreadUseCase } from './application/usecases/mentor-chat/GetMentorThreadUseCase.js';
 import { PostMentorMessageUseCase } from './application/usecases/mentor-chat/PostMentorMessageUseCase.js';
 import { PrismaAgentOSRepository } from './infrastructure/persistence/PrismaAgentOSRepository.js';
+import { PrismaAutopilotOutboxRepository } from './infrastructure/persistence/PrismaAutopilotOutboxRepository.js';
+import { PrismaAutopilotRunRepository } from './infrastructure/persistence/PrismaAutopilotRunRepository.js';
 import { buildDefaultToolRegistry } from './infrastructure/agent-os/tools.js';
 import { SafetyGuard } from './infrastructure/agent-os/guardrail.js';
 import { AgentRouter } from './infrastructure/agent-os/router.js';
@@ -106,6 +108,10 @@ import { CreateAgentRunUseCase } from './application/usecases/agent-os/CreateAge
 import { GetAgentRunUseCase } from './application/usecases/agent-os/GetAgentRunUseCase.js';
 import { ContinueAgentRunUseCase } from './application/usecases/agent-os/ContinueAgentRunUseCase.js';
 import { ConfirmAgentToolInvocationUseCase } from './application/usecases/agent-os/ConfirmAgentToolInvocationUseCase.js';
+import { EnqueueAutopilotTriggerUseCase } from './application/usecases/autopilot/EnqueueAutopilotTriggerUseCase.js';
+import { ListAutopilotRunsUseCase } from './application/usecases/autopilot/ListAutopilotRunsUseCase.js';
+import { GetAutopilotRunUseCase } from './application/usecases/autopilot/GetAutopilotRunUseCase.js';
+import { autopilotController } from './infrastructure/web/autopilotController.js';
 
 const fastify = Fastify({
   logger: true,
@@ -181,6 +187,8 @@ const mentorWorkflowRepository = new PrismaMentorWorkflowRepository();
 const mentorThreadRepository = new PrismaMentorThreadRepository();
 const evaluationMetricRepository = new PrismaEvaluationMetricRepository();
 const learningTimeRepository = new PrismaLearningTimeRepository();
+const autopilotOutboxRepository = new PrismaAutopilotOutboxRepository();
+const autopilotRunRepository = new PrismaAutopilotRunRepository();
 const mentorChatGenerator = new LLMMentorChatGenerator();
 const listWritingChallengesUseCase = new ListWritingChallengesUseCase(writingChallengeRepository);
 const getWritingChallengeUseCase = new GetWritingChallengeUseCase(writingChallengeRepository);
@@ -213,6 +221,7 @@ const evaluateSubmissionUseCase = new EvaluateSubmissionUseCase(
   evaluationEventPublisher,
   learningAnalysisScheduler,
   evaluationMetricRepository,
+  autopilotOutboxRepository,
   fastify.log
 );
 const getUserProfileUseCase = new GetUserProfileUseCase(userAccountRepository);
@@ -334,6 +343,11 @@ const confirmAgentToolInvocationUseCase = new ConfirmAgentToolInvocationUseCase(
   agentRuntime,
   fastify.log
 );
+const enqueueAutopilotTriggerUseCase = new EnqueueAutopilotTriggerUseCase(
+  autopilotOutboxRepository
+);
+const listAutopilotRunsUseCase = new ListAutopilotRunsUseCase(autopilotRunRepository);
+const getAutopilotRunUseCase = new GetAutopilotRunUseCase(autopilotRunRepository);
 // --- End of Dependency Injection ---
 
 // ルート登録（順番は依存なしだが、awaitで初期化完了を明示）
@@ -461,6 +475,15 @@ await fastify.register(
       getRun: getAgentRunUseCase,
       continueRun: continueAgentRunUseCase,
       confirmInvocation: confirmAgentToolInvocationUseCase,
+    });
+  }
+);
+await fastify.register(
+  async (instance) => {
+    autopilotController(instance, {
+      enqueueTrigger: enqueueAutopilotTriggerUseCase,
+      listRuns: listAutopilotRunsUseCase,
+      getRun: getAutopilotRunUseCase,
     });
   }
 );

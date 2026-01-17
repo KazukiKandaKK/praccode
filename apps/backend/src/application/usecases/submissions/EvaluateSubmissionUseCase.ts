@@ -7,6 +7,7 @@ import { IAnswerEvaluationService } from '../../../domain/ports/IAnswerEvaluatio
 import { IEvaluationEventPublisher } from '../../../domain/ports/IEvaluationEventPublisher';
 import { ILearningAnalysisScheduler } from '../../../domain/ports/ILearningAnalysisScheduler';
 import { IEvaluationMetricRepository } from '../../../domain/ports/IEvaluationMetricRepository';
+import { IAutopilotOutboxRepository } from '../../../domain/ports/IAutopilotOutboxRepository';
 
 type Logger = { info: (...args: unknown[]) => void; error: (...args: unknown[]) => void };
 
@@ -17,6 +18,7 @@ export class EvaluateSubmissionUseCase {
     private readonly eventPublisher: IEvaluationEventPublisher,
     private readonly learningAnalysisScheduler: ILearningAnalysisScheduler,
     private readonly evaluationMetricRepository: IEvaluationMetricRepository,
+    private readonly autopilotOutboxRepository: IAutopilotOutboxRepository,
     private readonly logger: Logger
   ) {}
 
@@ -102,6 +104,17 @@ export class EvaluateSubmissionUseCase {
         }
 
         await this.submissions.markStatus(id, 'EVALUATED');
+
+        try {
+          await this.autopilotOutboxRepository.enqueue({
+            type: 'SubmissionEvaluated',
+            payloadJson: { userId: jobTarget.userId, submissionId: jobTarget.id },
+            dedupKey: `SubmissionEvaluated:${jobTarget.id}`,
+          });
+        } catch (error) {
+          this.logger.error(error, 'Failed to enqueue autopilot outbox');
+        }
+
         this.eventPublisher.emitEvaluationComplete(id);
         this.logger.info(`Evaluation completed for submission ${id}`);
 

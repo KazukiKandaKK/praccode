@@ -43,6 +43,7 @@ model User {
   agentRuns                 AgentRun[]
   agentExperiences          AgentExperience[]
   agentMemories             AgentMemory[]
+  autopilotRuns             AutopilotRun[]
 
   @@map("users")
 }
@@ -126,6 +127,18 @@ enum AgentMemoryType {
   preference
   warning
   concept
+}
+
+enum AutopilotTriggerType {
+  submission_evaluated
+  manual
+}
+
+enum AutopilotRunStatus {
+  queued
+  running
+  completed
+  failed
 }
 
 // NextAuth.js用アカウント
@@ -738,4 +751,42 @@ model AgentMemory {
 
   @@index([userId, type, createdAt])
   @@map("agent_memories")
+}
+
+// ========== Autopilot ==========
+
+model AutopilotOutboxEvent {
+  id          String   @id @default(uuid())
+  type        String
+  payloadJson Json?    @map("payload_json")
+  dedupKey    String   @unique @map("dedup_key")
+  createdAt   DateTime @default(now()) @map("created_at")
+  processedAt DateTime? @map("processed_at")
+  errorCount  Int      @default(0) @map("error_count")
+  nextRetryAt DateTime? @map("next_retry_at")
+  lastError   String?  @map("last_error")
+
+  @@index([processedAt])
+  @@index([nextRetryAt])
+  @@map("autopilot_outbox_events")
+}
+
+model AutopilotRun {
+  id          String             @id @default(uuid())
+  userId      String             @map("user_id")
+  triggerType AutopilotTriggerType @map("trigger_type")
+  triggerKey  String             @unique @map("trigger_key")
+  payloadJson Json?              @map("payload_json")
+  status      AutopilotRunStatus @default(queued)
+  startedAt   DateTime?          @map("started_at")
+  finishedAt  DateTime?          @map("finished_at")
+  resultJson  Json?              @map("result_json")
+  errorMessage String?           @map("error_message")
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("autopilot_runs")
 }
