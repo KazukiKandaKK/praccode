@@ -14,6 +14,28 @@
 6) AutopilotRun を completed/failed に更新
 7) Outbox を processed or retry
 
+## フロー図
+```mermaid
+flowchart LR
+  A[Submission evaluated] --> B[Autopilot outbox enqueue]
+  B --> C[Worker lease event]
+  C --> D[Create Autopilot run queued]
+  D --> E[Mark run running]
+  E --> F[Build context from submission]
+  F --> G[Mastra autopilot agent plan]
+  G --> H[Allowlist tools execute]
+  H --> I[Generate submission feedback]
+  H --> J[Ensure mentor thread]
+  H --> K[Post mentor message]
+  I --> L[Mark run completed]
+  J --> L
+  K --> L
+  L --> M[Outbox processed]
+  G --> N[Failure]
+  N --> O[Mark run failed]
+  O --> P[Outbox retry schedule]
+```
+
 ## dedupKey 方針
 - SubmissionEvaluated:{submissionId}
 - 同一 dedupKey は UNIQUE 制約で二重 enqueue を防止
