@@ -20,7 +20,7 @@ cd apps/api
 pnpm db:generate
 
 echo "データベーススキーマを適用中..."
-pnpm db:push
+pnpm db:migrate
 
 echo "シードデータを投入中..."
 pnpm db:seed
@@ -32,7 +32,6 @@ echo "次のステップ:"
 echo "  make dev     # Docker で開発サーバーを起動"
 echo "  または"
 echo "  make dev-local  # ローカルで開発サーバーを起動"
-
 
 
 

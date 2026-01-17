@@ -183,6 +183,36 @@ export LLM_RATE_LIMIT_MAX_RETRIES=3    # 429エラー時の最大リトライ回
 - 429エラー発生時はエクスポネンシャルバックオフでリトライ
 - Retry-Afterヘッダーを尊重
 
+### Agent OS（Playground）
+
+Agent OS は Observe -> Plan -> Guard -> Act -> Verify -> Learn の安全なループを回す基盤です。
+UI は `/agent-playground` から利用できます。
+
+主なAPI:
+
+```
+POST /agent/runs
+GET  /agent/runs/:id
+POST /agent/runs/:id/continue
+POST /agent/runs/:id/confirm
+```
+
+例（x-user-id 必須）:
+
+```bash
+curl -X POST http://localhost:3001/agent/runs \\
+  -H 'Content-Type: application/json' \\
+  -H 'x-user-id: <USER_ID>' \\
+  -d '{\"mode\":\"mentor\",\"goal\":\"Explain the code structure\",\"inputJson\":{}}'
+```
+
+Agent OSの環境変数:
+
+- `AGENT_STEP_LIMIT` (default: 12)
+- `AGENT_PARALLEL_PLANS` (default: 3)
+- `AGENT_GUARD_LLM` (default: false)
+- `ENABLE_WEB_SEARCH` (default: false)
+
 ### セットアップ
 
 ```bash

@@ -96,6 +96,16 @@ import { LLMMentorChatGenerator } from './infrastructure/llm/LLMMentorChatGenera
 import { CreateMentorThreadUseCase } from './application/usecases/mentor-chat/CreateMentorThreadUseCase.js';
 import { GetMentorThreadUseCase } from './application/usecases/mentor-chat/GetMentorThreadUseCase.js';
 import { PostMentorMessageUseCase } from './application/usecases/mentor-chat/PostMentorMessageUseCase.js';
+import { PrismaAgentOSRepository } from './infrastructure/persistence/PrismaAgentOSRepository.js';
+import { buildDefaultToolRegistry } from './infrastructure/agent-os/tools.js';
+import { SafetyGuard } from './infrastructure/agent-os/guardrail.js';
+import { AgentRouter } from './infrastructure/agent-os/router.js';
+import { AgentRuntime } from './infrastructure/agent-os/agent-runtime.js';
+import { agentOSController } from './infrastructure/web/agentOSController.js';
+import { CreateAgentRunUseCase } from './application/usecases/agent-os/CreateAgentRunUseCase.js';
+import { GetAgentRunUseCase } from './application/usecases/agent-os/GetAgentRunUseCase.js';
+import { ContinueAgentRunUseCase } from './application/usecases/agent-os/ContinueAgentRunUseCase.js';
+import { ConfirmAgentToolInvocationUseCase } from './application/usecases/agent-os/ConfirmAgentToolInvocationUseCase.js';
 
 const fastify = Fastify({
   logger: true,
@@ -297,6 +307,33 @@ const getDailyLearningTimeUseCase = new GetDailyLearningTimeUseCase(learningTime
 const listExercisesUseCase = new ListExercisesUseCase(exerciseRepository);
 const getExerciseByIdUseCase = new GetExerciseByIdUseCase(exerciseRepository);
 const getUserProgressUseCase = new GetUserProgressUseCase(submissionRepository, exerciseRepository);
+const agentOSRepository = new PrismaAgentOSRepository();
+const agentToolRegistry = buildDefaultToolRegistry({
+  submissionRepository,
+  exerciseRepository,
+  generateHintUseCase,
+  getUserProgressUseCase,
+  agentOSRepository,
+});
+const agentGuard = new SafetyGuard(process.env.AGENT_GUARD_LLM === 'true');
+const agentRouter = new AgentRouter();
+const agentRuntime = new AgentRuntime(agentOSRepository, agentToolRegistry, agentGuard, agentRouter);
+const createAgentRunUseCase = new CreateAgentRunUseCase(
+  agentOSRepository,
+  agentRuntime,
+  fastify.log
+);
+const getAgentRunUseCase = new GetAgentRunUseCase(agentOSRepository);
+const continueAgentRunUseCase = new ContinueAgentRunUseCase(
+  agentOSRepository,
+  agentRuntime,
+  fastify.log
+);
+const confirmAgentToolInvocationUseCase = new ConfirmAgentToolInvocationUseCase(
+  agentOSRepository,
+  agentRuntime,
+  fastify.log
+);
 // --- End of Dependency Injection ---
 
 // ルート登録（順番は依存なしだが、awaitで初期化完了を明示）
@@ -414,6 +451,16 @@ await fastify.register(
       createThread: createMentorThreadUseCase,
       getThread: getMentorThreadUseCase,
       postMessage: postMentorMessageUseCase,
+    });
+  }
+);
+await fastify.register(
+  async (instance) => {
+    agentOSController(instance, {
+      createRun: createAgentRunUseCase,
+      getRun: getAgentRunUseCase,
+      continueRun: continueAgentRunUseCase,
+      confirmInvocation: confirmAgentToolInvocationUseCase,
     });
   }
 );

@@ -40,6 +40,9 @@ model User {
   mentorFeedbackInsights    MentorFeedbackInsight[]
   mentorSprints             MentorSprint[]
   mentorThreads             MentorThread[]
+  agentRuns                 AgentRun[]
+  agentExperiences          AgentExperience[]
+  agentMemories             AgentMemory[]
 
   @@map("users")
 }
@@ -69,6 +72,60 @@ enum EvaluationMetricSource {
 enum MentorFeedbackInsightType {
   STRENGTH
   IMPROVEMENT
+}
+
+enum AgentRunMode {
+  mentor
+  coach
+  deep_research
+  code_assist
+  generic
+}
+
+enum AgentRunStatus {
+  queued
+  running
+  completed
+  failed
+  cancelled
+}
+
+enum AgentStepKind {
+  plan
+  tool
+  verify
+  final
+  note
+}
+
+enum ToolInvocationStatus {
+  success
+  failed
+  blocked
+  needs_confirmation
+}
+
+enum SafetyDecisionType {
+  allow
+  block
+  confirm
+}
+
+enum EvidenceSourceType {
+  exercise
+  submission
+  progress
+  web
+  memory
+  other
+}
+
+enum AgentMemoryType {
+  fact
+  procedure
+  preference
+  warning
+  concept
 }
 
 // NextAuth.js用アカウント
@@ -540,4 +597,145 @@ model MastraMessage {
 
   @@index([threadId])
   @@map("mastra_messages")
+}
+
+// ========== Agent OS ==========
+
+model AgentRun {
+  id          String        @id @default(uuid())
+  userId      String        @map("user_id")
+  mode        AgentRunMode
+  goal        String
+  inputJson   Json?         @map("input_json")
+  status      AgentRunStatus @default(queued)
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  startedAt   DateTime?     @map("started_at")
+  finishedAt  DateTime?     @map("finished_at")
+  resultJson  Json?         @map("result_json")
+  errorMessage String?      @map("error_message")
+
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  steps           AgentStep[]
+  toolInvocations ToolInvocation[]
+  routingDecisions RoutingDecision[]
+  evidence        Evidence[]
+
+  @@index([userId, updatedAt])
+  @@map("agent_runs")
+}
+
+model AgentStep {
+  id        String       @id @default(uuid())
+  runId     String       @map("run_id")
+  stepIndex Int          @map("step_index")
+  kind      AgentStepKind
+  inputJson Json?        @map("input_json")
+  outputJson Json?       @map("output_json")
+  createdAt DateTime     @default(now()) @map("created_at")
+
+  run            AgentRun        @relation(fields: [runId], references: [id], onDelete: Cascade)
+  toolInvocations ToolInvocation[]
+  routingDecisions RoutingDecision[]
+
+  @@index([runId, stepIndex])
+  @@map("agent_steps")
+}
+
+model ToolInvocation {
+  id         String               @id @default(uuid())
+  runId      String               @map("run_id")
+  stepId     String               @map("step_id")
+  toolName   String               @map("tool_name")
+  argsJson   Json?                @map("args_json")
+  resultJson Json?                @map("result_json")
+  status     ToolInvocationStatus @default(success)
+  startedAt  DateTime             @default(now()) @map("started_at")
+  finishedAt DateTime?            @map("finished_at")
+  errorMessage String?            @map("error_message")
+
+  run       AgentRun      @relation(fields: [runId], references: [id], onDelete: Cascade)
+  step      AgentStep     @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  safetyDecisions SafetyDecision[]
+
+  @@index([runId, startedAt])
+  @@index([stepId])
+  @@map("tool_invocations")
+}
+
+model SafetyDecision {
+  id             String             @id @default(uuid())
+  invocationId   String             @map("invocation_id")
+  decision       SafetyDecisionType
+  reasonsJson    Json?              @map("reasons_json")
+  feedbackToAgent String?           @map("feedback_to_agent")
+  createdAt      DateTime           @default(now()) @map("created_at")
+
+  invocation ToolInvocation @relation(fields: [invocationId], references: [id], onDelete: Cascade)
+
+  @@index([invocationId])
+  @@map("safety_decisions")
+}
+
+model RoutingDecision {
+  id            String   @id @default(uuid())
+  runId         String   @map("run_id")
+  stepId        String?  @map("step_id")
+  chosenProvider String  @map("chosen_provider")
+  chosenModel   String   @map("chosen_model")
+  toolset       String
+  reason        String
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  run  AgentRun   @relation(fields: [runId], references: [id], onDelete: Cascade)
+  step AgentStep? @relation(fields: [stepId], references: [id], onDelete: SetNull)
+
+  @@index([runId, createdAt])
+  @@map("routing_decisions")
+}
+
+model Evidence {
+  id           String             @id @default(uuid())
+  runId        String             @map("run_id")
+  claim        String
+  evidenceText String             @db.Text @map("evidence_text")
+  sourceType   EvidenceSourceType @map("source_type")
+  sourceRef    String?            @map("source_ref")
+  confidence   Float?             @map("confidence")
+  createdAt    DateTime           @default(now()) @map("created_at")
+
+  run AgentRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([runId, createdAt])
+  @@map("agent_evidence")
+}
+
+model AgentExperience {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  tags          Json?    @map("tags")
+  situation     String   @db.Text
+  actionsSummary String  @db.Text @map("actions_summary")
+  outcome       String   @db.Text
+  evalScore     Float?   @map("eval_score")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("agent_experiences")
+}
+
+model AgentMemory {
+  id        String         @id @default(uuid())
+  userId    String         @map("user_id")
+  type      AgentMemoryType
+  content   String         @db.Text
+  linksJson Json?          @map("links_json")
+  createdAt DateTime       @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type, createdAt])
+  @@map("agent_memories")
 }

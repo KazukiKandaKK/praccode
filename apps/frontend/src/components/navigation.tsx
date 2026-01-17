@@ -19,6 +19,7 @@ import {
   Brain,
   History,
   ListChecks,
+  Bot,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { logout } from '@/app/actions/auth';
@@ -106,6 +107,11 @@ export function Navigation({ user }: NavigationProps) {
         { href: '/mentor/plan/history', label: '計画履歴', icon: History },
         { href: '/mentor/feedback', label: 'フィードバック履歴', icon: ListChecks },
       ],
+    },
+    {
+      label: 'Agent OS',
+      icon: Bot,
+      children: [{ href: '/agent-playground', label: 'Playground', icon: Bot }],
     },
   ];
 

@@ -26,8 +26,9 @@ export class GeminiProvider implements LLMProvider {
   private cachedToken: { value: string; expiresAt: number } | null = null;
 
   async generate(prompt: string, options?: LLMGenerateOptions): Promise<string> {
-    const mode = (process.env.GEMINI_AUTH_MODE || 'auto').toLowerCase();
-    const authMode = mode === 'vertex' || mode === 'api_key' ? mode : 'auto';
+    const mode = (process.env.GEMINI_AUTH_MODE || 'api_key').toLowerCase();
+    const authMode =
+      mode === 'vertex' || mode === 'api_key' || mode === 'auto' ? mode : 'api_key';
     const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
 
     // プロンプト全体をサニタイズ（既に構造化されている前提）
@@ -164,12 +165,16 @@ export class GeminiProvider implements LLMProvider {
   }
 
   async checkHealth(): Promise<boolean> {
-    const mode = (process.env.GEMINI_AUTH_MODE || 'auto').toLowerCase();
-    const authMode = mode === 'vertex' || mode === 'api_key' ? mode : 'auto';
+    const mode = (process.env.GEMINI_AUTH_MODE || 'api_key').toLowerCase();
+    const authMode =
+      mode === 'vertex' || mode === 'api_key' || mode === 'auto' ? mode : 'api_key';
     const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
 
     try {
       const { url, headers } = await this.buildHealthcheckContext(authMode, model);
+      if (!url) {
+        return false;
+      }
       const response = await fetch(url, {
         method: 'GET',
         headers,
