@@ -19,6 +19,7 @@
     "autopilot:worker": "tsx src/worker/autopilot-worker.ts"
   },
   "dependencies": {
+    "@fastify/basic-auth": "^5.0.0",
     "@fastify/cors": "^9.0.1",
     "@mastra/core": "^0.5.0",
     "@prisma/client": "^5.22.0",

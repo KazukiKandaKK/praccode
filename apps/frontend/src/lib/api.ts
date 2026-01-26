@@ -1,4 +1,4 @@
-import type { MentorPostMessageResult, MentorThreadWithMessages } from '@praccode/shared';
+import type { MentorMessage, MentorPostMessageResult, MentorThreadWithMessages } from '@praccode/shared';
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001';
 
@@ -140,6 +140,33 @@ async function handleResponse<T>(response: Response): Promise<T> {
 
 const userIdHeader = (userId: string) => ({ 'x-user-id': userId });
 
+const parseSseEvent = (raw: string): { event: string; data: string } | null => {
+  const lines = raw.split('\n');
+  let event = 'message';
+  const dataLines: string[] = [];
+
+  for (const line of lines) {
+    if (!line) continue;
+    if (line.startsWith(':')) continue;
+    if (line.startsWith('event:')) {
+      event = line.slice('event:'.length).trim();
+      continue;
+    }
+    if (line.startsWith('data:')) {
+      dataLines.push(line.slice('data:'.length).trimStart());
+    }
+  }
+
+  if (!event && dataLines.length === 0) return null;
+  return { event, data: dataLines.join('\n') };
+};
+
+export type MentorChatStreamEvent =
+  | { type: 'start'; userMessage: MentorMessage }
+  | { type: 'delta'; delta: string }
+  | { type: 'done'; assistantMessage: MentorMessage }
+  | { type: 'error'; message: string; assistantMessage?: MentorMessage };
+
 export const api = {
   // Mentor
   async generateLearningPlan(params: {
@@ -260,6 +287,90 @@ export const api = {
       body: JSON.stringify({ content }),
     });
     return handleResponse<MentorPostMessageResult>(response);
+  },
+
+  async *streamMentorMessage(params: {
+    threadId: string;
+    userId: string;
+    content: string;
+    signal?: AbortSignal;
+  }): AsyncIterable<MentorChatStreamEvent> {
+    const response = await fetch(
+      `${API_BASE_URL}/mentor/threads/${params.threadId}/messages/stream`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...userIdHeader(params.userId) },
+        body: JSON.stringify({ content: params.content }),
+        signal: params.signal,
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'An error occurred' }));
+      throw new ApiError(error.message || 'An error occurred', response.status);
+    }
+
+    if (!response.body) {
+      throw new ApiError('Stream response is empty', 500);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      const parts = buffer.split('\n\n');
+      buffer = parts.pop() ?? '';
+
+      for (const part of parts) {
+        const parsed = parseSseEvent(part);
+        if (!parsed) continue;
+        const payload = parsed.data ? JSON.parse(parsed.data) : {};
+
+        switch (parsed.event) {
+          case 'start':
+            yield { type: 'start', userMessage: payload.userMessage as MentorMessage };
+            break;
+          case 'delta':
+            yield { type: 'delta', delta: String(payload.delta ?? '') };
+            break;
+          case 'done':
+            yield { type: 'done', assistantMessage: payload.assistantMessage as MentorMessage };
+            break;
+          case 'error':
+            yield {
+              type: 'error',
+              message: String(payload.message ?? 'メンターの応答生成に失敗しました'),
+              assistantMessage: payload.assistantMessage as MentorMessage | undefined,
+            };
+            break;
+          default:
+            break;
+        }
+      }
+    }
+
+    const remaining = buffer.trim();
+    if (remaining) {
+      const parsed = parseSseEvent(remaining);
+      if (parsed) {
+        const payload = parsed.data ? JSON.parse(parsed.data) : {};
+        if (parsed.event === 'done') {
+          yield { type: 'done', assistantMessage: payload.assistantMessage as MentorMessage };
+        }
+        if (parsed.event === 'error') {
+          yield {
+            type: 'error',
+            message: String(payload.message ?? 'メンターの応答生成に失敗しました'),
+            assistantMessage: payload.assistantMessage as MentorMessage | undefined,
+          };
+        }
+      }
+    }
   },
 
   async logLearningTime(params: {

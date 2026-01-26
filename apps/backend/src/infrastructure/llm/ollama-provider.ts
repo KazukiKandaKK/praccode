@@ -86,6 +86,94 @@ export class OllamaProvider implements LLMProvider {
     }
   }
 
+  async *generateStream(
+    prompt: string,
+    options?: LLMGenerateOptions
+  ): AsyncIterable<string> {
+    const sanitizedPrompt = this.sanitizeStructuredPrompt(prompt);
+
+    const requestBody: OllamaGenerateRequest = {
+      model: OLLAMA_MODEL,
+      prompt: sanitizedPrompt,
+      stream: true,
+      ...(options?.jsonMode && { format: 'json' }),
+      options: {
+        temperature: options?.temperature ?? 0.7,
+        num_predict: options?.maxTokens ?? 4096,
+      },
+    };
+
+    const timeoutMs = options?.timeoutMs ?? 60000;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const response = await fetch(`${OLLAMA_HOST}/api/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        if (response.status === 429) {
+          const retryAfter = response.headers.get('Retry-After');
+          const retryAfterMs = parseRetryAfter(retryAfter);
+          const retryInfo = retryAfterMs ? ` (Retry after ${retryAfterMs}ms)` : '';
+          throw new Error(`Ollama API rate limit (429)${retryInfo}: ${errorText}`);
+        }
+        throw new Error(`Ollama API error: ${response.status} - ${errorText}`);
+      }
+
+      if (!response.body) {
+        throw new Error('Ollama API returned empty stream');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed) continue;
+          const data = JSON.parse(trimmed) as OllamaGenerateResponse;
+          if (data.response) {
+            yield data.response;
+          }
+          if (data.done) {
+            return;
+          }
+        }
+      }
+
+      const leftover = buffer.trim();
+      if (leftover) {
+        const data = JSON.parse(leftover) as OllamaGenerateResponse;
+        if (data.response) {
+          yield data.response;
+        }
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error(`Ollama request timed out after ${timeoutMs / 1000} seconds`);
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
   async checkHealth(): Promise<boolean> {
     try {
       const response = await fetch(`${OLLAMA_HOST}/api/tags`, {

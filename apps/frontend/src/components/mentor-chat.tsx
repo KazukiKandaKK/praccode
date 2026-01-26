@@ -2,6 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Sparkles, Loader2, Send } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -23,6 +27,47 @@ const createTempMessage = (role: MentorMessage['role'], content: string): Mentor
   createdAt: new Date().toISOString(),
 });
 
+const MarkdownMessage = ({ content }: { content: string }) => (
+  <ReactMarkdown
+    remarkPlugins={[remarkGfm]}
+    components={{
+      p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+      ul: ({ children }) => <ul className="mb-2 list-disc pl-5 space-y-1">{children}</ul>,
+      ol: ({ children }) => <ol className="mb-2 list-decimal pl-5 space-y-1">{children}</ol>,
+      li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+      code: ({ className, inline, children, ...props }) => {
+        const match = /language-(\w+)/.exec(className || '');
+        if (!inline && match) {
+          return (
+            <div className="my-3">
+              <SyntaxHighlighter
+                {...props}
+                language={match[1]}
+                style={oneDark}
+                customStyle={{
+                  margin: 0,
+                  borderRadius: 12,
+                  fontSize: '0.85rem',
+                  background: 'rgba(15, 23, 42, 0.85)',
+                }}
+              >
+                {String(children).replace(/\n$/, '')}
+              </SyntaxHighlighter>
+            </div>
+          );
+        }
+        return (
+          <code className="rounded bg-slate-950/70 px-1 py-0.5 text-[0.85em] text-cyan-200">
+            {children}
+          </code>
+        );
+      },
+    }}
+  >
+    {content}
+  </ReactMarkdown>
+);
+
 export function MentorChat({ userId, exerciseId, submissionId }: MentorChatProps) {
   const [threadId, setThreadId] = useState<string | null>(null);
   const [messages, setMessages] = useState<MentorMessage[]>([]);
@@ -31,7 +76,10 @@ export function MentorChat({ userId, exerciseId, submissionId }: MentorChatProps
   const [sendError, setSendError] = useState<string | null>(null);
   const [isInitializing, setIsInitializing] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
   const initOnceRef = useRef(false);
+  const streamAbortRef = useRef<AbortController | null>(null);
+  const scrollAnchorRef = useRef<HTMLDivElement | null>(null);
 
   const initializeThread = useCallback(async () => {
     setIsInitializing(true);
@@ -55,6 +103,16 @@ export function MentorChat({ userId, exerciseId, submissionId }: MentorChatProps
     void initializeThread();
   }, [initializeThread, userId]);
 
+  useEffect(() => {
+    scrollAnchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }, [messages, streamingMessageId]);
+
+  useEffect(() => {
+    return () => {
+      streamAbortRef.current?.abort();
+    };
+  }, []);
+
   const handleSend = async () => {
     if (!input.trim() || !threadId || isSending) return;
 
@@ -70,22 +128,69 @@ export function MentorChat({ userId, exerciseId, submissionId }: MentorChatProps
     setIsSending(true);
 
     const optimisticUser = createTempMessage('user', input);
-    const optimisticAssistant = createTempMessage('assistant', '考え中...');
+    const optimisticAssistant = createTempMessage('assistant', '');
 
     setMessages((prev) => [...prev, optimisticUser, optimisticAssistant]);
     setInput('');
+    setStreamingMessageId(optimisticAssistant.id);
+
+    const controller = new AbortController();
+    streamAbortRef.current?.abort();
+    streamAbortRef.current = controller;
+
+    let streamedContent = '';
+    let finalUserMessage: MentorMessage | null = null;
+    let finalAssistantMessage: MentorMessage | null = null;
 
     try {
-      const result = await api.postMentorMessage(threadId, userId, input);
+      for await (const event of api.streamMentorMessage({
+        threadId,
+        userId,
+        content: input,
+        signal: controller.signal,
+      })) {
+        if (event.type === 'start') {
+          finalUserMessage = event.userMessage;
+        }
+        if (event.type === 'delta') {
+          streamedContent += event.delta;
+          setMessages((prev) =>
+            prev.map((message) =>
+              message.id === optimisticAssistant.id
+                ? { ...message, content: streamedContent }
+                : message
+            )
+          );
+        }
+        if (event.type === 'done') {
+          finalAssistantMessage = event.assistantMessage;
+        }
+        if (event.type === 'error') {
+          setSendError(event.message);
+          if (event.assistantMessage) {
+            finalAssistantMessage = event.assistantMessage;
+          }
+        }
+      }
+
       setMessages((prev) => {
         const filtered = prev.filter(
           (message) =>
             message.id !== optimisticUser.id && message.id !== optimisticAssistant.id
         );
-        return [...filtered, result.userMessage, result.assistantMessage];
+        const next = [...filtered];
+        next.push(finalUserMessage ?? optimisticUser);
+        if (finalAssistantMessage) {
+          next.push(finalAssistantMessage);
+        } else if (streamedContent.trim()) {
+          next.push({ ...optimisticAssistant, content: streamedContent });
+        }
+        return next;
       });
     } catch (error) {
-      setMessages((prev) => prev.filter((message) => message.id !== optimisticAssistant.id));
+      setMessages((prev) =>
+        prev.filter((message) => message.id !== optimisticAssistant.id)
+      );
       if (error instanceof ApiError && error.statusCode === 503 && threadId) {
         try {
           const thread = await api.getMentorThread(threadId, userId);
@@ -97,14 +202,17 @@ export function MentorChat({ userId, exerciseId, submissionId }: MentorChatProps
       setSendError(error instanceof Error ? error.message : 'メンターの応答に失敗しました');
     } finally {
       setIsSending(false);
+      setStreamingMessageId(null);
     }
   };
 
   return (
-    <Card className="border-slate-700/60 bg-slate-900/40">
-      <CardHeader className="flex flex-row items-center justify-between">
+    <Card className="border-slate-700/60 bg-slate-950/50 shadow-lg shadow-cyan-500/10">
+      <CardHeader className="flex flex-row items-center justify-between border-b border-slate-800/60">
         <CardTitle className="text-lg text-white flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-cyan-400" />
+          <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-cyan-500/15 text-cyan-300">
+            <Sparkles className="w-4 h-4" />
+          </span>
           AIメンター
         </CardTitle>
         {isInitializing && (
@@ -114,7 +222,7 @@ export function MentorChat({ userId, exerciseId, submissionId }: MentorChatProps
           </div>
         )}
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 pt-4">
         {initError ? (
           <div className="space-y-3">
             <p className="text-sm text-red-400">{initError}</p>
@@ -124,36 +232,60 @@ export function MentorChat({ userId, exerciseId, submissionId }: MentorChatProps
           </div>
         ) : (
           <>
-            <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
+            <div className="space-y-4 max-h-[420px] overflow-y-auto pr-1">
               {messages.length === 0 ? (
-                <div className="text-sm text-slate-400">
-                  疑問点や読み方のコツを相談してみましょう。
+                <div className="rounded-xl border border-dashed border-slate-700/70 bg-slate-900/30 px-4 py-3 text-sm text-slate-400">
+                  弱点の克服や深掘り質問など、学習の相談を気軽にどうぞ。
                 </div>
               ) : (
                 messages.map((message) => {
                   const isUser = message.role === 'user';
                   const isError = Boolean(message.metadata && message.metadata.error);
+                  const isStreaming = streamingMessageId === message.id;
                   return (
                     <div
                       key={message.id}
                       className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
                     >
-                      <div
-                        className={[
-                          'max-w-[85%] rounded-xl px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap',
-                          isUser
-                            ? 'bg-cyan-500/20 text-cyan-100 border border-cyan-500/30'
-                            : isError
-                              ? 'bg-red-500/10 text-red-200 border border-red-500/30'
-                              : 'bg-slate-800 text-slate-100 border border-slate-700/70',
-                        ].join(' ')}
-                      >
-                        {message.content}
+                      <div className="max-w-[88%]">
+                        {!isUser && (
+                          <div className="mb-1 flex items-center gap-2 text-xs text-slate-400">
+                            <span className="h-2 w-2 rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.7)]" />
+                            メンター
+                          </div>
+                        )}
+                        <div
+                          className={[
+                            'rounded-2xl px-4 py-3 text-sm leading-relaxed',
+                            isUser
+                              ? 'bg-gradient-to-br from-cyan-500/25 via-cyan-500/15 to-slate-900/60 text-cyan-100 border border-cyan-500/30'
+                              : isError
+                                ? 'bg-red-500/10 text-red-200 border border-red-500/30'
+                                : 'bg-slate-900/70 text-slate-100 border border-slate-700/70',
+                          ].join(' ')}
+                        >
+                          {isUser ? (
+                            <p className="whitespace-pre-wrap">{message.content}</p>
+                          ) : message.content ? (
+                            <div className="prose prose-invert prose-sm max-w-none">
+                              <MarkdownMessage content={message.content} />
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 text-slate-400">
+                              <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+                              返答を作成中...
+                            </div>
+                          )}
+                          {isStreaming && message.content && (
+                            <span className="ml-1 inline-block h-3 w-2 animate-pulse rounded-sm bg-cyan-400/80 align-middle" />
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
                 })
               )}
+              <div ref={scrollAnchorRef} />
             </div>
 
             {sendError && (
@@ -166,7 +298,7 @@ export function MentorChat({ userId, exerciseId, submissionId }: MentorChatProps
               <Textarea
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
-                placeholder="どこが気になるか、どう読めば良いかを相談してください"
+                placeholder="弱点の克服や深掘りしたいポイントを相談してください"
                 rows={3}
               />
               <div className="flex justify-end">

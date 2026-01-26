@@ -4,6 +4,7 @@ import { mentorChatController } from '@/infrastructure/web/mentorChatController'
 import { CreateMentorThreadUseCase } from '@/application/usecases/mentor-chat/CreateMentorThreadUseCase';
 import { GetMentorThreadUseCase } from '@/application/usecases/mentor-chat/GetMentorThreadUseCase';
 import { PostMentorMessageUseCase } from '@/application/usecases/mentor-chat/PostMentorMessageUseCase';
+import { PostMentorMessageStreamUseCase } from '@/application/usecases/mentor-chat/PostMentorMessageStreamUseCase';
 import { ApplicationError } from '@/application/errors/ApplicationError';
 
 const mockCreateThread = {
@@ -18,6 +19,10 @@ const mockPostMessage = {
   execute: vi.fn(),
 } as unknown as Mocked<PostMentorMessageUseCase>;
 
+const mockPostMessageStream = {
+  execute: vi.fn(),
+} as unknown as Mocked<PostMentorMessageStreamUseCase>;
+
 describe('mentorChatController', () => {
   let app: FastifyInstance;
 
@@ -28,6 +33,7 @@ describe('mentorChatController', () => {
         createThread: mockCreateThread,
         getThread: mockGetThread,
         postMessage: mockPostMessage,
+        postMessageStream: mockPostMessageStream,
       });
       done();
     });

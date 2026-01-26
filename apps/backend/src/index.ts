@@ -96,6 +96,7 @@ import { LLMMentorChatGenerator } from './infrastructure/llm/LLMMentorChatGenera
 import { CreateMentorThreadUseCase } from './application/usecases/mentor-chat/CreateMentorThreadUseCase.js';
 import { GetMentorThreadUseCase } from './application/usecases/mentor-chat/GetMentorThreadUseCase.js';
 import { PostMentorMessageUseCase } from './application/usecases/mentor-chat/PostMentorMessageUseCase.js';
+import { PostMentorMessageStreamUseCase } from './application/usecases/mentor-chat/PostMentorMessageStreamUseCase.js';
 import { PrismaAgentOSRepository } from './infrastructure/persistence/PrismaAgentOSRepository.js';
 import { PrismaAutopilotOutboxRepository } from './infrastructure/persistence/PrismaAutopilotOutboxRepository.js';
 import { PrismaAutopilotRunRepository } from './infrastructure/persistence/PrismaAutopilotRunRepository.js';
@@ -306,6 +307,12 @@ const postMentorMessageUseCase = new PostMentorMessageUseCase(
   exerciseRepository,
   mentorChatGenerator
 );
+const postMentorMessageStreamUseCase = new PostMentorMessageStreamUseCase(
+  mentorThreadRepository,
+  submissionRepository,
+  exerciseRepository,
+  mentorChatGenerator
+);
 const generateHintUseCase = new GenerateHintUseCase(
   exerciseRepository,
   hintRepository,
@@ -465,6 +472,7 @@ await fastify.register(
       createThread: createMentorThreadUseCase,
       getThread: getMentorThreadUseCase,
       postMessage: postMentorMessageUseCase,
+      postMessageStream: postMentorMessageStreamUseCase,
     });
   }
 );

@@ -1,5 +1,5 @@
 import type { IMentorChatGenerator, MentorChatContext } from '@/domain/ports/IMentorChatGenerator';
-import { generateWithOllama } from './llm-client.js';
+import { generateStream, generateWithOllama } from './llm-client.js';
 import { loadPrompt, renderPrompt } from './prompt-loader.js';
 import { PromptSanitizer } from './prompt-sanitizer.js';
 
@@ -126,5 +126,25 @@ export class LLMMentorChatGenerator implements IMentorChatGenerator {
     });
 
     return response.trim();
+  }
+
+  async *generateStream(context: MentorChatContext): AsyncIterable<string> {
+    const template = loadPrompt('mentor-chat-prompt.md');
+    const sanitizedMessage = PromptSanitizer.sanitize(context.userMessage, 'USER_MESSAGE');
+
+    const prompt = renderPrompt(template, {
+      EXERCISE_CONTEXT: buildExerciseContext(context.exercise),
+      SUBMISSION_CONTEXT: buildSubmissionContext(context.submission),
+      PROGRESS_CONTEXT: buildProgressContext(context.progress),
+      CONVERSATION_HISTORY: buildHistory(context.history),
+      USER_MESSAGE: wrapUserInput(sanitizedMessage),
+    });
+
+    for await (const chunk of generateStream(prompt, {
+      temperature: 0.4,
+      maxTokens: DEFAULT_MAX_TOKENS,
+    })) {
+      yield chunk;
+    }
   }
 }

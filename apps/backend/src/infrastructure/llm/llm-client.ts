@@ -152,6 +152,81 @@ export async function generateWithOllama(
 }
 
 /**
+ * テキスト生成ストリーム（プロバイダー非対応時は1回生成で代用）
+ */
+export async function* generateStream(
+  prompt: string,
+  options?: {
+    temperature?: number;
+    maxTokens?: number;
+    jsonMode?: boolean;
+    timeoutMs?: number;
+  }
+): AsyncIterable<string> {
+  const providerOrder = getProviderOrder();
+  let lastError: Error | null = null;
+
+  for (const name of providerOrder) {
+    if (shouldSkipProvider(name)) {
+      continue;
+    }
+
+    const rateLimiter = getGlobalRateLimiter();
+    const promptTokens = estimateTokens(prompt);
+    const outputTokens = options?.maxTokens ?? DEFAULT_MAX_TOKENS;
+    await rateLimiter.acquire(promptTokens + outputTokens);
+
+    const provider = getProviderInstance(name);
+
+    try {
+      if (provider.generateStream) {
+        const stream = await retryWithBackoff(
+          () => Promise.resolve(provider.generateStream?.(prompt, options)),
+          {
+            onRetry: (error, retryCount, delayMs) => {
+              console.info(
+                `[LLMClient] ${name} ストリーム呼び出し失敗 (試行 ${retryCount}): ${error.message}. ${delayMs}ms 後に再試行...`
+              );
+            },
+          }
+        );
+
+        if (!stream) {
+          throw new Error('LLM provider returned empty stream');
+        }
+
+        for await (const chunk of stream) {
+          yield chunk;
+        }
+        return;
+      }
+
+      const response = await retryWithBackoff(
+        async () => provider.generate(prompt, options),
+        {
+          onRetry: (error, retryCount, delayMs) => {
+            console.info(
+              `[LLMClient] ${name} 呼び出し失敗 (試行 ${retryCount}): ${error.message}. ${delayMs}ms 後に再試行...`
+            );
+          },
+        }
+      );
+      yield response;
+      return;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      lastError = err;
+      if (isServiceUnavailableError(err)) {
+        continue;
+      }
+      throw err;
+    }
+  }
+
+  throw lastError ?? new Error('No available LLM provider');
+}
+
+/**
  * ヘルスチェック（後方互換性のため）
  */
 export async function checkLLMHealth(): Promise<boolean> {

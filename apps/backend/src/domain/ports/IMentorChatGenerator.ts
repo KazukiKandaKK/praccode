@@ -47,4 +47,5 @@ export type MentorChatContext = {
 
 export interface IMentorChatGenerator {
   generate(context: MentorChatContext): Promise<string>;
+  generateStream?(context: MentorChatContext): AsyncIterable<string>;
 }

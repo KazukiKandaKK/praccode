@@ -16,8 +16,15 @@ export interface LLMProvider {
   generate(prompt: string, options?: LLMGenerateOptions): Promise<string>;
 
   /**
+   * テキスト生成ストリームを取得（対応プロバイダーのみ）
+   */
+  generateStream?: (
+    prompt: string,
+    options?: LLMGenerateOptions
+  ) => AsyncIterable<string>;
+
+  /**
    * プロバイダーの接続状態を確認
    */
   checkHealth(): Promise<boolean>;
 }
-
