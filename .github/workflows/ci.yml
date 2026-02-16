@@ -75,7 +75,7 @@ jobs:
         run: pnpm --filter @praccode/api test:coverage
 
       - name: Upload Backend Coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           files: ./apps/backend/coverage/coverage-final.json
           flags: backend
@@ -110,7 +110,7 @@ jobs:
         run: pnpm --filter @praccode/web test:coverage
 
       - name: Upload Frontend Coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           files: ./apps/frontend/coverage/coverage-final.json
           flags: frontend
