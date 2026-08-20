@@ -223,7 +223,7 @@ export default function AgentPlaygroundPage() {
           <CardContent className="space-y-4">
             <div className="flex flex-wrap items-center gap-3 text-sm text-slate-300">
               <span>ID: {runDetails.run.id}</span>
-              <Badge variant="secondary">{runDetails.run.mode}</Badge>
+              <Badge variant="default">{runDetails.run.mode}</Badge>
               <Badge>{runDetails.run.status}</Badge>
             </div>
             {runDetails.run.resultJson?.message && (
@@ -236,7 +236,7 @@ export default function AgentPlaygroundPage() {
               {runDetails.steps.map((step) => (
                 <div key={step.id} className="border border-slate-800 rounded-md p-3">
                   <div className="flex items-center gap-2 text-xs text-slate-400">
-                    <Badge variant="secondary">#{step.stepIndex}</Badge>
+                    <Badge variant="default">#{step.stepIndex}</Badge>
                     <span>{step.kind}</span>
                   </div>
                   <pre className="mt-2 text-xs text-slate-200 whitespace-pre-wrap">
@@ -250,7 +250,7 @@ export default function AgentPlaygroundPage() {
               {runDetails.toolInvocations.map((invocation) => (
                 <div key={invocation.id} className="border border-slate-800 rounded-md p-3">
                   <div className="flex items-center gap-2 text-xs text-slate-400">
-                    <Badge variant="secondary">{invocation.toolName}</Badge>
+                    <Badge variant="default">{invocation.toolName}</Badge>
                     <Badge>{invocation.status}</Badge>
                   </div>
                   <pre className="mt-2 text-xs text-slate-200 whitespace-pre-wrap">
@@ -286,7 +286,7 @@ export default function AgentPlaygroundPage() {
               {runDetails.safetyDecisions.map((decision) => (
                 <div key={decision.id} className="border border-slate-800 rounded-md p-3">
                   <div className="flex items-center gap-2 text-xs text-slate-400">
-                    <Badge variant="secondary">{decision.decision}</Badge>
+                    <Badge variant="default">{decision.decision}</Badge>
                     <span>Invocation: {decision.invocationId}</span>
                   </div>
                   <pre className="mt-2 text-xs text-slate-200 whitespace-pre-wrap">
@@ -303,9 +303,9 @@ export default function AgentPlaygroundPage() {
               {runDetails.routingDecisions.map((decision) => (
                 <div key={decision.id} className="border border-slate-800 rounded-md p-3">
                   <div className="flex items-center gap-2 text-xs text-slate-400">
-                    <Badge variant="secondary">{decision.chosenProvider}</Badge>
+                    <Badge variant="default">{decision.chosenProvider}</Badge>
                     <Badge>{decision.chosenModel}</Badge>
-                    <Badge variant="outline">{decision.toolset}</Badge>
+                    <Badge variant="default">{decision.toolset}</Badge>
                   </div>
                   <p className="text-xs text-slate-300 mt-2">{decision.reason}</p>
                 </div>
@@ -316,9 +316,9 @@ export default function AgentPlaygroundPage() {
               {runDetails.evidence.map((item) => (
                 <div key={item.id} className="border border-slate-800 rounded-md p-3">
                   <div className="flex items-center gap-2 text-xs text-slate-400">
-                    <Badge variant="secondary">{item.sourceType}</Badge>
+                    <Badge variant="default">{item.sourceType}</Badge>
                     {item.confidence !== null && item.confidence !== undefined && (
-                      <Badge variant="outline">{item.confidence}</Badge>
+                      <Badge variant="default">{item.confidence}</Badge>
                     )}
                   </div>
                   <p className="text-xs text-slate-200 mt-2">{item.claim}</p>

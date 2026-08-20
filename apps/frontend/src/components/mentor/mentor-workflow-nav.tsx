@@ -42,7 +42,7 @@ const steps = [
     href: '/mentor/plan/history',
     match: ['/mentor/plan/history'],
   },
-];
+] as const;
 
 function getActiveIndex(pathname: string) {
   const found = steps.find((step) => step.match.some((path) => pathname.startsWith(path)));

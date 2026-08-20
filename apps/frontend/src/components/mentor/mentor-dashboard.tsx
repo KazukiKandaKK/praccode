@@ -211,7 +211,7 @@ export function MentorPlan({ userId, userName }: Props) {
                     >
                       <div className="flex items-center justify-between text-xs text-slate-400">
                         <span className="uppercase tracking-[0.2em]">Question {idx + 1}</span>
-                        <Badge variant="outline" className="border-slate-700 text-slate-300">
+                        <Badge variant="default" className="border-slate-700 text-slate-300">
                           AIメンターが参照
                         </Badge>
                       </div>
@@ -303,7 +303,7 @@ function PlanView({ plan, meta }: { plan: LearningPlan; meta: LearningPlanRecord
       >
         <div className="flex flex-wrap gap-2">
           {plan.focusAreas.map((area, idx) => (
-            <Badge key={idx} variant="secondary" className="bg-slate-800 text-slate-100">
+            <Badge key={idx} variant="default" className="bg-slate-800 text-slate-100">
               {area}
             </Badge>
           ))}

@@ -172,7 +172,7 @@ export default async function DashboardPage() {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center justify-between">
             <span>最近の学習時間</span>
-            <Badge variant="outline" className="text-xs text-amber-300 border-amber-400/30">
+            <Badge variant="default" className="text-xs text-amber-300 border-amber-400/30">
               自動計測
             </Badge>
           </CardTitle>

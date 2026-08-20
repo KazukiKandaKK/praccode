@@ -172,7 +172,7 @@ function PlanDetail({ plan }: { plan: LearningPlanRecord }) {
           <div className="text-slate-200 font-semibold">フォーカス</div>
           <div className="flex flex-wrap gap-2 mt-2">
             {plan.plan.focusAreas.map((area, idx) => (
-              <Badge key={idx} variant="secondary" className="bg-slate-800 text-slate-100">
+              <Badge key={idx} variant="default" className="bg-slate-800 text-slate-100">
                 {area}
               </Badge>
             ))}
