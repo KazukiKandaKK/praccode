@@ -49,6 +49,10 @@ export interface LearningAnalysisRecord {
 export interface IDashboardRepository {
   getReadingSubmissions(userId: string): Promise<ReadingSubmissionRecord[]>;
   getWritingSubmissions(userId: string): Promise<WritingSubmissionRecord[]>;
+  /** 複数ユーザー分のリーディング提出をまとめて取得（集約ダッシュボード用） */
+  getReadingSubmissionsForUsers(userIds: string[]): Promise<ReadingSubmissionRecord[]>;
+  /** 複数ユーザー分のライティング提出をまとめて取得（集約ダッシュボード用） */
+  getWritingSubmissionsForUsers(userIds: string[]): Promise<WritingSubmissionRecord[]>;
   getReadingActivityDates(userId: string, startDate: Date, endDate: Date): Promise<Date[]>;
   getWritingActivityDates(userId: string, startDate: Date, endDate: Date): Promise<Date[]>;
   getLearningAnalysis(userId: string): Promise<LearningAnalysisRecord | null>;

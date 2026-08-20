@@ -62,6 +62,10 @@ import { GetDashboardActivityUseCase } from './application/usecases/dashboard/Ge
 import { GetLearningAnalysisUseCase } from './application/usecases/dashboard/GetLearningAnalysisUseCase.js';
 import { GenerateRecommendationUseCase } from './application/usecases/dashboard/GenerateRecommendationUseCase.js';
 import { dashboardController } from './infrastructure/web/dashboardController.js';
+import { PrismaTeamRepository } from './infrastructure/persistence/PrismaTeamRepository.js';
+import { GetMyTeamsUseCase } from './application/usecases/dashboard/GetMyTeamsUseCase.js';
+import { GetTeamDashboardUseCase } from './application/usecases/dashboard/GetTeamDashboardUseCase.js';
+import { teamDashboardController } from './infrastructure/web/teamDashboardController.js';
 import { ExerciseGeneratorService } from './infrastructure/services/ExerciseGeneratorService.js';
 import { LlmLearningAnalyzer } from './infrastructure/services/LlmLearningAnalyzer.js';
 import { MentorAgent } from './mastra/mentorAgent.js';
@@ -175,6 +179,7 @@ const writingSubmissionRepository = new PrismaWritingSubmissionRepository();
 const userAccountRepository = new PrismaUserAccountRepository();
 const emailChangeTokenRepository = new PrismaEmailChangeTokenRepository();
 const dashboardRepository = new PrismaDashboardRepository();
+const teamRepository = new PrismaTeamRepository();
 const learningAnalyzer = new LlmLearningAnalyzer();
 const mentorMemory = new PrismaMastraMemory() as unknown as MastraMemory;
 const mentorAgent = new MentorAgent({ memory: mentorMemory });
@@ -252,6 +257,12 @@ const generateRecommendationUseCase = new GenerateRecommendationUseCase(
   writingChallengeGenerator,
   exerciseGenerationEventPublisher,
   fastify.log
+);
+const getMyTeamsUseCase = new GetMyTeamsUseCase(teamRepository);
+const getTeamDashboardUseCase = new GetTeamDashboardUseCase(
+  teamRepository,
+  dashboardRepository,
+  userAccountRepository
 );
 const generateLearningPlanWithAgentUseCase = new GenerateLearningPlanWithAgentUseCase(
   userAccountRepository,
@@ -439,6 +450,14 @@ await fastify.register(
       getActivity: getDashboardActivityUseCase,
       getLearningAnalysis: getLearningAnalysisUseCase,
       generateRecommendation: generateRecommendationUseCase,
+    });
+  }
+);
+await fastify.register(
+  async (instance) => {
+    teamDashboardController(instance, {
+      getMyTeams: getMyTeamsUseCase,
+      getTeamDashboard: getTeamDashboardUseCase,
     });
   }
 );
