@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, type Mocked } from 'vitest';
-import { GetTeamDashboardUseCase } from '@/application/usecases/dashboard/GetTeamDashboardUseCase';
+import { GetTeamDashboardUseCase } from '@/application/usecases/team/GetTeamDashboardUseCase';
 import { ITeamRepository } from '@/domain/ports/ITeamRepository';
 import { IDashboardRepository } from '@/domain/ports/IDashboardRepository';
 import { IUserAccountRepository } from '@/domain/ports/IUserAccountRepository';
@@ -8,6 +8,7 @@ import { ApplicationError } from '@/application/errors/ApplicationError';
 const mockTeamRepo: Mocked<ITeamRepository> = {
   getTeamsForUser: vi.fn(),
   getMembersByTeamIds: vi.fn(),
+  isMemberOfTeam: vi.fn(),
 };
 
 const mockDashboardRepo = {

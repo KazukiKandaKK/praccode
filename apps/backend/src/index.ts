@@ -63,8 +63,11 @@ import { GetLearningAnalysisUseCase } from './application/usecases/dashboard/Get
 import { GenerateRecommendationUseCase } from './application/usecases/dashboard/GenerateRecommendationUseCase.js';
 import { dashboardController } from './infrastructure/web/dashboardController.js';
 import { PrismaTeamRepository } from './infrastructure/persistence/PrismaTeamRepository.js';
-import { GetMyTeamsUseCase } from './application/usecases/dashboard/GetMyTeamsUseCase.js';
-import { GetTeamDashboardUseCase } from './application/usecases/dashboard/GetTeamDashboardUseCase.js';
+import { GetMyTeamsUseCase } from './application/usecases/team/GetMyTeamsUseCase.js';
+import { GetTeamDashboardUseCase } from './application/usecases/team/GetTeamDashboardUseCase.js';
+import { AssignExerciseToTeamUseCase } from './application/usecases/team/AssignExerciseToTeamUseCase.js';
+import { ListOwnedExercisesUseCase } from './application/usecases/team/ListOwnedExercisesUseCase.js';
+import { PrismaExerciseAssignmentRepository } from './infrastructure/persistence/PrismaExerciseAssignmentRepository.js';
 import { teamDashboardController } from './infrastructure/web/teamDashboardController.js';
 import { ExerciseGeneratorService } from './infrastructure/services/ExerciseGeneratorService.js';
 import { LlmLearningAnalyzer } from './infrastructure/services/LlmLearningAnalyzer.js';
@@ -180,6 +183,7 @@ const userAccountRepository = new PrismaUserAccountRepository();
 const emailChangeTokenRepository = new PrismaEmailChangeTokenRepository();
 const dashboardRepository = new PrismaDashboardRepository();
 const teamRepository = new PrismaTeamRepository();
+const exerciseAssignmentRepository = new PrismaExerciseAssignmentRepository();
 const learningAnalyzer = new LlmLearningAnalyzer();
 const mentorMemory = new PrismaMastraMemory() as unknown as MastraMemory;
 const mentorAgent = new MentorAgent({ memory: mentorMemory });
@@ -262,6 +266,15 @@ const getMyTeamsUseCase = new GetMyTeamsUseCase(teamRepository);
 const getTeamDashboardUseCase = new GetTeamDashboardUseCase(
   teamRepository,
   dashboardRepository,
+  userAccountRepository
+);
+const assignExerciseToTeamUseCase = new AssignExerciseToTeamUseCase(
+  teamRepository,
+  exerciseAssignmentRepository,
+  userAccountRepository
+);
+const listOwnedExercisesUseCase = new ListOwnedExercisesUseCase(
+  exerciseAssignmentRepository,
   userAccountRepository
 );
 const generateLearningPlanWithAgentUseCase = new GenerateLearningPlanWithAgentUseCase(
@@ -458,6 +471,8 @@ await fastify.register(
     teamDashboardController(instance, {
       getMyTeams: getMyTeamsUseCase,
       getTeamDashboard: getTeamDashboardUseCase,
+      assignExerciseToTeam: assignExerciseToTeamUseCase,
+      listOwnedExercises: listOwnedExercisesUseCase,
     });
   }
 );

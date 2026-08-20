@@ -34,4 +34,11 @@ export class PrismaTeamRepository implements ITeamRepository {
     }
     return Array.from(byUserId.values());
   }
+
+  async isMemberOfTeam(userId: string, teamId: string): Promise<boolean> {
+    const membership = await prisma.teamMembership.findUnique({
+      where: { userId_teamId: { userId, teamId } },
+    });
+    return membership !== null;
+  }
 }
