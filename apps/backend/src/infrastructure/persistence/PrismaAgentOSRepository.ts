@@ -1,4 +1,4 @@
-import { prisma } from '../../lib/prisma';
+import { prisma, Prisma } from '../../lib/prisma';
 import {
   type AgentRunMode,
   type AgentRunRecord,
@@ -19,7 +19,10 @@ import {
   type IAgentOSRepository,
 } from '../../domain/ports/IAgentOSRepository';
 
-const toJson = (value?: Record<string, unknown> | null) => value ?? null;
+const toJson = (
+  value?: Record<string, unknown> | null
+): Prisma.InputJsonValue | typeof Prisma.JsonNull =>
+  value === undefined || value === null ? Prisma.JsonNull : (value as Prisma.InputJsonValue);
 
 const normalizeTags = (value: unknown): string[] => {
   if (Array.isArray(value)) {
@@ -70,7 +73,11 @@ export class PrismaAgentOSRepository implements IAgentOSRepository {
   async completeRun(runId: string, resultJson: Record<string, unknown>): Promise<void> {
     await prisma.agentRun.update({
       where: { id: runId },
-      data: { status: 'completed', resultJson, finishedAt: new Date() },
+      data: {
+        status: 'completed',
+        resultJson: resultJson as Prisma.InputJsonValue,
+        finishedAt: new Date(),
+      },
     });
   }
 
@@ -119,7 +126,7 @@ export class PrismaAgentOSRepository implements IAgentOSRepository {
   async updateStepOutput(stepId: string, outputJson: Record<string, unknown>): Promise<void> {
     await prisma.agentStep.update({
       where: { id: stepId },
-      data: { outputJson },
+      data: { outputJson: outputJson as Prisma.InputJsonValue },
     });
   }
 

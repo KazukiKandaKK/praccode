@@ -23,7 +23,7 @@ export class ToolRegistry {
   register<TInput extends z.ZodTypeAny, TOutput extends z.ZodTypeAny>(
     tool: ToolDefinition<TInput, TOutput>
   ) {
-    this.tools.set(tool.name, tool);
+    this.tools.set(tool.name, tool as unknown as ToolDefinition<z.ZodTypeAny, z.ZodTypeAny>);
   }
 
   get(toolName: string) {

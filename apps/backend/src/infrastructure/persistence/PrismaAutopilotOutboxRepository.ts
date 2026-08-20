@@ -1,4 +1,4 @@
-import { prisma } from '../../lib/prisma';
+import { prisma, Prisma } from '../../lib/prisma';
 import type {
   AutopilotOutboxEventRecord,
   IAutopilotOutboxRepository,
@@ -38,7 +38,7 @@ export class PrismaAutopilotOutboxRepository implements IAutopilotOutboxReposito
       const created = await prisma.autopilotOutboxEvent.create({
         data: {
           type: params.type,
-          payloadJson: params.payloadJson,
+          payloadJson: params.payloadJson as Prisma.InputJsonValue,
           dedupKey: params.dedupKey,
         },
       });

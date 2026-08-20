@@ -109,7 +109,7 @@ export class PostMentorMessageUseCase {
       });
 
       return { userMessage, assistantMessage };
-    } catch (error) {
+    } catch {
       await this.threadRepository.addMessage({
         threadId: thread.id,
         role: 'assistant',

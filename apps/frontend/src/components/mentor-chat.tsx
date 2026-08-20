@@ -41,7 +41,7 @@ export function MentorChat({ userId, exerciseId, submissionId }: MentorChatProps
       setThreadId(result.threadId);
       const thread = await api.getMentorThread(result.threadId, userId);
       setMessages(thread.messages);
-    } catch (error) {
+    } catch {
       setInitError('メンターの準備に失敗しました。再試行してください。');
     } finally {
       setIsInitializing(false);

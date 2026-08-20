@@ -3,7 +3,7 @@ import type {
   MentorMessageRecord,
   MentorThreadRecord,
 } from '@/domain/ports/IMentorThreadRepository';
-import { prisma } from '@/lib/prisma';
+import { prisma, Prisma } from '@/lib/prisma';
 
 export class PrismaMentorThreadRepository implements IMentorThreadRepository {
   async createThread(params: {
@@ -127,7 +127,7 @@ export class PrismaMentorThreadRepository implements IMentorThreadRepository {
         threadId: params.threadId,
         role: params.role,
         content: params.content,
-        metadata: params.metadata ?? undefined,
+        metadata: (params.metadata ?? undefined) as Prisma.InputJsonValue | undefined,
       },
     });
 
