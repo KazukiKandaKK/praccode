@@ -58,10 +58,7 @@ export function MentorPlan({ userId, userName }: Props) {
           setLatestPlan(latest);
         }
       } catch (e) {
-        if (
-          e instanceof ApiError &&
-          e.statusCode === 404
-        ) {
+        if (e instanceof ApiError && e.statusCode === 404) {
           if (!cancelled) {
             setLatestPlan(null);
           }
@@ -168,9 +165,7 @@ export function MentorPlan({ userId, userName }: Props) {
             <Button variant="outline">履歴を見る</Button>
           </Link>
           {latestPlan?.updatedAt && (
-            <span className="text-xs text-slate-500">
-              更新: {formatDate(latestPlan.updatedAt)}
-            </span>
+            <span className="text-xs text-slate-500">更新: {formatDate(latestPlan.updatedAt)}</span>
           )}
           {!loading && !latestPlan && (
             <span className="text-xs text-slate-500">最新の学習計画はまだありません</span>
@@ -188,10 +183,7 @@ export function MentorPlan({ userId, userName }: Props) {
                 <NotebookPen className="w-5 h-5 text-slate-300" />
                 事前質問への回答
               </CardTitle>
-              <Badge
-                variant="default"
-                className="text-xs"
-              >
+              <Badge variant="default" className="text-xs">
                 Step 1
               </Badge>
             </div>
@@ -264,11 +256,7 @@ export function MentorPlan({ userId, userName }: Props) {
               </div>
             </div>
 
-            <Button
-              className="w-full"
-              onClick={handleGenerate}
-              disabled={generating}
-            >
+            <Button className="w-full" onClick={handleGenerate} disabled={generating}>
               {generating ? (
                 <div className="flex items-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -280,13 +268,9 @@ export function MentorPlan({ userId, userName }: Props) {
             </Button>
           </CardContent>
         </Card>
-
       </div>
       {showLatestPanel && latestPlan && (
-        <MentorPlanSidePanel
-          planRecord={latestPlan}
-          onClose={() => setShowLatestPanel(false)}
-        />
+        <MentorPlanSidePanel planRecord={latestPlan} onClose={() => setShowLatestPanel(false)} />
       )}
     </div>
   );
@@ -297,19 +281,11 @@ function PlanView({ plan, meta }: { plan: LearningPlan; meta: LearningPlanRecord
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-2 text-xs">
         {meta?.targetLanguage && <Badge variant="default">{meta.targetLanguage}</Badge>}
-        {meta?.modelId && (
-          <Badge variant="default">
-            model: {meta.modelId}
-          </Badge>
-        )}
+        {meta?.modelId && <Badge variant="default">model: {meta.modelId}</Badge>}
         {typeof meta?.temperature === 'number' && (
-          <Badge variant="default">
-            temp: {meta.temperature}
-          </Badge>
+          <Badge variant="default">temp: {meta.temperature}</Badge>
         )}
-        {meta && (
-          <span className="text-slate-400">更新: {formatDate(meta.updatedAt)}</span>
-        )}
+        {meta && <span className="text-slate-400">更新: {formatDate(meta.updatedAt)}</span>}
       </div>
 
       <PlanSection

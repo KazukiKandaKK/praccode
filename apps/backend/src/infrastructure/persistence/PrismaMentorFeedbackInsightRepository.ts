@@ -7,9 +7,7 @@ import type {
 
 const client = new PrismaClient();
 
-export class PrismaMentorFeedbackInsightRepository
-  implements IMentorFeedbackInsightRepository
-{
+export class PrismaMentorFeedbackInsightRepository implements IMentorFeedbackInsightRepository {
   async saveInsights(params: {
     userId: string;
     mentorFeedbackId: string;

@@ -3,6 +3,7 @@
 This document describes the Agent OS execution flow and persistence model.
 
 ## Goals
+
 - Safe agent loop: Observe -> Plan -> Guard -> Act -> Verify -> Final -> Learn
 - All steps and decisions persisted for audit and future learning
 - Tool execution strictly allowlisted and schema validated
@@ -46,11 +47,13 @@ AgentRun (queued -> running)
 ```
 
 ## Context & Injection Safety
+
 - Context is wrapped with <CONTEXT> ... </CONTEXT> and declared as data.
 - User input is sanitized and separated from system instructions.
 - Tools only execute after guardrail approval.
 
 ## Persistence Model
+
 - AgentRun: one execution instance
 - AgentStep: each plan/tool/verify/final record
 - ToolInvocation: each tool call (status, args, result)
@@ -61,11 +64,12 @@ AgentRun (queued -> running)
 - AgentMemory: structured memory entries (facts/procedures/preferences)
 
 ## Ownership / Authorization
+
 - All queries scoped by userId (x-user-id)
 - Unauthorized access returns 404
 
 ## Extension Points
+
 - Router: choose provider/model/toolset by mode/cost
 - Long-context reader tools: search/read/summarize snippets
 - Optional web tools behind ENABLE_WEB_SEARCH
-

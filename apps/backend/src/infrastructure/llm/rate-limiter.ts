@@ -4,10 +4,7 @@
 
 const RATE_LIMIT_WINDOW_MS = parseInt(process.env.LLM_RATE_LIMIT_WINDOW_MS || '60000', 10); // デフォルト: 60秒
 const RATE_LIMIT_MAX_REQUESTS = parseInt(process.env.LLM_RATE_LIMIT_MAX_REQUESTS || '10', 10); // デフォルト: 10リクエスト
-const RATE_LIMIT_MAX_TOKENS = parseInt(
-  process.env.LLM_RATE_LIMIT_MAX_TOKENS || '60000',
-  10
-); // 0は無制限
+const RATE_LIMIT_MAX_TOKENS = parseInt(process.env.LLM_RATE_LIMIT_MAX_TOKENS || '60000', 10); // 0は無制限
 const RATE_LIMIT_PREEMPT_MS = parseInt(process.env.LLM_RATE_LIMIT_PREEMPT_MS || '10000', 10); // デフォルト: 10秒
 const RATE_LIMIT_QUEUE_MAX = parseInt(process.env.LLM_RATE_LIMIT_QUEUE_MAX || '100', 10);
 const RATE_LIMIT_QUEUE_TIMEOUT_MS = parseInt(
@@ -231,11 +228,7 @@ export class RateLimiter {
     return Math.max(waitForRequests, waitForTokens);
   }
 
-  private applyPreemptiveDegrade(
-    now: number,
-    usedRequests: number,
-    usedTokens: number
-  ): void {
+  private applyPreemptiveDegrade(now: number, usedRequests: number, usedTokens: number): void {
     if (this.preemptMs <= 0) {
       return;
     }

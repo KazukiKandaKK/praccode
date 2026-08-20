@@ -1,4 +1,9 @@
-import { ILearningAnalyzer, LearningAnalysisResult, ReadingAnalysisItem, WritingAnalysisItem } from '../../domain/ports/ILearningAnalyzer';
+import {
+  ILearningAnalyzer,
+  LearningAnalysisResult,
+  ReadingAnalysisItem,
+  WritingAnalysisItem,
+} from '../../domain/ports/ILearningAnalyzer';
 import { analyzeLearningProgress } from '../llm/learning-analyzer';
 
 export class LlmLearningAnalyzer implements ILearningAnalyzer {

@@ -8,7 +8,11 @@ export class AddTeamMemberUseCase {
     private readonly userAccountRepo: IUserAccountRepository
   ) {}
 
-  async execute(input: { requesterId: string; teamId: string; memberEmail: string }): Promise<void> {
+  async execute(input: {
+    requesterId: string;
+    teamId: string;
+    memberEmail: string;
+  }): Promise<void> {
     const requesterProfile = await this.userAccountRepo.getProfile(input.requesterId);
     if (!requesterProfile) {
       throw new ApplicationError('Unauthorized', 401);

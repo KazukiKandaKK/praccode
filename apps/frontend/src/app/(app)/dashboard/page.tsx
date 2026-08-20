@@ -55,8 +55,7 @@ interface LearningAnalysis {
   cached: boolean;
 }
 
-const apiBase =
-  process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const apiBase = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 async function getDashboardStats(userId: string): Promise<DashboardStats | null> {
   try {
@@ -120,9 +119,7 @@ export default async function DashboardPage() {
     (stats?.totalReadingSubmissions || 0) + (stats?.totalWritingSubmissions || 0);
   const learningTimeDaily = stats?.learningTimeDaily ? [...stats.learningTimeDaily].reverse() : [];
   const maxDailyDuration =
-    learningTimeDaily.length > 0
-      ? Math.max(...learningTimeDaily.map((d) => d.durationSec), 1)
-      : 1;
+    learningTimeDaily.length > 0 ? Math.max(...learningTimeDaily.map((d) => d.durationSec), 1) : 1;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

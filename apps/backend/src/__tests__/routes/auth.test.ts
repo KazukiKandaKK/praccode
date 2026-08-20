@@ -28,7 +28,13 @@ function createDeps(overrides?: Partial<AuthControllerDeps>): AuthControllerDeps
   return {
     loginUseCase: {
       execute: async () => ({
-        user: { id: baseUser.id, email: baseUser.email, name: baseUser.name, image: null, role: baseUser.role },
+        user: {
+          id: baseUser.id,
+          email: baseUser.email,
+          name: baseUser.name,
+          image: null,
+          role: baseUser.role,
+        },
       }),
     } as UseCaseMock<LoginInput, LoginResult>,
     registerUserUseCase: {

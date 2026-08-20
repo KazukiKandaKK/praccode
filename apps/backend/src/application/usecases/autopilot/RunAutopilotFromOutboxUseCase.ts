@@ -76,7 +76,9 @@ export class RunAutopilotFromOutboxUseCase {
 
       const context = await this.buildContext({ userId, submissionId, runId: run.id });
 
-      const availableTools = this.tools.list().filter((tool) => tool.name !== 'getSubmissionContext');
+      const availableTools = this.tools
+        .list()
+        .filter((tool) => tool.name !== 'getSubmissionContext');
 
       const plan = await this.agent.generatePlan({
         input: {

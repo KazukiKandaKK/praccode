@@ -56,7 +56,11 @@ describe('AddTeamMemberUseCase', () => {
     mockUserAccountRepo.findByEmail.mockResolvedValue(null);
 
     await expect(
-      useCase.execute({ requesterId: 'admin-1', teamId: 'team-1', memberEmail: 'nobody@example.com' })
+      useCase.execute({
+        requesterId: 'admin-1',
+        teamId: 'team-1',
+        memberEmail: 'nobody@example.com',
+      })
     ).rejects.toMatchObject({ statusCode: 404 } as Partial<ApplicationError>);
   });
 
@@ -65,7 +69,11 @@ describe('AddTeamMemberUseCase', () => {
     mockTeamRepo.isMemberOfTeam.mockResolvedValue(true);
     mockUserAccountRepo.findByEmail.mockResolvedValue({ id: 'user-1' });
 
-    await useCase.execute({ requesterId: 'admin-1', teamId: 'team-1', memberEmail: 'l1@example.com' });
+    await useCase.execute({
+      requesterId: 'admin-1',
+      teamId: 'team-1',
+      memberEmail: 'l1@example.com',
+    });
 
     expect(mockTeamRepo.addMember).toHaveBeenCalledWith('team-1', 'user-1');
   });

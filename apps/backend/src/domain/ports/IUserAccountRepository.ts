@@ -10,7 +10,10 @@ export interface UserProfile {
 
 export interface IUserAccountRepository {
   getProfile(userId: string): Promise<UserProfile | null>;
-  updateName(userId: string, name: string): Promise<{ id: string; email: string; name: string; image: string | null }>;
+  updateName(
+    userId: string,
+    name: string
+  ): Promise<{ id: string; email: string; name: string; image: string | null }>;
   findByEmail(email: string): Promise<{ id: string } | null>;
   findByIdWithPassword(userId: string): Promise<{ id: string; password: string | null } | null>;
   updatePassword(userId: string, passwordHash: string): Promise<void>;

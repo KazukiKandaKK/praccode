@@ -219,12 +219,14 @@ Autopilot は提出評価完了などのイベントをトリガーに、Mastra 
 自動でフィードバック生成とメンターチャット投稿を実行する仕組みです。
 
 主な流れ:
+
 - Evaluate完了 → Outboxに積む
 - WorkerがOutboxを処理 → AutopilotRunを記録
 - Mastra Autopilot Agentがplan/actionsを生成
 - allowlist toolで mentor feedback / mentor message を保存
 
 手動トリガーAPI:
+
 ```
 POST /autopilot/trigger
 GET  /autopilot/runs
@@ -232,6 +234,7 @@ GET  /autopilot/runs/:id
 ```
 
 手動トリガー例（x-user-id 必須）:
+
 ```bash
 curl -X POST http://localhost:3001/autopilot/trigger \\
   -H 'Content-Type: application/json' \\
@@ -240,11 +243,13 @@ curl -X POST http://localhost:3001/autopilot/trigger \\
 ```
 
 Worker 起動:
+
 ```bash
 pnpm --filter @praccode/api autopilot:worker
 ```
 
 Autopilotの環境変数:
+
 - `AUTOPILOT_WORKER_INTERVAL_MS` (default: 10000)
 - `AUTOPILOT_WORKER_BATCH_SIZE` (default: 5)
 - `AUTOPILOT_MAX_RETRIES` (default: 5)

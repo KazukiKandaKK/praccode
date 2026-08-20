@@ -1,4 +1,7 @@
-import { IExerciseAssignmentRepository, OwnedExerciseSummary } from '../../../domain/ports/IExerciseAssignmentRepository';
+import {
+  IExerciseAssignmentRepository,
+  OwnedExerciseSummary,
+} from '../../../domain/ports/IExerciseAssignmentRepository';
 import { IUserAccountRepository } from '../../../domain/ports/IUserAccountRepository';
 import { ApplicationError } from '../../errors/ApplicationError';
 

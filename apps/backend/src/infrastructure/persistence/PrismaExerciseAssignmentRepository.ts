@@ -22,7 +22,10 @@ export class PrismaExerciseAssignmentRepository implements IExerciseAssignmentRe
     return exercise?.createdById === createdById;
   }
 
-  async copyExerciseToUsers(exerciseId: string, userIds: string[]): Promise<Record<string, string>> {
+  async copyExerciseToUsers(
+    exerciseId: string,
+    userIds: string[]
+  ): Promise<Record<string, string>> {
     const preset = await prisma.exercise.findUnique({
       where: { id: exerciseId },
       include: { questions: true },

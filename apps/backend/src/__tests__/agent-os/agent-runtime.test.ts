@@ -277,7 +277,9 @@ class InMemoryAgentOSRepository implements IAgentOSRepository {
   }
 
   async getPendingInvocations(runId: string): Promise<ToolInvocationRecord[]> {
-    return this.toolInvocations.filter((t) => t.runId === runId && t.status === 'needs_confirmation');
+    return this.toolInvocations.filter(
+      (t) => t.runId === runId && t.status === 'needs_confirmation'
+    );
   }
 
   async updateInvocationStatus(invocationId: string, status: any): Promise<void> {

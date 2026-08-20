@@ -111,9 +111,7 @@ export function MentorPlanHistory({ userId, userName }: Props) {
                   >
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="space-y-2">
-                        <div className="text-sm text-slate-400">
-                          {formatDate(plan.createdAt)}
-                        </div>
+                        <div className="text-sm text-slate-400">{formatDate(plan.createdAt)}</div>
                         <div className="text-slate-100 font-semibold">{plan.plan.summary}</div>
                         <div className="flex flex-wrap gap-2 text-xs text-slate-400">
                           {plan.targetLanguage && (

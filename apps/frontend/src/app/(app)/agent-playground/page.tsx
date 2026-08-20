@@ -266,10 +266,7 @@ export default function AgentPlaygroundPage() {
                   )}
                   {invocation.status === 'needs_confirmation' && (
                     <div className="mt-2 flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() => confirmInvocation(invocation.id, 'allow')}
-                      >
+                      <Button size="sm" onClick={() => confirmInvocation(invocation.id, 'allow')}>
                         Allow
                       </Button>
                       <Button

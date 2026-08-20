@@ -131,45 +131,36 @@ export class MentorAgent {
   async generateLearningPlan(input: LearningPlanInput): Promise<LearningPlan> {
     const message = this.buildPlanPrompt(input);
     const threadId = input.threadId || `plan-${input.profile.id}`;
-    const result = await this.agent.generate(
-      [{ role: 'user', content: message }],
-      {
-        output: learningPlanSchema,
-        temperature: 0.2,
-        resourceId: input.profile.id,
-        threadId,
-      }
-    );
+    const result = await this.agent.generate([{ role: 'user', content: message }], {
+      output: learningPlanSchema,
+      temperature: 0.2,
+      resourceId: input.profile.id,
+      threadId,
+    });
     return result.object;
   }
 
   async generateNextLearningPlan(input: NextLearningPlanInput): Promise<LearningPlan> {
     const message = this.buildNextPlanPrompt(input);
     const threadId = input.threadId || `plan-next-${input.profile.id}`;
-    const result = await this.agent.generate(
-      [{ role: 'user', content: message }],
-      {
-        output: learningPlanSchema,
-        temperature: 0.2,
-        resourceId: input.profile.id,
-        threadId,
-      }
-    );
+    const result = await this.agent.generate([{ role: 'user', content: message }], {
+      output: learningPlanSchema,
+      temperature: 0.2,
+      resourceId: input.profile.id,
+      threadId,
+    });
     return result.object;
   }
 
   async generateSubmissionFeedback(input: FeedbackInput): Promise<MentorFeedback> {
     const message = this.buildFeedbackPrompt(input);
     const threadId = input.threadId || `feedback-${input.submission.id}`;
-    const result = await this.agent.generate(
-      [{ role: 'user', content: message }],
-      {
-        output: mentorFeedbackSchema,
-        temperature: 0.1,
-        resourceId: input.submission.userId,
-        threadId,
-      }
-    );
+    const result = await this.agent.generate([{ role: 'user', content: message }], {
+      output: mentorFeedbackSchema,
+      temperature: 0.1,
+      resourceId: input.submission.userId,
+      threadId,
+    });
     return result.object;
   }
 
@@ -182,10 +173,7 @@ export class MentorAgent {
         : '未評価';
 
     const recent = progress.recentSubmissions
-      .map(
-        (s) =>
-          `- ${s.exerciseTitle} (score: ${s.averageScore}, updated: ${s.updatedAt})`
-      )
+      .map((s) => `- ${s.exerciseTitle} (score: ${s.averageScore}, updated: ${s.updatedAt})`)
       .join('\n');
 
     const answers = presetAnswers
@@ -211,7 +199,7 @@ export class MentorAgent {
       '3) quickTests は理解確認用の即席課題と採点観点を示す',
       '4) checkpoints で測定指標といつ確認するかを示す',
       '5) reminders は短いメモで良い（任意）',
-      '常にJSONスキーマに沿って簡潔に。'
+      '常にJSONスキーマに沿って簡潔に。',
     ]
       .filter(Boolean)
       .join('\n');
@@ -227,10 +215,7 @@ export class MentorAgent {
         : '未評価';
 
     const recent = progress.recentSubmissions
-      .map(
-        (s) =>
-          `- ${s.exerciseTitle} (score: ${s.averageScore}, updated: ${s.updatedAt})`
-      )
+      .map((s) => `- ${s.exerciseTitle} (score: ${s.averageScore}, updated: ${s.updatedAt})`)
       .join('\n');
 
     const answers = presetAnswers
@@ -307,10 +292,7 @@ export class MentorAgent {
     ].join('\n');
 
     const answers = submission.answers
-      .map(
-        (a) =>
-          `- Q${a.questionIndex}: ${a.answerText ?? '未回答'}`
-      )
+      .map((a) => `- Q${a.questionIndex}: ${a.answerText ?? '未回答'}`)
       .join('\n');
 
     const weakPoints =
@@ -331,7 +313,7 @@ export class MentorAgent {
       '- improvementsは優先度高い順に、手順付きで示す。',
       '- suggestedChecks でセルフチェック用の簡易プロンプトと見るべき点を示す。',
       '- nextFocus で次の演習や観点を短く提示。',
-      '冗長にならないように簡潔に。'
+      '冗長にならないように簡潔に。',
     ].join('\n');
   }
 

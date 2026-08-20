@@ -119,7 +119,9 @@ describe('teamDashboardController', () => {
   });
 
   it('所有していない演習の割り当ては404を返す', async () => {
-    mockAssignExerciseToTeam.execute.mockRejectedValue(new ApplicationError('Exercise not found', 404));
+    mockAssignExerciseToTeam.execute.mockRejectedValue(
+      new ApplicationError('Exercise not found', 404)
+    );
 
     const response = await app.inject({
       method: 'POST',

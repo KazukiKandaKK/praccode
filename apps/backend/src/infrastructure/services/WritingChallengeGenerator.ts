@@ -1,4 +1,8 @@
-import { IWritingChallengeGenerator, WritingChallengeGenerateInput, WritingChallengeGenerated } from '../../domain/ports/IWritingChallengeGenerator';
+import {
+  IWritingChallengeGenerator,
+  WritingChallengeGenerateInput,
+  WritingChallengeGenerated,
+} from '../../domain/ports/IWritingChallengeGenerator';
 import { generateWritingChallenge } from '../llm/writing-generator';
 
 export class WritingChallengeGenerator implements IWritingChallengeGenerator {

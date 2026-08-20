@@ -1,8 +1,4 @@
-export type MentorAssessmentTaskStatus =
-  | 'NOT_STARTED'
-  | 'IN_PROGRESS'
-  | 'COMPLETED'
-  | 'FAILED';
+export type MentorAssessmentTaskStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
 
 export type MentorAssessmentTask = {
   id: string;

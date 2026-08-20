@@ -1,7 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { RunAutopilotFromOutboxUseCase } from '@/application/usecases/autopilot/RunAutopilotFromOutboxUseCase';
-import type { IAutopilotOutboxRepository, AutopilotOutboxEventRecord } from '@/domain/ports/IAutopilotOutboxRepository';
-import type { IAutopilotRunRepository, AutopilotRunRecord } from '@/domain/ports/IAutopilotRunRepository';
+import type {
+  IAutopilotOutboxRepository,
+  AutopilotOutboxEventRecord,
+} from '@/domain/ports/IAutopilotOutboxRepository';
+import type {
+  IAutopilotRunRepository,
+  AutopilotRunRecord,
+} from '@/domain/ports/IAutopilotRunRepository';
 
 class InMemoryOutboxRepo implements IAutopilotOutboxRepository {
   events: AutopilotOutboxEventRecord[] = [];

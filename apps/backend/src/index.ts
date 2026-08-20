@@ -217,7 +217,9 @@ const submitWritingCodeUseCase = new SubmitWritingCodeUseCase(
   learningAnalysisScheduler,
   evaluationMetricRepository
 );
-const listWritingSubmissionsUseCase = new ListWritingSubmissionsUseCase(writingSubmissionRepository);
+const listWritingSubmissionsUseCase = new ListWritingSubmissionsUseCase(
+  writingSubmissionRepository
+);
 const getWritingSubmissionUseCase = new GetWritingSubmissionUseCase(writingSubmissionRepository);
 const requestWritingFeedbackUseCase = new RequestWritingFeedbackUseCase(
   writingSubmissionRepository,
@@ -314,9 +316,7 @@ const getMentorAssessmentStatusUseCase = new GetMentorAssessmentStatusUseCase(
   mentorAssessmentRepository
 );
 const getCurrentMentorSprintUseCase = new GetCurrentMentorSprintUseCase(mentorSprintRepository);
-const getMentorWorkflowStepUseCase = new GetMentorWorkflowStepUseCase(
-  mentorWorkflowRepository
-);
+const getMentorWorkflowStepUseCase = new GetMentorWorkflowStepUseCase(mentorWorkflowRepository);
 const updateMentorWorkflowStepUseCase = new UpdateMentorWorkflowStepUseCase(
   mentorWorkflowRepository
 );
@@ -356,7 +356,12 @@ const agentToolRegistry = buildDefaultToolRegistry({
 });
 const agentGuard = new SafetyGuard(process.env.AGENT_GUARD_LLM === 'true');
 const agentRouter = new AgentRouter();
-const agentRuntime = new AgentRuntime(agentOSRepository, agentToolRegistry, agentGuard, agentRouter);
+const agentRuntime = new AgentRuntime(
+  agentOSRepository,
+  agentToolRegistry,
+  agentGuard,
+  agentRouter
+);
 const createAgentRunUseCase = new CreateAgentRunUseCase(
   agentOSRepository,
   agentRuntime,
@@ -454,82 +459,68 @@ await fastify.register(
   },
   { prefix: '/writing' }
 );
-await fastify.register(
-  async (instance) => {
-    learningTimeController(instance, {
-      logLearningTime: logLearningTimeUseCase,
-      getDailyLearningTime: getDailyLearningTimeUseCase,
-    });
-  }
-);
-await fastify.register(
-  async (instance) => {
-    dashboardController(instance, {
-      getStats: getDashboardStatsUseCase,
-      getActivity: getDashboardActivityUseCase,
-      getLearningAnalysis: getLearningAnalysisUseCase,
-      generateRecommendation: generateRecommendationUseCase,
-    });
-  }
-);
-await fastify.register(
-  async (instance) => {
-    teamDashboardController(instance, {
-      getMyTeams: getMyTeamsUseCase,
-      getTeamDashboard: getTeamDashboardUseCase,
-      assignExerciseToTeam: assignExerciseToTeamUseCase,
-      listOwnedExercises: listOwnedExercisesUseCase,
-      createTeam: createTeamUseCase,
-      addTeamMember: addTeamMemberUseCase,
-      removeTeamMember: removeTeamMemberUseCase,
-    });
-  }
-);
-await fastify.register(
-  async (instance) => {
-    mentorController(instance, {
-      generateLearningPlan: generateLearningPlanWithAgentUseCase,
-      generateNextLearningPlan: generateNextLearningPlanWithAgentUseCase,
-      generateSubmissionFeedback: generateSubmissionFeedbackWithAgentUseCase,
-      getMentorAssessmentStatus: getMentorAssessmentStatusUseCase,
-      getCurrentMentorSprint: getCurrentMentorSprintUseCase,
-      getMentorMetadataSummary: getMentorMetadataSummaryUseCase,
-      getMentorWorkflowStep: getMentorWorkflowStepUseCase,
-      updateMentorWorkflowStep: updateMentorWorkflowStepUseCase,
-      getLatestLearningPlan: getLatestLearningPlanUseCase,
-      listLearningPlans: listLearningPlansUseCase,
-      listMentorFeedback: listMentorFeedbackUseCase,
-    });
-  }
-);
-await fastify.register(
-  async (instance) => {
-    mentorChatController(instance, {
-      createThread: createMentorThreadUseCase,
-      getThread: getMentorThreadUseCase,
-      postMessage: postMentorMessageUseCase,
-    });
-  }
-);
-await fastify.register(
-  async (instance) => {
-    agentOSController(instance, {
-      createRun: createAgentRunUseCase,
-      getRun: getAgentRunUseCase,
-      continueRun: continueAgentRunUseCase,
-      confirmInvocation: confirmAgentToolInvocationUseCase,
-    });
-  }
-);
-await fastify.register(
-  async (instance) => {
-    autopilotController(instance, {
-      enqueueTrigger: enqueueAutopilotTriggerUseCase,
-      listRuns: listAutopilotRunsUseCase,
-      getRun: getAutopilotRunUseCase,
-    });
-  }
-);
+await fastify.register(async (instance) => {
+  learningTimeController(instance, {
+    logLearningTime: logLearningTimeUseCase,
+    getDailyLearningTime: getDailyLearningTimeUseCase,
+  });
+});
+await fastify.register(async (instance) => {
+  dashboardController(instance, {
+    getStats: getDashboardStatsUseCase,
+    getActivity: getDashboardActivityUseCase,
+    getLearningAnalysis: getLearningAnalysisUseCase,
+    generateRecommendation: generateRecommendationUseCase,
+  });
+});
+await fastify.register(async (instance) => {
+  teamDashboardController(instance, {
+    getMyTeams: getMyTeamsUseCase,
+    getTeamDashboard: getTeamDashboardUseCase,
+    assignExerciseToTeam: assignExerciseToTeamUseCase,
+    listOwnedExercises: listOwnedExercisesUseCase,
+    createTeam: createTeamUseCase,
+    addTeamMember: addTeamMemberUseCase,
+    removeTeamMember: removeTeamMemberUseCase,
+  });
+});
+await fastify.register(async (instance) => {
+  mentorController(instance, {
+    generateLearningPlan: generateLearningPlanWithAgentUseCase,
+    generateNextLearningPlan: generateNextLearningPlanWithAgentUseCase,
+    generateSubmissionFeedback: generateSubmissionFeedbackWithAgentUseCase,
+    getMentorAssessmentStatus: getMentorAssessmentStatusUseCase,
+    getCurrentMentorSprint: getCurrentMentorSprintUseCase,
+    getMentorMetadataSummary: getMentorMetadataSummaryUseCase,
+    getMentorWorkflowStep: getMentorWorkflowStepUseCase,
+    updateMentorWorkflowStep: updateMentorWorkflowStepUseCase,
+    getLatestLearningPlan: getLatestLearningPlanUseCase,
+    listLearningPlans: listLearningPlansUseCase,
+    listMentorFeedback: listMentorFeedbackUseCase,
+  });
+});
+await fastify.register(async (instance) => {
+  mentorChatController(instance, {
+    createThread: createMentorThreadUseCase,
+    getThread: getMentorThreadUseCase,
+    postMessage: postMentorMessageUseCase,
+  });
+});
+await fastify.register(async (instance) => {
+  agentOSController(instance, {
+    createRun: createAgentRunUseCase,
+    getRun: getAgentRunUseCase,
+    continueRun: continueAgentRunUseCase,
+    confirmInvocation: confirmAgentToolInvocationUseCase,
+  });
+});
+await fastify.register(async (instance) => {
+  autopilotController(instance, {
+    enqueueTrigger: enqueueAutopilotTriggerUseCase,
+    listRuns: listAutopilotRunsUseCase,
+    getRun: getAutopilotRunUseCase,
+  });
+});
 
 // エラーハンドリング
 fastify.setErrorHandler((error, request, reply) => {

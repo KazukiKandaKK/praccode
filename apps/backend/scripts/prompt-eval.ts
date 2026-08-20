@@ -42,7 +42,13 @@ type Claim = { text: string; evidence: Evidence[] };
 type PointEntry = { text: string; evidence: Evidence[] };
 type WrongPointEntry = { text: string; why_wrong: string; evidence: Evidence[] };
 
-const CRITERIA = ['responsibility', 'data_flow', 'error_handling', 'reliability', 'clarity'] as const;
+const CRITERIA = [
+  'responsibility',
+  'data_flow',
+  'error_handling',
+  'reliability',
+  'clarity',
+] as const;
 type CriterionName = (typeof CRITERIA)[number];
 
 type NormalizedOutput = {
@@ -362,21 +368,24 @@ function normalizeGoldPointEval(raw: unknown, goldPointsLength: number): GoldPoi
 
 function normalizeOutput(raw: unknown, goldPointsLength: number): NormalizedOutput {
   const output = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
-  const criteriaInput = (output.criteria && typeof output.criteria === 'object'
-    ? output.criteria
-    : {}) as Record<string, unknown>;
+  const criteriaInput = (
+    output.criteria && typeof output.criteria === 'object' ? output.criteria : {}
+  ) as Record<string, unknown>;
 
-  const criteria = CRITERIA.reduce((acc, name) => {
-    const entry = (criteriaInput[name] && typeof criteriaInput[name] === 'object'
-      ? criteriaInput[name]
-      : {}) as { score?: unknown; comment?: unknown; evidence?: unknown };
-    acc[name] = {
-      score: typeof entry.score === 'number' ? entry.score : null,
-      comment: typeof entry.comment === 'string' ? entry.comment : '',
-      evidence: normalizeEvidence(entry.evidence),
-    };
-    return acc;
-  }, {} as NormalizedOutput['criteria']);
+  const criteria = CRITERIA.reduce(
+    (acc, name) => {
+      const entry = (
+        criteriaInput[name] && typeof criteriaInput[name] === 'object' ? criteriaInput[name] : {}
+      ) as { score?: unknown; comment?: unknown; evidence?: unknown };
+      acc[name] = {
+        score: typeof entry.score === 'number' ? entry.score : null,
+        comment: typeof entry.comment === 'string' ? entry.comment : '',
+        evidence: normalizeEvidence(entry.evidence),
+      };
+      return acc;
+    },
+    {} as NormalizedOutput['criteria']
+  );
 
   const good_points = Array.isArray(output.good_points)
     ? output.good_points.map(normalizePoint)
@@ -456,9 +465,7 @@ function collectQuotes(normalized: NormalizedOutput): Evidence[] {
   return quotes;
 }
 
-function computeOverallScoreCalc(
-  criteria: NormalizedOutput['criteria']
-): number {
+function computeOverallScoreCalc(criteria: NormalizedOutput['criteria']): number {
   const sum = CRITERIA.reduce((acc, name) => {
     const value = criteria[name].score;
     return acc + (typeof value === 'number' ? value : 0);
@@ -588,11 +595,7 @@ function isMatch(predicted: string, gold: string): boolean {
   return bigramSimilarity(normPred, normGold) >= 0.35;
 }
 
-function lexicalOverlapProxy(
-  predictedPoints: string[],
-  goldPoints: string[],
-  k: number
-): number {
+function lexicalOverlapProxy(predictedPoints: string[], goldPoints: string[], k: number): number {
   if (goldPoints.length === 0) {
     return 0;
   }
@@ -643,9 +646,7 @@ function goldPointIdMetrics(
   }
 
   const normalizedContext = normalizeWhitespace(contextText);
-  const claimedCoveredIds = Array.from(
-    new Set(goldPointEval.covered.map((entry) => entry.id))
-  );
+  const claimedCoveredIds = Array.from(new Set(goldPointEval.covered.map((entry) => entry.id)));
   const validCoveredIds = new Set<number>();
 
   for (const entry of goldPointEval.covered) {
@@ -853,63 +854,23 @@ async function run() {
     await mkdir(runDir, { recursive: true });
 
     for (let runIndex = 0; runIndex < options.runs; runIndex += 1) {
-      const itemResults = await mapWithConcurrency(
-        filtered,
-        options.concurrency,
-        async (item) => {
-          const start = Date.now();
-          const result = await evaluateItem(item, config);
-          const itemDir = resolve(runDir, item.id);
-          await mkdir(itemDir, { recursive: true });
+      const itemResults = await mapWithConcurrency(filtered, options.concurrency, async (item) => {
+        const start = Date.now();
+        const result = await evaluateItem(item, config);
+        const itemDir = resolve(runDir, item.id);
+        await mkdir(itemDir, { recursive: true });
 
-          if (!result.ok) {
-            const artifact = {
-              itemId: item.id,
-              run_index: runIndex,
-              config,
-              prompt: result.prompt,
-              raw_response: result.rawResponse,
-              parsed_json: null,
-              normalized_response: null,
-              metrics: null,
-              error: result.error,
-              timing_ms: Date.now() - start,
-            };
-            await writeFile(
-              resolve(itemDir, `run_${runIndex}.json`),
-              JSON.stringify(artifact, null, 2),
-              'utf-8'
-            );
-            await appendGoldPointArtifact(
-              resolve(itemDir, 'gold_points.json'),
-              buildGoldPointArtifact(item, runIndex, null)
-            );
-            console.warn(`[prompt-eval] Failed item ${item.id}: ${result.error}`);
-            return { ok: false as const };
-          }
-
+        if (!result.ok) {
           const artifact = {
             itemId: item.id,
             run_index: runIndex,
             config,
             prompt: result.prompt,
             raw_response: result.rawResponse,
-            parsed_json: result.parsed,
-            normalized_response: result.normalized,
-            metrics: {
-              model_overall_score: result.metrics.modelOverallScore,
-              overall_score_calc: result.metrics.overallScoreCalc,
-              overall_score_mismatch: result.metrics.overallScoreMismatch,
-              gold_point_coverage_rate: result.metrics.goldPointCoverageRate,
-              gold_point_self_report_rate: result.metrics.goldPointSelfReportRate,
-              gold_point_cheat_rate: result.metrics.goldPointCheatRate,
-              lexical_overlap_proxy: result.metrics.lexicalOverlapProxy,
-              grounded_claim_rate: result.metrics.groundedClaimRate,
-              normalized_grounded_claim_rate: result.metrics.normalizedGroundedClaimRate,
-              evidence_quote_hit_rate: result.metrics.evidenceQuoteHitRate,
-              forbidden_claim_rate: result.metrics.forbiddenClaimRate,
-              quote_contains_forbidden_rate: result.metrics.quoteContainsForbiddenRate,
-            },
+            parsed_json: null,
+            normalized_response: null,
+            metrics: null,
+            error: result.error,
             timing_ms: Date.now() - start,
           };
           await writeFile(
@@ -919,12 +880,48 @@ async function run() {
           );
           await appendGoldPointArtifact(
             resolve(itemDir, 'gold_points.json'),
-            buildGoldPointArtifact(item, runIndex, result.goldPointStatus)
+            buildGoldPointArtifact(item, runIndex, null)
           );
-
-          return { ok: true as const, metrics: result.metrics };
+          console.warn(`[prompt-eval] Failed item ${item.id}: ${result.error}`);
+          return { ok: false as const };
         }
-      );
+
+        const artifact = {
+          itemId: item.id,
+          run_index: runIndex,
+          config,
+          prompt: result.prompt,
+          raw_response: result.rawResponse,
+          parsed_json: result.parsed,
+          normalized_response: result.normalized,
+          metrics: {
+            model_overall_score: result.metrics.modelOverallScore,
+            overall_score_calc: result.metrics.overallScoreCalc,
+            overall_score_mismatch: result.metrics.overallScoreMismatch,
+            gold_point_coverage_rate: result.metrics.goldPointCoverageRate,
+            gold_point_self_report_rate: result.metrics.goldPointSelfReportRate,
+            gold_point_cheat_rate: result.metrics.goldPointCheatRate,
+            lexical_overlap_proxy: result.metrics.lexicalOverlapProxy,
+            grounded_claim_rate: result.metrics.groundedClaimRate,
+            normalized_grounded_claim_rate: result.metrics.normalizedGroundedClaimRate,
+            evidence_quote_hit_rate: result.metrics.evidenceQuoteHitRate,
+            forbidden_claim_rate: result.metrics.forbiddenClaimRate,
+            quote_contains_forbidden_rate: result.metrics.quoteContainsForbiddenRate,
+          },
+          timing_ms: Date.now() - start,
+        };
+        await writeFile(
+          resolve(itemDir, `run_${runIndex}.json`),
+          JSON.stringify(artifact, null, 2),
+          'utf-8'
+        );
+        await appendGoldPointArtifact(
+          resolve(itemDir, 'gold_points.json'),
+          buildGoldPointArtifact(item, runIndex, result.goldPointStatus)
+        );
+
+        return { ok: true as const, metrics: result.metrics };
+      });
 
       runResults.push({
         config,
@@ -1087,7 +1084,11 @@ function parseArgs(args: string[]): { options: CliOptions; runId: string } {
       i += 1;
     } else if (arg === '--ids') {
       const value = args[i + 1];
-      if (value) options.ids = value.split(',').map((id) => id.trim()).filter(Boolean);
+      if (value)
+        options.ids = value
+          .split(',')
+          .map((id) => id.trim())
+          .filter(Boolean);
       i += 1;
     } else if (arg === '--concurrency') {
       const value = Number(args[i + 1]);
@@ -1289,8 +1290,7 @@ function mean(values: number[]): number {
 function std(values: number[]): number {
   if (values.length === 0) return 0;
   const avg = mean(values);
-  const variance =
-    values.reduce((acc, value) => acc + Math.pow(value - avg, 2), 0) / values.length;
+  const variance = values.reduce((acc, value) => acc + Math.pow(value - avg, 2), 0) / values.length;
   return Math.sqrt(variance);
 }
 
@@ -1315,10 +1315,12 @@ function buildGoldPointArtifact(
     claimed_covered_ids: status?.claimedCoveredIds ?? [],
     valid_covered_ids: status?.validCoveredIds ?? [],
     missing_ids: status?.missingIds ?? [],
-    per_id_status: status?.perIdStatus ?? item.gold.goldPoints.map((_, id) => ({
-      id,
-      status: 'unreported',
-    })),
+    per_id_status:
+      status?.perIdStatus ??
+      item.gold.goldPoints.map((_, id) => ({
+        id,
+        status: 'unreported',
+      })),
     error: status ? null : 'evaluation_failed',
   };
 }

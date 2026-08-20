@@ -79,11 +79,7 @@ export type MentorSummary = {
   recentAdvice: Array<{ area: string; advice: string; createdAt: string }>;
 };
 
-export type MentorAssessmentTaskStatus =
-  | 'NOT_STARTED'
-  | 'IN_PROGRESS'
-  | 'COMPLETED'
-  | 'FAILED';
+export type MentorAssessmentTaskStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
 
 export type MentorAssessmentTask = {
   id: string;
@@ -229,11 +225,7 @@ export const api = {
     return handleResponse<MentorSprint>(response);
   },
 
-  async createMentorThread(params: {
-    userId: string;
-    exerciseId?: string;
-    submissionId?: string;
-  }) {
+  async createMentorThread(params: { userId: string; exerciseId?: string; submissionId?: string }) {
     const response = await fetch(`${API_BASE_URL}/mentor/threads`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...userIdHeader(params.userId) },

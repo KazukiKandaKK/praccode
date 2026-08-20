@@ -56,7 +56,10 @@ export interface IDashboardRepository {
   getReadingActivityDates(userId: string, startDate: Date, endDate: Date): Promise<Date[]>;
   getWritingActivityDates(userId: string, startDate: Date, endDate: Date): Promise<Date[]>;
   getLearningAnalysis(userId: string): Promise<LearningAnalysisRecord | null>;
-  saveLearningAnalysis(userId: string, record: Omit<LearningAnalysisRecord, 'userId'>): Promise<void>;
+  saveLearningAnalysis(
+    userId: string,
+    record: Omit<LearningAnalysisRecord, 'userId'>
+  ): Promise<void>;
   createReadingExercisePlaceholder(data: {
     userId: string;
     language: string;

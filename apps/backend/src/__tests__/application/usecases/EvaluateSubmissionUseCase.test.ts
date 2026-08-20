@@ -11,9 +11,7 @@ const createTarget = (): EvaluationTarget => ({
   id: 'submission-1',
   userId: 'user-1',
   status: 'DRAFT',
-  answers: [
-    { id: 'answer-1', questionIndex: 1, answerText: 'answer' },
-  ],
+  answers: [{ id: 'answer-1', questionIndex: 1, answerText: 'answer' }],
   exercise: {
     code: 'console.log("test")',
     questions: [
@@ -65,7 +63,11 @@ describe('EvaluateSubmissionUseCase', () => {
     };
 
     const outbox: Partial<IAutopilotOutboxRepository> = {
-      enqueue: vi.fn(async () => ({ id: 'outbox-1', dedupKey: 'SubmissionEvaluated:submission-1', enqueued: true })),
+      enqueue: vi.fn(async () => ({
+        id: 'outbox-1',
+        dedupKey: 'SubmissionEvaluated:submission-1',
+        enqueued: true,
+      })),
       leaseNextBatch: vi.fn(),
       markProcessed: vi.fn(),
       markFailed: vi.fn(),

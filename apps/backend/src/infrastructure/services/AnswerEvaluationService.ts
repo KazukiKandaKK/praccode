@@ -1,4 +1,8 @@
-import { IAnswerEvaluationService, EvaluateAnswerInput, EvaluateAnswerResult } from '../../domain/ports/IAnswerEvaluationService';
+import {
+  IAnswerEvaluationService,
+  EvaluateAnswerInput,
+  EvaluateAnswerResult,
+} from '../../domain/ports/IAnswerEvaluationService';
 import { evaluateAnswer } from '../llm/evaluator';
 
 export class AnswerEvaluationService implements IAnswerEvaluationService {

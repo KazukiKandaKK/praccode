@@ -1,10 +1,11 @@
 import { prisma } from '../../lib/prisma';
-import { IEmailVerificationTokenRepository, VerificationTokenWithUser } from '../../domain/ports/IEmailVerificationTokenRepository';
+import {
+  IEmailVerificationTokenRepository,
+  VerificationTokenWithUser,
+} from '../../domain/ports/IEmailVerificationTokenRepository';
 import { User } from '../../domain/entities/User';
 
-export class PrismaEmailVerificationTokenRepository
-  implements IEmailVerificationTokenRepository
-{
+export class PrismaEmailVerificationTokenRepository implements IEmailVerificationTokenRepository {
   async create(userId: string, tokenHash: string, expiresAt: Date): Promise<void> {
     await prisma.emailVerificationToken.create({
       data: {

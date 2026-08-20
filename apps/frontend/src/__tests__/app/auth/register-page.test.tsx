@@ -41,9 +41,7 @@ describe('RegisterPage', () => {
     const form = screen.getByLabelText('ユーザー名').closest('form') as Element;
     fireEvent.submit(form);
 
-    await waitFor(() =>
-      expect(screen.getByText(/登録に失敗しました/)).toBeTruthy()
-    );
+    await waitFor(() => expect(screen.getByText(/登録に失敗しました/)).toBeTruthy());
   });
 
   it('shows success state when registration succeeds', async () => {
@@ -66,12 +64,8 @@ describe('RegisterPage', () => {
     const form = screen.getByLabelText('ユーザー名').closest('form') as Element;
     fireEvent.submit(form);
 
-    await waitFor(() =>
-      expect(screen.getByText('登録完了')).toBeTruthy()
-    );
-    expect(
-      screen.getByText(/メールアドレスの確認リンクを送信しました/)
-    ).toBeTruthy();
+    await waitFor(() => expect(screen.getByText('登録完了')).toBeTruthy());
+    expect(screen.getByText(/メールアドレスの確認リンクを送信しました/)).toBeTruthy();
   });
 
   it('displays loading state while submitting', async () => {
@@ -97,9 +91,7 @@ describe('RegisterPage', () => {
     const form = screen.getByLabelText('ユーザー名').closest('form') as Element;
     fireEvent.submit(form);
 
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: '登録中...' })).toBeTruthy()
-    );
+    await waitFor(() => expect(screen.getByRole('button', { name: '登録中...' })).toBeTruthy());
 
     resolveRegister({});
     await waitFor(() => expect(mockRegisterUser).toHaveBeenCalled());

@@ -97,7 +97,8 @@ export class GetTeamDashboardUseCase {
       const writingPassRate =
         completedWriting.length > 0
           ? Math.round(
-              (completedWriting.filter((s) => s.passed === true).length / completedWriting.length) * 100
+              (completedWriting.filter((s) => s.passed === true).length / completedWriting.length) *
+                100
             )
           : 0;
 

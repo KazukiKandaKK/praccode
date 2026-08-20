@@ -27,8 +27,7 @@ export class GeminiProvider implements LLMProvider {
 
   async generate(prompt: string, options?: LLMGenerateOptions): Promise<string> {
     const mode = (process.env.GEMINI_AUTH_MODE || 'api_key').toLowerCase();
-    const authMode =
-      mode === 'vertex' || mode === 'api_key' || mode === 'auto' ? mode : 'api_key';
+    const authMode = mode === 'vertex' || mode === 'api_key' || mode === 'auto' ? mode : 'api_key';
     const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
 
     // プロンプト全体をサニタイズ（既に構造化されている前提）
@@ -166,8 +165,7 @@ export class GeminiProvider implements LLMProvider {
 
   async checkHealth(): Promise<boolean> {
     const mode = (process.env.GEMINI_AUTH_MODE || 'api_key').toLowerCase();
-    const authMode =
-      mode === 'vertex' || mode === 'api_key' || mode === 'auto' ? mode : 'api_key';
+    const authMode = mode === 'vertex' || mode === 'api_key' || mode === 'auto' ? mode : 'api_key';
     const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
 
     try {
@@ -204,9 +202,7 @@ export class GeminiProvider implements LLMProvider {
     }
 
     const project =
-      process.env.GOOGLE_CLOUD_PROJECT ||
-      process.env.GCP_PROJECT ||
-      process.env.VERTEX_PROJECT;
+      process.env.GOOGLE_CLOUD_PROJECT || process.env.GCP_PROJECT || process.env.VERTEX_PROJECT;
     const location =
       process.env.GOOGLE_CLOUD_LOCATION ||
       process.env.GCP_LOCATION ||
@@ -241,9 +237,7 @@ export class GeminiProvider implements LLMProvider {
     }
 
     const project =
-      process.env.GOOGLE_CLOUD_PROJECT ||
-      process.env.GCP_PROJECT ||
-      process.env.VERTEX_PROJECT;
+      process.env.GOOGLE_CLOUD_PROJECT || process.env.GCP_PROJECT || process.env.VERTEX_PROJECT;
     const location =
       process.env.GOOGLE_CLOUD_LOCATION ||
       process.env.GCP_LOCATION ||
@@ -268,8 +262,7 @@ export class GeminiProvider implements LLMProvider {
     }
 
     const credentialsPath =
-      process.env.GOOGLE_APPLICATION_CREDENTIALS ||
-      process.env.GOOGLE_CREDENTIALS_FILE;
+      process.env.GOOGLE_APPLICATION_CREDENTIALS || process.env.GOOGLE_CREDENTIALS_FILE;
     if (!credentialsPath) {
       throw new Error('GOOGLE_APPLICATION_CREDENTIALS environment variable is not set');
     }
@@ -331,11 +324,7 @@ export class GeminiProvider implements LLMProvider {
 
   private base64UrlEncode(input: string | Buffer): string {
     const buffer = typeof input === 'string' ? Buffer.from(input, 'utf-8') : input;
-    return buffer
-      .toString('base64')
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '');
+    return buffer.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }
 
   /**

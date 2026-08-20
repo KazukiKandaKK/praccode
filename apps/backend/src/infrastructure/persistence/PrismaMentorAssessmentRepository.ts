@@ -90,19 +90,13 @@ export class PrismaMentorAssessmentRepository implements IMentorAssessmentReposi
     const readingStatusByExercise = new Map<string, MentorAssessmentTaskStatus>();
     for (const submission of readingSubmissions) {
       if (readingStatusByExercise.has(submission.exerciseId)) continue;
-      readingStatusByExercise.set(
-        submission.exerciseId,
-        resolveReadingStatus(submission.status)
-      );
+      readingStatusByExercise.set(submission.exerciseId, resolveReadingStatus(submission.status));
     }
 
     const writingStatusByChallenge = new Map<string, MentorAssessmentTaskStatus>();
     for (const submission of writingSubmissions) {
       if (writingStatusByChallenge.has(submission.challengeId)) continue;
-      writingStatusByChallenge.set(
-        submission.challengeId,
-        resolveWritingStatus(submission.status)
-      );
+      writingStatusByChallenge.set(submission.challengeId, resolveWritingStatus(submission.status));
     }
 
     const reading = readingTasks.map((task) => ({
@@ -128,9 +122,7 @@ export class PrismaMentorAssessmentRepository implements IMentorAssessmentReposi
   }
 }
 
-function resolveReadingStatus(
-  status: ReadingSubmission['status']
-): MentorAssessmentTaskStatus {
+function resolveReadingStatus(status: ReadingSubmission['status']): MentorAssessmentTaskStatus {
   switch (status) {
     case 'EVALUATED':
       return 'COMPLETED';
@@ -142,9 +134,7 @@ function resolveReadingStatus(
   }
 }
 
-function resolveWritingStatus(
-  status: WritingSubmission['status']
-): MentorAssessmentTaskStatus {
+function resolveWritingStatus(status: WritingSubmission['status']): MentorAssessmentTaskStatus {
   switch (status) {
     case 'COMPLETED':
       return 'COMPLETED';

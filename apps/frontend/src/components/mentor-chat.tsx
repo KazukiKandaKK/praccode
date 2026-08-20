@@ -58,9 +58,7 @@ export function MentorChat({ userId, exerciseId, submissionId }: MentorChatProps
   const handleSend = async () => {
     if (!input.trim() || !threadId || isSending) return;
 
-    const violation = findLlmInputViolation([
-      { field: 'メンターへの質問', value: input },
-    ]);
+    const violation = findLlmInputViolation([{ field: 'メンターへの質問', value: input }]);
     if (violation) {
       setSendError(`${violation.reason}: ${violation.field}`);
       return;
@@ -79,8 +77,7 @@ export function MentorChat({ userId, exerciseId, submissionId }: MentorChatProps
       const result = await api.postMentorMessage(threadId, userId, input);
       setMessages((prev) => {
         const filtered = prev.filter(
-          (message) =>
-            message.id !== optimisticUser.id && message.id !== optimisticAssistant.id
+          (message) => message.id !== optimisticUser.id && message.id !== optimisticAssistant.id
         );
         return [...filtered, result.userMessage, result.assistantMessage];
       });
@@ -170,10 +167,7 @@ export function MentorChat({ userId, exerciseId, submissionId }: MentorChatProps
                 rows={3}
               />
               <div className="flex justify-end">
-                <Button
-                  onClick={handleSend}
-                  disabled={isSending || !input.trim() || !threadId}
-                >
+                <Button onClick={handleSend} disabled={isSending || !input.trim() || !threadId}>
                   {isSending ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />

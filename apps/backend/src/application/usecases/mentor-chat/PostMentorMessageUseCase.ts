@@ -10,8 +10,7 @@ import { buildProgressSnapshot } from '@/application/usecases/mentor/buildProgre
 
 // TODO: Consider moving this to env and truncating long messages if needed.
 const HISTORY_LIMIT = 40;
-const ASSISTANT_FAILURE_MESSAGE =
-  '生成に失敗しました。もう一度送信してください。';
+const ASSISTANT_FAILURE_MESSAGE = '生成に失敗しました。もう一度送信してください。';
 
 type Result = {
   userMessage: MentorMessageRecord;
@@ -26,15 +25,8 @@ export class PostMentorMessageUseCase {
     private readonly chatGenerator: IMentorChatGenerator
   ) {}
 
-  async execute(params: {
-    threadId: string;
-    userId: string;
-    content: string;
-  }): Promise<Result> {
-    const thread = await this.threadRepository.getThreadByIdForUser(
-      params.threadId,
-      params.userId
-    );
+  async execute(params: { threadId: string; userId: string; content: string }): Promise<Result> {
+    const thread = await this.threadRepository.getThreadByIdForUser(params.threadId, params.userId);
     if (!thread) {
       throw new ApplicationError('Thread not found', 404);
     }
@@ -48,7 +40,9 @@ export class PostMentorMessageUseCase {
     });
 
     const [exercise, submission, progress] = await Promise.all([
-      thread.exerciseId ? this.exerciseRepository.findById(thread.exerciseId) : Promise.resolve(null),
+      thread.exerciseId
+        ? this.exerciseRepository.findById(thread.exerciseId)
+        : Promise.resolve(null),
       thread.submissionId
         ? this.submissionRepository.findById(thread.submissionId)
         : Promise.resolve(null),

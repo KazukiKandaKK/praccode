@@ -156,7 +156,11 @@ export class PrismaAgentOSRepository implements IAgentOSRepository {
 
   async updateToolInvocation(
     invocationId: string,
-    params: { status: ToolInvocationStatus; resultJson?: Record<string, unknown>; errorMessage?: string }
+    params: {
+      status: ToolInvocationStatus;
+      resultJson?: Record<string, unknown>;
+      errorMessage?: string;
+    }
   ): Promise<void> {
     const shouldFinish = params.status !== 'needs_confirmation';
     await prisma.toolInvocation.update({
