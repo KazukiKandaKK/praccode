@@ -36,10 +36,7 @@ export class RequestWritingFeedbackUseCase {
 
     PromptSanitizer.sanitize(submission.code, 'USER_CODE', { allowBase64: true });
     PromptSanitizer.sanitize(submission.challenge.title, 'CHALLENGE_TITLE');
-    PromptSanitizer.sanitize(
-      submission.challenge.description ?? '',
-      'CHALLENGE_DESCRIPTION'
-    );
+    PromptSanitizer.sanitize(submission.challenge.description ?? '', 'CHALLENGE_DESCRIPTION');
     PromptSanitizer.sanitize(submission.challenge.testCode ?? '', 'TEST_CODE', {
       allowBase64: true,
     });

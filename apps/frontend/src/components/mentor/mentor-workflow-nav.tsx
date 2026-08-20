@@ -42,7 +42,7 @@ const steps = [
     href: '/mentor/plan/history',
     match: ['/mentor/plan/history'],
   },
-];
+] as const;
 
 function getActiveIndex(pathname: string) {
   const found = steps.find((step) => step.match.some((path) => pathname.startsWith(path)));
@@ -146,12 +146,8 @@ export function MentorWorkflowNav({ userId }: Props) {
   }, [userId]);
 
   const resumeStep = workflowState?.step ?? activeStep;
-  const resumeTarget = useMemo(
-    () => steps.find((step) => step.step === resumeStep),
-    [resumeStep]
-  );
-  const showResume =
-    resumeTarget && !resumeTarget.match.some((path) => pathname.startsWith(path));
+  const resumeTarget = useMemo(() => steps.find((step) => step.step === resumeStep), [resumeStep]);
+  const showResume = resumeTarget && !resumeTarget.match.some((path) => pathname.startsWith(path));
 
   return (
     <Card className="border-slate-600/70">

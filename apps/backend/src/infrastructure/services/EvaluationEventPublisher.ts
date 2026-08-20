@@ -1,4 +1,7 @@
-import { IEvaluationEventPublisher, EvaluationEvent } from '../../domain/ports/IEvaluationEventPublisher';
+import {
+  IEvaluationEventPublisher,
+  EvaluationEvent,
+} from '../../domain/ports/IEvaluationEventPublisher';
 import {
   emitEvaluationComplete,
   emitEvaluationFailed,

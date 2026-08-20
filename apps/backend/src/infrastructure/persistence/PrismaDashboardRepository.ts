@@ -52,6 +52,83 @@ export class PrismaDashboardRepository implements IDashboardRepository {
     }));
   }
 
+  async getReadingSubmissionsForUsers(userIds: string[]): Promise<ReadingSubmissionRecord[]> {
+    if (userIds.length === 0) return [];
+
+    const submissions = await prisma.submission.findMany({
+      where: {
+        userId: { in: userIds },
+        status: 'EVALUATED',
+      },
+      include: {
+        exercise: {
+          select: {
+            id: true,
+            title: true,
+            language: true,
+            genre: true,
+          },
+        },
+        answers: {
+          select: {
+            score: true,
+            level: true,
+            aspects: true,
+            llmFeedback: true,
+          },
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    return submissions.map((s) => ({
+      id: s.id,
+      userId: s.userId,
+      status: s.status as ReadingSubmissionRecord['status'],
+      createdAt: s.createdAt,
+      updatedAt: s.updatedAt,
+      exercise: s.exercise,
+      answers: s.answers.map((a) => ({
+        score: a.score,
+        level: a.level,
+        aspects: (a.aspects as Record<string, number> | null) ?? null,
+        llmFeedback: a.llmFeedback,
+      })),
+    }));
+  }
+
+  async getWritingSubmissionsForUsers(userIds: string[]): Promise<WritingSubmissionRecord[]> {
+    if (userIds.length === 0) return [];
+
+    const submissions = await prisma.writingSubmission.findMany({
+      where: {
+        userId: { in: userIds },
+      },
+      include: {
+        challenge: {
+          select: {
+            id: true,
+            title: true,
+            language: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return submissions.map((s) => ({
+      id: s.id,
+      userId: s.userId,
+      status: s.status as WritingSubmissionRecord['status'],
+      createdAt: s.createdAt,
+      executedAt: s.executedAt,
+      passed: s.passed,
+      challenge: s.challenge,
+      llmFeedback: s.llmFeedback,
+      llmFeedbackStatus: s.llmFeedbackStatus as WritingSubmissionRecord['llmFeedbackStatus'],
+    }));
+  }
+
   async getWritingSubmissions(userId: string): Promise<WritingSubmissionRecord[]> {
     const submissions = await prisma.writingSubmission.findMany({
       where: {

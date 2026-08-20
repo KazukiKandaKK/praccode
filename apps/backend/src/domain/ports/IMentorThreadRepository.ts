@@ -28,10 +28,7 @@ export interface IMentorThreadRepository {
   getThreadById(id: string): Promise<MentorThreadRecord | null>;
   getThreadByIdForUser(id: string, userId: string): Promise<MentorThreadRecord | null>;
 
-  findByUserAndExerciseId(
-    userId: string,
-    exerciseId: string
-  ): Promise<MentorThreadRecord | null>;
+  findByUserAndExerciseId(userId: string, exerciseId: string): Promise<MentorThreadRecord | null>;
 
   findByUserAndSubmissionId(
     userId: string,

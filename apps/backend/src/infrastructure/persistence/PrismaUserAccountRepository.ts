@@ -1,8 +1,5 @@
 import { prisma } from '../../lib/prisma';
-import {
-  IUserAccountRepository,
-  UserProfile,
-} from '../../domain/ports/IUserAccountRepository';
+import { IUserAccountRepository, UserProfile } from '../../domain/ports/IUserAccountRepository';
 
 export class PrismaUserAccountRepository implements IUserAccountRepository {
   async getProfile(userId: string): Promise<UserProfile | null> {
@@ -57,7 +54,9 @@ export class PrismaUserAccountRepository implements IUserAccountRepository {
     return existing;
   }
 
-  async findByIdWithPassword(userId: string): Promise<{ id: string; password: string | null } | null> {
+  async findByIdWithPassword(
+    userId: string
+  ): Promise<{ id: string; password: string | null } | null> {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, password: true },
@@ -72,7 +71,10 @@ export class PrismaUserAccountRepository implements IUserAccountRepository {
     });
   }
 
-  async updateEmail(userId: string, email: string): Promise<{ id: string; email: string; name: string }> {
+  async updateEmail(
+    userId: string,
+    email: string
+  ): Promise<{ id: string; email: string; name: string }> {
     const updated = await prisma.user.update({
       where: { id: userId },
       data: { email },

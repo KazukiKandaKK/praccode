@@ -29,7 +29,11 @@ export class AutoGenerateWritingChallengeUseCase {
       throw new ApplicationError('LLM service is not available', 503);
     }
 
-    const challenge = await this.repo.createGenerating(input.userId, input.language, input.difficulty);
+    const challenge = await this.repo.createGenerating(
+      input.userId,
+      input.language,
+      input.difficulty
+    );
 
     // 非同期で生成を実行
     setImmediate(async () => {

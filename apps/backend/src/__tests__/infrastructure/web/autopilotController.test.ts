@@ -42,7 +42,10 @@ describe('autopilotController', () => {
       method: 'POST',
       url: '/autopilot/trigger',
       headers: { 'x-user-id': 'd2d3b878-348c-4f70-9a57-7988351f5c69' },
-      payload: { triggerType: 'submission_evaluated', submissionId: '7ef84a3d-8f80-4b45-b07b-0bd6b0fc8ab0' },
+      payload: {
+        triggerType: 'submission_evaluated',
+        submissionId: '7ef84a3d-8f80-4b45-b07b-0bd6b0fc8ab0',
+      },
     });
 
     expect(response.statusCode).toBe(200);

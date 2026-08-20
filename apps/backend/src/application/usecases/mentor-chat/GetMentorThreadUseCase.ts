@@ -14,10 +14,7 @@ export class GetMentorThreadUseCase {
   constructor(private readonly threadRepository: IMentorThreadRepository) {}
 
   async execute(params: { threadId: string; userId: string }): Promise<Result> {
-    const thread = await this.threadRepository.getThreadByIdForUser(
-      params.threadId,
-      params.userId
-    );
+    const thread = await this.threadRepository.getThreadByIdForUser(params.threadId, params.userId);
     if (!thread) {
       throw new ApplicationError('Thread not found', 404);
     }

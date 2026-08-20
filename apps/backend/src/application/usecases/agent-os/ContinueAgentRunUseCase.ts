@@ -6,7 +6,10 @@ export class ContinueAgentRunUseCase {
   constructor(
     private readonly repo: IAgentOSRepository,
     private readonly runtime: AgentRuntime,
-    private readonly logger: { info: (...args: unknown[]) => void; error: (...args: unknown[]) => void }
+    private readonly logger: {
+      info: (...args: unknown[]) => void;
+      error: (...args: unknown[]) => void;
+    }
   ) {}
 
   async execute(params: { runId: string; userId: string }): Promise<{ status: string }> {

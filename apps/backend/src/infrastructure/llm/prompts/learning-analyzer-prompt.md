@@ -33,4 +33,3 @@
 "recommendations": ["おすすめ1", "おすすめ2"],
 "summary": "総評（2-3文）"
 }
-

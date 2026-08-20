@@ -17,16 +17,9 @@ export interface IAutopilotOutboxRepository {
     dedupKey: string;
   }): Promise<{ id: string; dedupKey: string; enqueued: boolean }>;
 
-  leaseNextBatch(params: {
-    limit: number;
-    now: Date;
-  }): Promise<AutopilotOutboxEventRecord[]>;
+  leaseNextBatch(params: { limit: number; now: Date }): Promise<AutopilotOutboxEventRecord[]>;
 
   markProcessed(id: string): Promise<void>;
 
-  markFailed(params: {
-    id: string;
-    error: string;
-    nextRetryAt?: Date | null;
-  }): Promise<void>;
+  markFailed(params: { id: string; error: string; nextRetryAt?: Date | null }): Promise<void>;
 }

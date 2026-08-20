@@ -25,7 +25,10 @@ export class AutopilotToolRegistry {
   register<TInput extends z.ZodTypeAny, TOutput extends z.ZodTypeAny>(
     tool: AutopilotToolDefinition<TInput, TOutput>
   ) {
-    this.tools.set(tool.name, tool);
+    this.tools.set(
+      tool.name,
+      tool as unknown as AutopilotToolDefinition<z.ZodTypeAny, z.ZodTypeAny>
+    );
   }
 
   list() {

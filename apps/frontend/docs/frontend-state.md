@@ -3,6 +3,7 @@
 フロント主要フローの状態遷移図。UI実装と付き合わせるためのドキュメントです。
 
 ## Auth
+
 ```mermaid
 stateDiagram-v2
     [*] --> Unauthenticated
@@ -20,6 +21,7 @@ stateDiagram-v2
 ```
 
 ## コードリーディング提出 (`app/(app)/exercises/[id]/page.tsx`)
+
 ```mermaid
 stateDiagram-v2
     [*] --> SessionLoading
@@ -37,6 +39,7 @@ stateDiagram-v2
 ```
 
 ## コードライティング提出/フィードバック (`app/(app)/writing/[id]/page.tsx`)
+
 ```mermaid
 stateDiagram-v2
     [*] --> LoadingChallenge
@@ -54,5 +57,6 @@ stateDiagram-v2
 ```
 
 メモ:
+
 - フロントはライティングの `llmFeedbackStatus` を `NOT_STARTED | GENERATING | COMPLETED | FAILED` と想定。
 - コードリーディングのヒント生成は現在API接続済み、失敗時はエラーメッセージを表示。

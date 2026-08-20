@@ -23,5 +23,8 @@ export interface LearningAnalysisResult {
 }
 
 export interface ILearningAnalyzer {
-  analyze(reading: ReadingAnalysisItem[], writing: WritingAnalysisItem[]): Promise<LearningAnalysisResult>;
+  analyze(
+    reading: ReadingAnalysisItem[],
+    writing: WritingAnalysisItem[]
+  ): Promise<LearningAnalysisResult>;
 }

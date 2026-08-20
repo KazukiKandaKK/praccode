@@ -4,3 +4,5 @@ if (!process.env.DATABASE_URL) {
 }
 
 await import('./autopilot-worker-main.js');
+
+export {};

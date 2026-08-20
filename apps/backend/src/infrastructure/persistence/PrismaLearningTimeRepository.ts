@@ -11,8 +11,7 @@ export class PrismaLearningTimeRepository implements ILearningTimeRepository {
     if (!durationSec) return;
 
     const startedAt = data.startedAt ?? new Date();
-    const endedAt =
-      data.endedAt ?? new Date(startedAt.getTime() + durationSec * 1000);
+    const endedAt = data.endedAt ?? new Date(startedAt.getTime() + durationSec * 1000);
 
     await prisma.learningTimeLog.create({
       data: {

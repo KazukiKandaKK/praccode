@@ -371,9 +371,7 @@ export function buildDefaultToolRegistry(deps: ToolDependencies) {
     description: 'Search keyword occurrences within an exercise code.',
     inputSchema: z.object({ exerciseId: z.string().uuid(), query: z.string().min(1) }),
     outputSchema: z.object({
-      matches: z.array(
-        z.object({ line: z.number(), text: z.string(), preview: z.string() })
-      ),
+      matches: z.array(z.object({ line: z.number(), text: z.string(), preview: z.string() })),
     }),
     permission: 'read',
     sideEffects: false,

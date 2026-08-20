@@ -17,12 +17,15 @@ export interface IWritingChallengeRepository {
     language: WritingChallenge['language'],
     difficulty: number
   ): Promise<WritingChallenge>;
-  updateGenerated(challengeId: string, generated: WritingChallengeGenerateInput & {
-    title: string;
-    description: string;
-    testCode: string;
-    starterCode?: string | null;
-    sampleCode?: string | null;
-  }): Promise<void>;
+  updateGenerated(
+    challengeId: string,
+    generated: WritingChallengeGenerateInput & {
+      title: string;
+      description: string;
+      testCode: string;
+      starterCode?: string | null;
+      sampleCode?: string | null;
+    }
+  ): Promise<void>;
   markFailed(challengeId: string): Promise<void>;
 }

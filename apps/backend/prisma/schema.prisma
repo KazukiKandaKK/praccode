@@ -44,6 +44,7 @@ model User {
   agentExperiences          AgentExperience[]
   agentMemories             AgentMemory[]
   autopilotRuns             AutopilotRun[]
+  teamMemberships           TeamMembership[]
 
   @@map("users")
 }
@@ -789,4 +790,31 @@ model AutopilotRun {
 
   @@index([userId, createdAt])
   @@map("autopilot_runs")
+}
+
+// ========== チーム（新人研修向け最小構成） ==========
+
+model Team {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  members TeamMembership[]
+
+  @@map("teams")
+}
+
+model TeamMembership {
+  id        String   @id @default(uuid())
+  teamId    String   @map("team_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, teamId])
+  @@index([teamId])
+  @@map("team_memberships")
 }

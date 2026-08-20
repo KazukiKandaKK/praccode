@@ -140,9 +140,7 @@ export default function ExerciseDetailPage() {
 
       if (!res.ok) {
         const message =
-          res.status === 404
-            ? 'ヒントが見つかりませんでした'
-            : 'ヒントの取得に失敗しました';
+          res.status === 404 ? 'ヒントが見つかりませんでした' : 'ヒントの取得に失敗しました';
         setHintErrors((prev) => ({ ...prev, [questionIndex]: message }));
         return;
       }

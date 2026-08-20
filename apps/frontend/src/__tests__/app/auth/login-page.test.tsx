@@ -47,9 +47,7 @@ describe('LoginPage', () => {
     const form = screen.getByLabelText('メールアドレス').closest('form') as Element;
     fireEvent.submit(form);
 
-    await waitFor(() =>
-      expect(screen.getByText(/メールアドレスが未認証です/)).toBeTruthy()
-    );
+    await waitFor(() => expect(screen.getByText(/メールアドレスが未認証です/)).toBeTruthy());
   });
 
   it('displays loading text while submitting', async () => {
@@ -72,9 +70,7 @@ describe('LoginPage', () => {
     const form = screen.getByLabelText('メールアドレス').closest('form') as Element;
     fireEvent.submit(form);
 
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'ログイン中...' })).toBeTruthy()
-    );
+    await waitFor(() => expect(screen.getByRole('button', { name: 'ログイン中...' })).toBeTruthy());
 
     // complete promise to avoid unhandled rejection
     resolveLogin({});

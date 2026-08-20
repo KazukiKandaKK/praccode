@@ -1,4 +1,7 @@
-import { ICodeWritingFeedbackGenerator, CodeWritingFeedbackInput } from '../../domain/ports/ICodeWritingFeedbackGenerator';
+import {
+  ICodeWritingFeedbackGenerator,
+  CodeWritingFeedbackInput,
+} from '../../domain/ports/ICodeWritingFeedbackGenerator';
 import { generateCodeReview } from '../llm/code-reviewer';
 
 export class CodeWritingFeedbackGenerator implements ICodeWritingFeedbackGenerator {

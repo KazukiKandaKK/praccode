@@ -49,21 +49,15 @@ export function MentorOverview({ userId, userName }: Props) {
     const load = async () => {
       setLoading(true);
       try {
-        const [
-          latest,
-          plans,
-          feedback,
-          summaryResult,
-          sprintResult,
-          assessmentResult,
-        ] = await Promise.allSettled([
-          api.getLatestLearningPlan(userId),
-          api.getLearningPlanHistory(userId, 5),
-          api.getMentorFeedbackHistory(userId, 5),
-          api.getMentorSummary(userId),
-          api.getCurrentMentorSprint(userId),
-          api.getMentorAssessmentStatus(userId),
-        ]);
+        const [latest, plans, feedback, summaryResult, sprintResult, assessmentResult] =
+          await Promise.allSettled([
+            api.getLatestLearningPlan(userId),
+            api.getLearningPlanHistory(userId, 5),
+            api.getMentorFeedbackHistory(userId, 5),
+            api.getMentorSummary(userId),
+            api.getCurrentMentorSprint(userId),
+            api.getMentorAssessmentStatus(userId),
+          ]);
 
         if (cancelled) return;
 
@@ -231,11 +225,7 @@ export function MentorOverview({ userId, userName }: Props) {
             <Clock className="w-5 h-5 text-slate-300" />
             <CardTitle className="text-white text-lg">今週のスプリント</CardTitle>
           </div>
-          {sprint && (
-            <Badge variant="default">
-              Sprint {sprint.sequence}
-            </Badge>
-          )}
+          {sprint && <Badge variant="default">Sprint {sprint.sequence}</Badge>}
         </CardHeader>
         <CardContent className="space-y-3">
           {sprintError && <p className="text-sm text-rose-300">{sprintError}</p>}
@@ -332,9 +322,7 @@ export function MentorOverview({ userId, userName }: Props) {
                         </Badge>
                       ))
                     ) : (
-                      <span className="text-sm text-slate-500">
-                        まだ強みのデータがありません。
-                      </span>
+                      <span className="text-sm text-slate-500">まだ強みのデータがありません。</span>
                     )}
                   </div>
                 </div>
@@ -531,7 +519,10 @@ export function MentorOverview({ userId, userName }: Props) {
                 {feedbackHistory.slice(0, 3).map((feedback) => (
                   <div
                     key={feedback.id}
-                    className={cn('rounded-xl border border-slate-700/60 bg-slate-800/40 p-3', 'space-y-1')}
+                    className={cn(
+                      'rounded-xl border border-slate-700/60 bg-slate-800/40 p-3',
+                      'space-y-1'
+                    )}
                   >
                     <div className="text-sm font-semibold text-slate-100 line-clamp-2">
                       {feedback.feedback.overall}
@@ -617,7 +608,11 @@ function AssessmentTaskList({
   );
 }
 
-function AssessmentStatusBadge({ status }: { status: MentorAssessmentStatus['tasks'][number]['status'] }) {
+function AssessmentStatusBadge({
+  status,
+}: {
+  status: MentorAssessmentStatus['tasks'][number]['status'];
+}) {
   const labels: Record<string, string> = {
     NOT_STARTED: '未着手',
     IN_PROGRESS: '進行中',

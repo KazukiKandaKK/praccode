@@ -12,4 +12,3 @@ export class PromptInjectionError extends Error {
     this.name = 'PromptInjectionError';
   }
 }
-

@@ -1,4 +1,7 @@
-import type { ILearningPlanRepository, LearningPlanRecord } from '@/domain/ports/ILearningPlanRepository';
+import type {
+  ILearningPlanRepository,
+  LearningPlanRecord,
+} from '@/domain/ports/ILearningPlanRepository';
 import type { LearningPlan, PresetAnswer } from '@/mastra/mentorAgent';
 import { PrismaClient } from '@prisma/client';
 

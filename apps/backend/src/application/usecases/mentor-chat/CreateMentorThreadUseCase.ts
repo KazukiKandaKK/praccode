@@ -1,7 +1,10 @@
 import { ApplicationError } from '@/application/errors/ApplicationError';
 import type { IExerciseRepository } from '@/domain/ports/IExerciseRepository';
 import type { ISubmissionRepository } from '@/domain/ports/ISubmissionRepository';
-import type { IMentorThreadRepository, MentorThreadRecord } from '@/domain/ports/IMentorThreadRepository';
+import type {
+  IMentorThreadRepository,
+  MentorThreadRecord,
+} from '@/domain/ports/IMentorThreadRepository';
 
 type Params = {
   userId: string;

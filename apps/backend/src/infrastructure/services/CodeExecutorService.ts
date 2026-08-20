@@ -1,4 +1,8 @@
-import { ICodeExecutor, CodeExecutionInput, CodeExecutionResult } from '../../domain/ports/ICodeExecutor';
+import {
+  ICodeExecutor,
+  CodeExecutionInput,
+  CodeExecutionResult,
+} from '../../domain/ports/ICodeExecutor';
 import { executeCode } from '../runner/executor';
 
 export class CodeExecutorService implements ICodeExecutor {

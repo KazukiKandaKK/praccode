@@ -1,4 +1,4 @@
-import { prisma } from '../../lib/prisma';
+import { prisma, Prisma } from '../../lib/prisma';
 import type {
   AutopilotRunRecord,
   AutopilotRunStatus,
@@ -47,7 +47,7 @@ export class PrismaAutopilotRunRepository implements IAutopilotRunRepository {
           userId: params.userId,
           triggerType: params.triggerType,
           triggerKey: params.triggerKey,
-          payloadJson: params.payloadJson,
+          payloadJson: params.payloadJson as Prisma.InputJsonValue,
           status: 'queued',
         },
       });
@@ -70,7 +70,11 @@ export class PrismaAutopilotRunRepository implements IAutopilotRunRepository {
   async markCompleted(runId: string, resultJson: Record<string, unknown>): Promise<void> {
     await prisma.autopilotRun.update({
       where: { id: runId },
-      data: { status: 'completed', resultJson, finishedAt: new Date() },
+      data: {
+        status: 'completed',
+        resultJson: resultJson as Prisma.InputJsonValue,
+        finishedAt: new Date(),
+      },
     });
   }
 

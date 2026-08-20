@@ -67,9 +67,7 @@ function buildMetricSummary(metrics: EvaluationMetricRecord[]): MetricSummary[] 
   const summaries: MetricSummary[] = [];
 
   for (const [aspect, records] of byAspect) {
-    const sorted = [...records].sort(
-      (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
-    );
+    const sorted = [...records].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     const current = sorted.slice(0, 5);
     const previous = sorted.slice(5, 10);
     const currentAvg = average(current.map((item) => item.score));

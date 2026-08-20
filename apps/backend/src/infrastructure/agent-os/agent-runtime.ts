@@ -668,7 +668,7 @@ export class AgentRuntime {
       situation: goal,
       actionsSummary: message.slice(0, 500),
       outcome: 'completed',
-      evalScore: null,
+      evalScore: undefined,
     });
   }
 }

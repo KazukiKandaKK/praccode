@@ -106,12 +106,7 @@ export class MastraOllamaModel implements LanguageModelV1 {
             .filter((part) => part.type === 'text')
             .map((part) => ('text' in part ? part.text : ''))
             .join('\n');
-          return [
-            'Input:',
-            '---USER_INPUT_START---',
-            textParts,
-            '---USER_INPUT_END---',
-          ].join('\n');
+          return ['Input:', '---USER_INPUT_START---', textParts, '---USER_INPUT_END---'].join('\n');
         }
 
         if (message.role === 'assistant') {

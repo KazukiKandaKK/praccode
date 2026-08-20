@@ -35,9 +35,7 @@ export async function buildProgressSnapshot(
   });
 
   const averageScore =
-    allScores.length > 0
-      ? Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length)
-      : 0;
+    allScores.length > 0 ? Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length) : 0;
 
   const aspectScores: Record<string, number> = {};
   Object.entries(aspectScoresMap).forEach(([aspect, data]) => {

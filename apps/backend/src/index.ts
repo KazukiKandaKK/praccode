@@ -62,6 +62,16 @@ import { GetDashboardActivityUseCase } from './application/usecases/dashboard/Ge
 import { GetLearningAnalysisUseCase } from './application/usecases/dashboard/GetLearningAnalysisUseCase.js';
 import { GenerateRecommendationUseCase } from './application/usecases/dashboard/GenerateRecommendationUseCase.js';
 import { dashboardController } from './infrastructure/web/dashboardController.js';
+import { PrismaTeamRepository } from './infrastructure/persistence/PrismaTeamRepository.js';
+import { GetMyTeamsUseCase } from './application/usecases/team/GetMyTeamsUseCase.js';
+import { GetTeamDashboardUseCase } from './application/usecases/team/GetTeamDashboardUseCase.js';
+import { AssignExerciseToTeamUseCase } from './application/usecases/team/AssignExerciseToTeamUseCase.js';
+import { ListOwnedExercisesUseCase } from './application/usecases/team/ListOwnedExercisesUseCase.js';
+import { CreateTeamUseCase } from './application/usecases/team/CreateTeamUseCase.js';
+import { AddTeamMemberUseCase } from './application/usecases/team/AddTeamMemberUseCase.js';
+import { RemoveTeamMemberUseCase } from './application/usecases/team/RemoveTeamMemberUseCase.js';
+import { PrismaExerciseAssignmentRepository } from './infrastructure/persistence/PrismaExerciseAssignmentRepository.js';
+import { teamDashboardController } from './infrastructure/web/teamDashboardController.js';
 import { ExerciseGeneratorService } from './infrastructure/services/ExerciseGeneratorService.js';
 import { LlmLearningAnalyzer } from './infrastructure/services/LlmLearningAnalyzer.js';
 import { MentorAgent } from './mastra/mentorAgent.js';
@@ -175,6 +185,8 @@ const writingSubmissionRepository = new PrismaWritingSubmissionRepository();
 const userAccountRepository = new PrismaUserAccountRepository();
 const emailChangeTokenRepository = new PrismaEmailChangeTokenRepository();
 const dashboardRepository = new PrismaDashboardRepository();
+const teamRepository = new PrismaTeamRepository();
+const exerciseAssignmentRepository = new PrismaExerciseAssignmentRepository();
 const learningAnalyzer = new LlmLearningAnalyzer();
 const mentorMemory = new PrismaMastraMemory() as unknown as MastraMemory;
 const mentorAgent = new MentorAgent({ memory: mentorMemory });
@@ -205,7 +217,9 @@ const submitWritingCodeUseCase = new SubmitWritingCodeUseCase(
   learningAnalysisScheduler,
   evaluationMetricRepository
 );
-const listWritingSubmissionsUseCase = new ListWritingSubmissionsUseCase(writingSubmissionRepository);
+const listWritingSubmissionsUseCase = new ListWritingSubmissionsUseCase(
+  writingSubmissionRepository
+);
 const getWritingSubmissionUseCase = new GetWritingSubmissionUseCase(writingSubmissionRepository);
 const requestWritingFeedbackUseCase = new RequestWritingFeedbackUseCase(
   writingSubmissionRepository,
@@ -253,6 +267,24 @@ const generateRecommendationUseCase = new GenerateRecommendationUseCase(
   exerciseGenerationEventPublisher,
   fastify.log
 );
+const getMyTeamsUseCase = new GetMyTeamsUseCase(teamRepository);
+const getTeamDashboardUseCase = new GetTeamDashboardUseCase(
+  teamRepository,
+  dashboardRepository,
+  userAccountRepository
+);
+const assignExerciseToTeamUseCase = new AssignExerciseToTeamUseCase(
+  teamRepository,
+  exerciseAssignmentRepository,
+  userAccountRepository
+);
+const listOwnedExercisesUseCase = new ListOwnedExercisesUseCase(
+  exerciseAssignmentRepository,
+  userAccountRepository
+);
+const createTeamUseCase = new CreateTeamUseCase(teamRepository, userAccountRepository);
+const addTeamMemberUseCase = new AddTeamMemberUseCase(teamRepository, userAccountRepository);
+const removeTeamMemberUseCase = new RemoveTeamMemberUseCase(teamRepository, userAccountRepository);
 const generateLearningPlanWithAgentUseCase = new GenerateLearningPlanWithAgentUseCase(
   userAccountRepository,
   submissionRepository,
@@ -284,9 +316,7 @@ const getMentorAssessmentStatusUseCase = new GetMentorAssessmentStatusUseCase(
   mentorAssessmentRepository
 );
 const getCurrentMentorSprintUseCase = new GetCurrentMentorSprintUseCase(mentorSprintRepository);
-const getMentorWorkflowStepUseCase = new GetMentorWorkflowStepUseCase(
-  mentorWorkflowRepository
-);
+const getMentorWorkflowStepUseCase = new GetMentorWorkflowStepUseCase(mentorWorkflowRepository);
 const updateMentorWorkflowStepUseCase = new UpdateMentorWorkflowStepUseCase(
   mentorWorkflowRepository
 );
@@ -326,7 +356,12 @@ const agentToolRegistry = buildDefaultToolRegistry({
 });
 const agentGuard = new SafetyGuard(process.env.AGENT_GUARD_LLM === 'true');
 const agentRouter = new AgentRouter();
-const agentRuntime = new AgentRuntime(agentOSRepository, agentToolRegistry, agentGuard, agentRouter);
+const agentRuntime = new AgentRuntime(
+  agentOSRepository,
+  agentToolRegistry,
+  agentGuard,
+  agentRouter
+);
 const createAgentRunUseCase = new CreateAgentRunUseCase(
   agentOSRepository,
   agentRuntime,
@@ -424,69 +459,68 @@ await fastify.register(
   },
   { prefix: '/writing' }
 );
-await fastify.register(
-  async (instance) => {
-    learningTimeController(instance, {
-      logLearningTime: logLearningTimeUseCase,
-      getDailyLearningTime: getDailyLearningTimeUseCase,
-    });
-  }
-);
-await fastify.register(
-  async (instance) => {
-    dashboardController(instance, {
-      getStats: getDashboardStatsUseCase,
-      getActivity: getDashboardActivityUseCase,
-      getLearningAnalysis: getLearningAnalysisUseCase,
-      generateRecommendation: generateRecommendationUseCase,
-    });
-  }
-);
-await fastify.register(
-  async (instance) => {
-    mentorController(instance, {
-      generateLearningPlan: generateLearningPlanWithAgentUseCase,
-      generateNextLearningPlan: generateNextLearningPlanWithAgentUseCase,
-      generateSubmissionFeedback: generateSubmissionFeedbackWithAgentUseCase,
-      getMentorAssessmentStatus: getMentorAssessmentStatusUseCase,
-      getCurrentMentorSprint: getCurrentMentorSprintUseCase,
-      getMentorMetadataSummary: getMentorMetadataSummaryUseCase,
-      getMentorWorkflowStep: getMentorWorkflowStepUseCase,
-      updateMentorWorkflowStep: updateMentorWorkflowStepUseCase,
-      getLatestLearningPlan: getLatestLearningPlanUseCase,
-      listLearningPlans: listLearningPlansUseCase,
-      listMentorFeedback: listMentorFeedbackUseCase,
-    });
-  }
-);
-await fastify.register(
-  async (instance) => {
-    mentorChatController(instance, {
-      createThread: createMentorThreadUseCase,
-      getThread: getMentorThreadUseCase,
-      postMessage: postMentorMessageUseCase,
-    });
-  }
-);
-await fastify.register(
-  async (instance) => {
-    agentOSController(instance, {
-      createRun: createAgentRunUseCase,
-      getRun: getAgentRunUseCase,
-      continueRun: continueAgentRunUseCase,
-      confirmInvocation: confirmAgentToolInvocationUseCase,
-    });
-  }
-);
-await fastify.register(
-  async (instance) => {
-    autopilotController(instance, {
-      enqueueTrigger: enqueueAutopilotTriggerUseCase,
-      listRuns: listAutopilotRunsUseCase,
-      getRun: getAutopilotRunUseCase,
-    });
-  }
-);
+await fastify.register(async (instance) => {
+  learningTimeController(instance, {
+    logLearningTime: logLearningTimeUseCase,
+    getDailyLearningTime: getDailyLearningTimeUseCase,
+  });
+});
+await fastify.register(async (instance) => {
+  dashboardController(instance, {
+    getStats: getDashboardStatsUseCase,
+    getActivity: getDashboardActivityUseCase,
+    getLearningAnalysis: getLearningAnalysisUseCase,
+    generateRecommendation: generateRecommendationUseCase,
+  });
+});
+await fastify.register(async (instance) => {
+  teamDashboardController(instance, {
+    getMyTeams: getMyTeamsUseCase,
+    getTeamDashboard: getTeamDashboardUseCase,
+    assignExerciseToTeam: assignExerciseToTeamUseCase,
+    listOwnedExercises: listOwnedExercisesUseCase,
+    createTeam: createTeamUseCase,
+    addTeamMember: addTeamMemberUseCase,
+    removeTeamMember: removeTeamMemberUseCase,
+  });
+});
+await fastify.register(async (instance) => {
+  mentorController(instance, {
+    generateLearningPlan: generateLearningPlanWithAgentUseCase,
+    generateNextLearningPlan: generateNextLearningPlanWithAgentUseCase,
+    generateSubmissionFeedback: generateSubmissionFeedbackWithAgentUseCase,
+    getMentorAssessmentStatus: getMentorAssessmentStatusUseCase,
+    getCurrentMentorSprint: getCurrentMentorSprintUseCase,
+    getMentorMetadataSummary: getMentorMetadataSummaryUseCase,
+    getMentorWorkflowStep: getMentorWorkflowStepUseCase,
+    updateMentorWorkflowStep: updateMentorWorkflowStepUseCase,
+    getLatestLearningPlan: getLatestLearningPlanUseCase,
+    listLearningPlans: listLearningPlansUseCase,
+    listMentorFeedback: listMentorFeedbackUseCase,
+  });
+});
+await fastify.register(async (instance) => {
+  mentorChatController(instance, {
+    createThread: createMentorThreadUseCase,
+    getThread: getMentorThreadUseCase,
+    postMessage: postMentorMessageUseCase,
+  });
+});
+await fastify.register(async (instance) => {
+  agentOSController(instance, {
+    createRun: createAgentRunUseCase,
+    getRun: getAgentRunUseCase,
+    continueRun: continueAgentRunUseCase,
+    confirmInvocation: confirmAgentToolInvocationUseCase,
+  });
+});
+await fastify.register(async (instance) => {
+  autopilotController(instance, {
+    enqueueTrigger: enqueueAutopilotTriggerUseCase,
+    listRuns: listAutopilotRunsUseCase,
+    getRun: getAutopilotRunUseCase,
+  });
+});
 
 // エラーハンドリング
 fastify.setErrorHandler((error, request, reply) => {

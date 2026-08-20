@@ -5,8 +5,7 @@ import { PromptSanitizer } from './prompt-sanitizer.js';
 
 const DEFAULT_MAX_TOKENS = 700;
 
-const wrapUserInput = (value: string) =>
-  `---USER_INPUT_START---\n${value}\n---USER_INPUT_END---`;
+const wrapUserInput = (value: string) => `---USER_INPUT_START---\n${value}\n---USER_INPUT_END---`;
 
 // TODO: Add size-based truncation for code/answers/history if prompt grows too large.
 const sanitizeOrMask = (value: string, fieldName: string, allowBase64 = false): string => {
@@ -23,9 +22,7 @@ const buildExerciseContext = (context: MentorChatContext['exercise']): string =>
   const code = sanitizeOrMask(context.code, 'CODE', true);
   const questions =
     context.questions.length > 0
-      ? context.questions
-          .map((q) => `- [${q.questionIndex}] ${q.questionText}`)
-          .join('\n')
+      ? context.questions.map((q) => `- [${q.questionIndex}] ${q.questionText}`).join('\n')
       : '（設問なし）';
   const goals = context.learningGoals.length > 0 ? context.learningGoals.join(', ') : '未設定';
 
@@ -102,9 +99,7 @@ const buildProgressContext = (context: MentorChatContext['progress']): string =>
 
 const buildHistory = (context: MentorChatContext['history']): string => {
   if (context.length === 0) return '（なし）';
-  return context
-    .map((message) => `${message.role}: ${wrapUserInput(message.content)}`)
-    .join('\n');
+  return context.map((message) => `${message.role}: ${wrapUserInput(message.content)}`).join('\n');
 };
 
 export class LLMMentorChatGenerator implements IMentorChatGenerator {

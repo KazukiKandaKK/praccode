@@ -1,4 +1,8 @@
-import { IExerciseGenerator, ExerciseGenerateInput, GeneratedExercise } from '../../domain/ports/IExerciseGenerator';
+import {
+  IExerciseGenerator,
+  ExerciseGenerateInput,
+  GeneratedExercise,
+} from '../../domain/ports/IExerciseGenerator';
 import { generateExercise } from '../llm/generator';
 
 export class ExerciseGeneratorService implements IExerciseGenerator {

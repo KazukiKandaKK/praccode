@@ -98,9 +98,7 @@ export function MentorFeedbackHistory({ userId, userName }: Props) {
               次の学習計画を作成
             </Button>
             {!loading && feedback.length === 0 && (
-              <span className="text-xs text-slate-500">
-                フィードバックが集まると作成できます
-              </span>
+              <span className="text-xs text-slate-500">フィードバックが集まると作成できます</span>
             )}
           </div>
         </div>
@@ -127,17 +125,11 @@ export function MentorFeedbackHistory({ userId, userName }: Props) {
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="space-y-2">
-                      <div className="text-sm text-slate-400">
-                        {formatDate(entry.createdAt)}
-                      </div>
+                      <div className="text-sm text-slate-400">{formatDate(entry.createdAt)}</div>
                       <div className="text-slate-100 font-semibold">{entry.feedback.overall}</div>
                       <div className="flex flex-wrap gap-2 text-xs text-slate-400">
-                        <Badge variant="default">
-                          Submission {entry.submissionId.slice(0, 8)}
-                        </Badge>
-                        {entry.modelId && (
-                          <Badge variant="default">{entry.modelId}</Badge>
-                        )}
+                        <Badge variant="default">Submission {entry.submissionId.slice(0, 8)}</Badge>
+                        {entry.modelId && <Badge variant="default">{entry.modelId}</Badge>}
                       </div>
                     </div>
                     <Link href={`/submissions/${entry.submissionId}`}>
