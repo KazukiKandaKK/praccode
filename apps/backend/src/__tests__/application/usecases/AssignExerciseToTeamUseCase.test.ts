@@ -9,6 +9,9 @@ const mockTeamRepo: Mocked<ITeamRepository> = {
   getTeamsForUser: vi.fn(),
   getMembersByTeamIds: vi.fn(),
   isMemberOfTeam: vi.fn(),
+  createTeam: vi.fn(),
+  addMember: vi.fn(),
+  removeMember: vi.fn(),
 };
 
 const mockExerciseAssignmentRepo: Mocked<IExerciseAssignmentRepository> = {

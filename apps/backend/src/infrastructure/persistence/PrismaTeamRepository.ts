@@ -41,4 +41,30 @@ export class PrismaTeamRepository implements ITeamRepository {
     });
     return membership !== null;
   }
+
+  async createTeam(name: string, creatorUserId: string): Promise<TeamRecord> {
+    const team = await prisma.team.create({
+      data: {
+        name,
+        members: {
+          create: { userId: creatorUserId },
+        },
+      },
+    });
+    return { id: team.id, name: team.name };
+  }
+
+  async addMember(teamId: string, userId: string): Promise<void> {
+    await prisma.teamMembership.upsert({
+      where: { userId_teamId: { userId, teamId } },
+      create: { teamId, userId },
+      update: {},
+    });
+  }
+
+  async removeMember(teamId: string, userId: string): Promise<void> {
+    await prisma.teamMembership.deleteMany({
+      where: { teamId, userId },
+    });
+  }
 }

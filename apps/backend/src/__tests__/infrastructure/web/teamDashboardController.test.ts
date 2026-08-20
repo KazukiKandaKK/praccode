@@ -5,6 +5,9 @@ import { GetMyTeamsUseCase } from '@/application/usecases/team/GetMyTeamsUseCase
 import { GetTeamDashboardUseCase } from '@/application/usecases/team/GetTeamDashboardUseCase';
 import { AssignExerciseToTeamUseCase } from '@/application/usecases/team/AssignExerciseToTeamUseCase';
 import { ListOwnedExercisesUseCase } from '@/application/usecases/team/ListOwnedExercisesUseCase';
+import { CreateTeamUseCase } from '@/application/usecases/team/CreateTeamUseCase';
+import { AddTeamMemberUseCase } from '@/application/usecases/team/AddTeamMemberUseCase';
+import { RemoveTeamMemberUseCase } from '@/application/usecases/team/RemoveTeamMemberUseCase';
 import { ApplicationError } from '@/application/errors/ApplicationError';
 
 const mockGetMyTeams = {
@@ -23,6 +26,18 @@ const mockListOwnedExercises = {
   execute: vi.fn(),
 } as unknown as Mocked<ListOwnedExercisesUseCase>;
 
+const mockCreateTeam = {
+  execute: vi.fn(),
+} as unknown as Mocked<CreateTeamUseCase>;
+
+const mockAddTeamMember = {
+  execute: vi.fn(),
+} as unknown as Mocked<AddTeamMemberUseCase>;
+
+const mockRemoveTeamMember = {
+  execute: vi.fn(),
+} as unknown as Mocked<RemoveTeamMemberUseCase>;
+
 describe('teamDashboardController', () => {
   let app: FastifyInstance;
 
@@ -34,6 +49,9 @@ describe('teamDashboardController', () => {
         getTeamDashboard: mockGetTeamDashboard,
         assignExerciseToTeam: mockAssignExerciseToTeam,
         listOwnedExercises: mockListOwnedExercises,
+        createTeam: mockCreateTeam,
+        addTeamMember: mockAddTeamMember,
+        removeTeamMember: mockRemoveTeamMember,
       });
       done();
     });
@@ -125,5 +143,73 @@ describe('teamDashboardController', () => {
 
     expect(response.statusCode).toBe(200);
     expect(JSON.parse(response.payload).exercises).toHaveLength(1);
+  });
+
+  it('チームを作成する', async () => {
+    mockCreateTeam.execute.mockResolvedValue({ id: 'team-1', name: 'Team A' });
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/teams',
+      headers: { 'x-user-id': 'd2d3b878-348c-4f70-9a57-7988351f5c69' },
+      payload: { name: 'Team A' },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(JSON.parse(response.payload)).toEqual({ id: 'team-1', name: 'Team A' });
+  });
+
+  it('チーム名が空の場合は400を返す', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/teams',
+      headers: { 'x-user-id': 'd2d3b878-348c-4f70-9a57-7988351f5c69' },
+      payload: { name: '' },
+    });
+
+    expect(response.statusCode).toBe(400);
+  });
+
+  it('メールアドレスでメンバーを追加する', async () => {
+    mockAddTeamMember.execute.mockResolvedValue(undefined);
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/teams/7ef84a3d-8f80-4b45-b07b-0bd6b0fc8ab0/members',
+      headers: { 'x-user-id': 'd2d3b878-348c-4f70-9a57-7988351f5c69' },
+      payload: { email: 'new-member@example.com' },
+    });
+
+    expect(response.statusCode).toBe(204);
+    expect(mockAddTeamMember.execute).toHaveBeenCalledWith({
+      requesterId: 'd2d3b878-348c-4f70-9a57-7988351f5c69',
+      teamId: '7ef84a3d-8f80-4b45-b07b-0bd6b0fc8ab0',
+      memberEmail: 'new-member@example.com',
+    });
+  });
+
+  it('存在しないユーザーの追加は404を返す', async () => {
+    mockAddTeamMember.execute.mockRejectedValue(new ApplicationError('User not found', 404));
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/teams/7ef84a3d-8f80-4b45-b07b-0bd6b0fc8ab0/members',
+      headers: { 'x-user-id': 'd2d3b878-348c-4f70-9a57-7988351f5c69' },
+      payload: { email: 'nobody@example.com' },
+    });
+
+    expect(response.statusCode).toBe(404);
+  });
+
+  it('メンバーを削除する', async () => {
+    mockRemoveTeamMember.execute.mockResolvedValue(undefined);
+
+    const response = await app.inject({
+      method: 'DELETE',
+      url: '/teams/7ef84a3d-8f80-4b45-b07b-0bd6b0fc8ab0/members/7ef84a3d-8f80-4b45-b07b-0bd6b0fc8ab1',
+      headers: { 'x-user-id': 'd2d3b878-348c-4f70-9a57-7988351f5c69' },
+    });
+
+    expect(response.statusCode).toBe(204);
   });
 });

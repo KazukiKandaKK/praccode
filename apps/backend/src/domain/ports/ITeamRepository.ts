@@ -17,4 +17,10 @@ export interface ITeamRepository {
   getMembersByTeamIds(teamIds: string[]): Promise<TeamMemberRecord[]>;
   /** 指定ユーザーが指定チームに所属しているか */
   isMemberOfTeam(userId: string, teamId: string): Promise<boolean>;
+  /** チームを作成し、作成者を最初のメンバーとして登録する */
+  createTeam(name: string, creatorUserId: string): Promise<TeamRecord>;
+  /** チームにメンバーを追加する（既に所属していれば何もしない） */
+  addMember(teamId: string, userId: string): Promise<void>;
+  /** チームからメンバーを削除する */
+  removeMember(teamId: string, userId: string): Promise<void>;
 }

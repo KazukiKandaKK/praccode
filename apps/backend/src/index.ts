@@ -67,6 +67,9 @@ import { GetMyTeamsUseCase } from './application/usecases/team/GetMyTeamsUseCase
 import { GetTeamDashboardUseCase } from './application/usecases/team/GetTeamDashboardUseCase.js';
 import { AssignExerciseToTeamUseCase } from './application/usecases/team/AssignExerciseToTeamUseCase.js';
 import { ListOwnedExercisesUseCase } from './application/usecases/team/ListOwnedExercisesUseCase.js';
+import { CreateTeamUseCase } from './application/usecases/team/CreateTeamUseCase.js';
+import { AddTeamMemberUseCase } from './application/usecases/team/AddTeamMemberUseCase.js';
+import { RemoveTeamMemberUseCase } from './application/usecases/team/RemoveTeamMemberUseCase.js';
 import { PrismaExerciseAssignmentRepository } from './infrastructure/persistence/PrismaExerciseAssignmentRepository.js';
 import { teamDashboardController } from './infrastructure/web/teamDashboardController.js';
 import { ExerciseGeneratorService } from './infrastructure/services/ExerciseGeneratorService.js';
@@ -277,6 +280,9 @@ const listOwnedExercisesUseCase = new ListOwnedExercisesUseCase(
   exerciseAssignmentRepository,
   userAccountRepository
 );
+const createTeamUseCase = new CreateTeamUseCase(teamRepository, userAccountRepository);
+const addTeamMemberUseCase = new AddTeamMemberUseCase(teamRepository, userAccountRepository);
+const removeTeamMemberUseCase = new RemoveTeamMemberUseCase(teamRepository, userAccountRepository);
 const generateLearningPlanWithAgentUseCase = new GenerateLearningPlanWithAgentUseCase(
   userAccountRepository,
   submissionRepository,
@@ -473,6 +479,9 @@ await fastify.register(
       getTeamDashboard: getTeamDashboardUseCase,
       assignExerciseToTeam: assignExerciseToTeamUseCase,
       listOwnedExercises: listOwnedExercisesUseCase,
+      createTeam: createTeamUseCase,
+      addTeamMember: addTeamMemberUseCase,
+      removeTeamMember: removeTeamMemberUseCase,
     });
   }
 );
