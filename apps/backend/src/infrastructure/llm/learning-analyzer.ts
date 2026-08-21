@@ -3,6 +3,7 @@
  * ユーザーの提出履歴からLLMで強み・弱み・おすすめを分析
  */
 
+import { LearningAnalysisResult } from '../../domain/ports/ILearningAnalyzer';
 import { generateWithOllama } from './llm-client.js';
 import { loadPrompt, renderPrompt } from './prompt-loader.js';
 
@@ -23,20 +24,13 @@ interface WritingSubmissionData {
   feedback: string | null;
 }
 
-interface AnalysisResult {
-  strengths: string[];
-  weaknesses: string[];
-  recommendations: string[];
-  summary: string;
-}
-
 /**
  * 提出データから学習分析を生成
  */
 export async function analyzeLearningProgress(
   readingSubmissions: SubmissionData[],
   writingSubmissions: WritingSubmissionData[]
-): Promise<AnalysisResult> {
+): Promise<LearningAnalysisResult> {
   // 統計データを計算
   const stats = calculateStats(readingSubmissions, writingSubmissions);
 
@@ -180,7 +174,7 @@ function buildAnalysisPrompt(
   });
 }
 
-export function generateFallbackAnalysis(stats: Stats): AnalysisResult {
+export function generateFallbackAnalysis(stats: Stats): LearningAnalysisResult {
   const strengths: string[] = [];
   const weaknesses: string[] = [];
   const recommendations: string[] = [];
@@ -228,21 +222,4 @@ export function generateFallbackAnalysis(stats: Stats): AnalysisResult {
       : 'まだ提出データがありません。';
 
   return { strengths, weaknesses, recommendations, summary };
-}
-
-/**
- * 弱みに基づいた問題生成のためのプロンプト情報を生成
- */
-export function getRecommendedProblemContext(analysis: AnalysisResult): {
-  focusAreas: string[];
-  difficulty: number;
-  suggestedLanguage?: string;
-} {
-  const focusAreas = analysis.weaknesses.length > 0 ? analysis.weaknesses : ['基礎力強化'];
-  const difficulty = analysis.weaknesses.length > 1 ? 2 : 3; // 弱みが多い場合は易しめに
-
-  return {
-    focusAreas,
-    difficulty,
-  };
 }

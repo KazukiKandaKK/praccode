@@ -2,7 +2,6 @@ import { IWritingSubmissionRepository } from '../../../domain/ports/IWritingSubm
 import { ICodeWritingFeedbackGenerator } from '../../../domain/ports/ICodeWritingFeedbackGenerator';
 import { ILlmHealthChecker } from '../../../domain/ports/ILlmHealthChecker';
 import { ApplicationError } from '../../errors/ApplicationError';
-import { PromptSanitizer } from '../../../infrastructure/llm/prompt-sanitizer';
 
 export class RequestWritingFeedbackUseCase {
   constructor(
@@ -31,16 +30,6 @@ export class RequestWritingFeedbackUseCase {
     }
 
     const testOutput = [submission.stdout, submission.stderr].filter(Boolean).join('\n\n');
-    const trimmedOutput =
-      testOutput.length > 500 ? testOutput.slice(0, 500) + '\n... (省略)' : testOutput;
-
-    PromptSanitizer.sanitize(submission.code, 'USER_CODE', { allowBase64: true });
-    PromptSanitizer.sanitize(submission.challenge.title, 'CHALLENGE_TITLE');
-    PromptSanitizer.sanitize(submission.challenge.description ?? '', 'CHALLENGE_DESCRIPTION');
-    PromptSanitizer.sanitize(submission.challenge.testCode ?? '', 'TEST_CODE', {
-      allowBase64: true,
-    });
-    PromptSanitizer.sanitize(trimmedOutput, 'TEST_OUTPUT');
 
     await this.submissionRepo.markFeedbackGenerating(submission.id);
 

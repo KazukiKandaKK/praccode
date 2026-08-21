@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { IAgentOSRepository, AgentRunMode } from '../../domain/ports/IAgentOSRepository';
+import type { IAgentRuntime } from '../../domain/ports/IAgentRuntime';
 import { generateWithOllama } from '../llm/llm-client.js';
 import type { ToolRegistry } from './tool-registry';
 import { SafetyGuard } from './guardrail';
@@ -52,7 +53,7 @@ type ToolResult = {
   errorMessage?: string;
 };
 
-export class AgentRuntime {
+export class AgentRuntime implements IAgentRuntime {
   constructor(
     private readonly repo: IAgentOSRepository,
     private readonly registry: ToolRegistry,

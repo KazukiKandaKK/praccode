@@ -3,9 +3,7 @@ import type {
   LearningPlanRecord,
 } from '@/domain/ports/ILearningPlanRepository';
 import type { LearningPlan, PresetAnswer } from '@/mastra/mentorAgent';
-import { PrismaClient } from '@prisma/client';
-
-const client = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 export class PrismaLearningPlanRepository implements ILearningPlanRepository {
   async savePlan(params: {
@@ -16,7 +14,7 @@ export class PrismaLearningPlanRepository implements ILearningPlanRepository {
     modelId?: string | null;
     temperature?: number | null;
   }): Promise<LearningPlanRecord> {
-    const created = await client.learningPlan.create({
+    const created = await prisma.learningPlan.create({
       data: {
         userId: params.userId,
         plan: params.plan,
@@ -31,7 +29,7 @@ export class PrismaLearningPlanRepository implements ILearningPlanRepository {
   }
 
   async getLatestByUser(userId: string): Promise<LearningPlanRecord | null> {
-    const plan = await client.learningPlan.findFirst({
+    const plan = await prisma.learningPlan.findFirst({
       where: { userId },
       orderBy: { createdAt: 'desc' },
     });
@@ -41,7 +39,7 @@ export class PrismaLearningPlanRepository implements ILearningPlanRepository {
   }
 
   async listByUser(userId: string, limit = 20): Promise<LearningPlanRecord[]> {
-    const plans = await client.learningPlan.findMany({
+    const plans = await prisma.learningPlan.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
       take: limit,
