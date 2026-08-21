@@ -11,6 +11,10 @@ const statsQuerySchema = z.object({
   userId: z.string().uuid(),
 });
 
+const analyzeBodySchema = z.object({
+  userId: z.string().uuid(),
+});
+
 const generateRecommendationSchema = z.object({
   userId: z.string().uuid(),
   language: z.string().optional(),
@@ -43,13 +47,17 @@ export const dashboardController = (fastify: FastifyInstance, deps: DashboardCon
     return reply.send(result);
   });
 
-  fastify.post<{ Body: { userId: string } }>('/dashboard/analyze', async (request, reply) => {
-    const { userId } = request.body;
-    if (!userId) {
-      return reply.status(400).send({ error: 'userId is required' });
+  fastify.post('/dashboard/analyze', async (request, reply) => {
+    try {
+      const body = analyzeBodySchema.parse(request.body);
+      const result = await deps.getLearningAnalysis.execute({ userId: body.userId, force: true });
+      return reply.send(result);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send({ error: 'Invalid input', issues: error.issues });
+      }
+      throw error;
     }
-    const result = await deps.getLearningAnalysis.execute({ userId, force: true });
-    return reply.send(result);
   });
 
   fastify.post('/dashboard/generate-recommendation', async (request, reply) => {

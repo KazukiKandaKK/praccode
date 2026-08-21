@@ -1,12 +1,10 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import type {
   EvaluationMetric,
   EvaluationMetricRecord,
   EvaluationMetricSource,
   IEvaluationMetricRepository,
 } from '@/domain/ports/IEvaluationMetricRepository';
-
-const client = new PrismaClient();
 
 export class PrismaEvaluationMetricRepository implements IEvaluationMetricRepository {
   async saveMetrics(params: {
@@ -20,7 +18,7 @@ export class PrismaEvaluationMetricRepository implements IEvaluationMetricReposi
       return;
     }
 
-    await client.evaluationMetric.createMany({
+    await prisma.evaluationMetric.createMany({
       data: params.metrics.map((metric) => ({
         userId: params.userId,
         sourceType: params.sourceType,
@@ -33,7 +31,7 @@ export class PrismaEvaluationMetricRepository implements IEvaluationMetricReposi
   }
 
   async listByUser(userId: string, limit = 200): Promise<EvaluationMetricRecord[]> {
-    const rows = await client.evaluationMetric.findMany({
+    const rows = await prisma.evaluationMetric.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
       take: limit,

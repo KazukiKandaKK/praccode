@@ -3,8 +3,13 @@
  * 一定条件で学習分析を実行する
  */
 
+import crypto from 'node:crypto';
 import { prisma } from '../../lib/prisma.js';
 import { analyzeLearningProgress } from '../llm/learning-analyzer.js';
+
+function hashUserId(userId: string): string {
+  return crypto.createHash('sha256').update(userId).digest('hex').slice(0, 12);
+}
 
 // 分析トリガー条件: N回提出ごと
 const ANALYSIS_TRIGGER_INTERVAL = 3;
@@ -15,6 +20,8 @@ const ANALYSIS_TRIGGER_INTERVAL = 3;
  */
 export async function triggerLearningAnalysis(userId: string): Promise<void> {
   try {
+    const userIdHash = hashUserId(userId);
+
     // 現在の分析状態を確認
     const existingAnalysis = await prisma.userLearningAnalysis.findUnique({
       where: { userId },
@@ -40,7 +47,7 @@ export async function triggerLearningAnalysis(userId: string): Promise<void> {
     }
 
     console.info(
-      `Triggering learning analysis for user ${userId} (${totalSubmissions} submissions)`
+      `Triggering learning analysis for user ${userIdHash} (${totalSubmissions} submissions)`
     );
 
     // 提出データを取得
@@ -120,7 +127,7 @@ export async function triggerLearningAnalysis(userId: string): Promise<void> {
       },
     });
 
-    console.info(`Learning analysis completed for user ${userId}`);
+    console.info(`Learning analysis completed for user ${userIdHash}`);
   } catch (error) {
     console.error('Learning analysis trigger failed:', error);
     // エラーは握りつぶして、メイン処理には影響を与えない

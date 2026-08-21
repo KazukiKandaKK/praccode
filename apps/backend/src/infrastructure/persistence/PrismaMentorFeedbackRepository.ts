@@ -3,9 +3,7 @@ import type {
   MentorFeedbackRecord,
 } from '@/domain/ports/IMentorFeedbackRepository';
 import type { MentorFeedback } from '@/mastra/mentorAgent';
-import { PrismaClient } from '@prisma/client';
-
-const client = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 export class PrismaMentorFeedbackRepository implements IMentorFeedbackRepository {
   async saveFeedback(params: {
@@ -15,7 +13,7 @@ export class PrismaMentorFeedbackRepository implements IMentorFeedbackRepository
     modelId?: string | null;
     temperature?: number | null;
   }): Promise<MentorFeedbackRecord> {
-    const created = await client.mentorFeedbackLog.create({
+    const created = await prisma.mentorFeedbackLog.create({
       data: {
         userId: params.userId,
         submissionId: params.submissionId,
@@ -29,7 +27,7 @@ export class PrismaMentorFeedbackRepository implements IMentorFeedbackRepository
   }
 
   async listByUser(userId: string, limit = 20): Promise<MentorFeedbackRecord[]> {
-    const feedbacks = await client.mentorFeedbackLog.findMany({
+    const feedbacks = await prisma.mentorFeedbackLog.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
       take: limit,
