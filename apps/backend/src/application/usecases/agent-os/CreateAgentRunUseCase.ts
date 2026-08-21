@@ -1,10 +1,10 @@
 import type { AgentRunMode, IAgentOSRepository } from '@/domain/ports/IAgentOSRepository';
-import type { AgentRuntime } from '@/infrastructure/agent-os/agent-runtime';
+import type { IAgentRuntime } from '@/domain/ports/IAgentRuntime';
 
 export class CreateAgentRunUseCase {
   constructor(
     private readonly repo: IAgentOSRepository,
-    private readonly runtime: AgentRuntime,
+    private readonly runtime: IAgentRuntime,
     private readonly logger: {
       info: (...args: unknown[]) => void;
       error: (...args: unknown[]) => void;

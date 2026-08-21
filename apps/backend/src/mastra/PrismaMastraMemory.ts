@@ -2,9 +2,8 @@
 // @ts-nocheck
 import { randomUUID } from 'crypto';
 import { MastraMemory, type CoreMessage, type MemoryConfig, type MessageType } from '@mastra/core';
-import { PrismaClient } from '@prisma/client';
-
-const client = new PrismaClient();
+import type { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 
 type RememberArgs = {
   threadId?: string;
@@ -14,8 +13,10 @@ type RememberArgs = {
 };
 
 export class PrismaMastraMemory extends MastraMemory {
-  constructor() {
+  private client: PrismaClient;
+  constructor(client: PrismaClient = prisma) {
     super({ name: 'mentor-memory' });
+    this.client = client;
   }
 
   async getSystemMessage(): Promise<string | null> {
@@ -56,7 +57,7 @@ export class PrismaMastraMemory extends MastraMemory {
   }
 
   async getThreadById({ threadId }: { threadId: string }) {
-    const thread = await client.mastraThread.findUnique({
+    const thread = await this.client.mastraThread.findUnique({
       where: { id: threadId },
     });
     if (!thread) return null;
@@ -71,7 +72,7 @@ export class PrismaMastraMemory extends MastraMemory {
   }
 
   async getThreadsByResourceId({ resourceId }: { resourceId: string }) {
-    const threads = await client.mastraThread.findMany({
+    const threads = await this.client.mastraThread.findMany({
       where: { resourceId },
       orderBy: { updatedAt: 'desc' },
     });
@@ -95,7 +96,7 @@ export class PrismaMastraMemory extends MastraMemory {
       metadata?: Record<string, unknown>;
     };
   }) {
-    const saved = await client.mastraThread.upsert({
+    const saved = await this.client.mastraThread.upsert({
       where: { id: thread.id },
       create: {
         id: thread.id,
@@ -121,9 +122,9 @@ export class PrismaMastraMemory extends MastraMemory {
   }
 
   async saveMessages({ messages }: { messages: MessageType[] }) {
-    await client.$transaction(
+    await this.client.$transaction(
       messages.map((m) =>
-        client.mastraMessage.create({
+        this.client.mastraMessage.create({
           data: {
             id: m.id || randomUUID(),
             threadId: m.threadId,
@@ -152,7 +153,7 @@ export class PrismaMastraMemory extends MastraMemory {
     threadConfig?: MemoryConfig;
   }): Promise<{ messages: CoreMessage[]; uiMessages: any[] }> {
     const take = selectBy?.last && selectBy.last > 0 ? selectBy.last : undefined;
-    const records = await client.mastraMessage.findMany({
+    const records = await this.client.mastraMessage.findMany({
       where: { threadId },
       orderBy: { createdAt: 'desc' },
       take,
@@ -179,9 +180,9 @@ export class PrismaMastraMemory extends MastraMemory {
   }
 
   async deleteThread(threadId: string) {
-    await client.$transaction([
-      client.mastraMessage.deleteMany({ where: { threadId } }),
-      client.mastraThread.deleteMany({ where: { id: threadId } }),
+    await this.client.$transaction([
+      this.client.mastraMessage.deleteMany({ where: { threadId } }),
+      this.client.mastraThread.deleteMany({ where: { id: threadId } }),
     ]);
   }
 

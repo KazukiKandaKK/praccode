@@ -3,9 +3,9 @@ import {
   analyzeLearningProgress,
   calculateStats,
   generateFallbackAnalysis,
-  getRecommendedProblemContext,
   Stats,
 } from '@/infrastructure/llm/learning-analyzer';
+import { getRecommendedProblemContext } from '@/domain/services/recommendation';
 import * as llmClient from '@/infrastructure/llm/llm-client';
 
 vi.mock('@/infrastructure/llm/llm-client');
