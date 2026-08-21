@@ -223,4 +223,3 @@ export function generateFallbackAnalysis(stats: Stats): LearningAnalysisResult {
 
   return { strengths, weaknesses, recommendations, summary };
 }
-
