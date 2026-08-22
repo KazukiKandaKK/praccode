@@ -49,6 +49,16 @@ describe('writingRoutes', () => {
 
       expect(response.statusCode).toBe(200);
     });
+
+    it('異常系: userId が UUID でない場合 400 を返す', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/writing/challenges?userId=not-a-uuid',
+      });
+
+      expect(response.statusCode).toBe(400);
+      expect(deps.listChallenges.execute).not.toHaveBeenCalled();
+    });
   });
 
   describe('POST /writing/challenges/auto', () => {
@@ -69,6 +79,17 @@ describe('writingRoutes', () => {
       await tick();
 
       expect(deps.autoGenerateChallenge.execute).toHaveBeenCalled();
+    });
+
+    it('異常系: 不正な difficulty の場合 400 を返す', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/writing/challenges/auto',
+        payload: { userId: 'd2d3b878-348c-4f70-9a57-7988351f5c69', language: 'go', difficulty: 10 },
+      });
+
+      expect(response.statusCode).toBe(400);
+      expect(deps.autoGenerateChallenge.execute).not.toHaveBeenCalled();
     });
   });
 
@@ -97,6 +118,29 @@ describe('writingRoutes', () => {
       await tick();
 
       expect(deps.submitCode.execute).toHaveBeenCalled();
+    });
+
+    it('異常系: 必須フィールドが欠けている場合 400 を返す', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/writing/submissions',
+        payload: { userId: 'd2d3b878-348c-4f70-9a57-7988351f5c69' },
+      });
+
+      expect(response.statusCode).toBe(400);
+      expect(deps.submitCode.execute).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('GET /writing/submissions/:id', () => {
+    it('異常系: 不正な id の場合 400 を返す', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/writing/submissions/not-a-uuid',
+      });
+
+      expect(response.statusCode).toBe(400);
+      expect(deps.getSubmission.execute).not.toHaveBeenCalled();
     });
   });
 });
