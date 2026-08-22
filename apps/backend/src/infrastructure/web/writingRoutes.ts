@@ -30,6 +30,14 @@ const autoGenerateChallengeSchema = z.object({
   topic: z.string().optional(),
 });
 
+const queryUserIdSchema = z.object({
+  userId: z.string().uuid(),
+});
+
+const idParamsSchema = z.object({
+  id: z.string().uuid(),
+});
+
 type UseCaseExecutor<I, O> = {
   execute: (input: I) => Promise<O>;
 };
@@ -69,34 +77,35 @@ export interface WritingRouteDeps {
 export async function writingRoutes(fastify: FastifyInstance, deps: WritingRouteDeps) {
   // GET /writing/challenges - お題一覧（READY状態のもののみ、ユーザーに割り当てられたもののみ）
   fastify.get('/challenges', async (request: FastifyRequest, reply: FastifyReply) => {
-    const userId = (request.query as { userId?: string }).userId;
-
-    if (!userId) {
-      return reply.status(400).send({ error: 'userId is required' });
+    try {
+      const { userId } = queryUserIdSchema.parse(request.query);
+      const challenges = await deps.listChallenges.execute(userId);
+      return reply.send({ challenges });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send({ error: 'Invalid input', issues: error.issues });
+      }
+      throw error;
     }
-
-    const challenges = await deps.listChallenges.execute(userId);
-    return reply.send({ challenges });
   });
 
   // GET /writing/challenges/:id - お題詳細
   fastify.get(
     '/challenges/:id',
     async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-      const { id } = request.params;
-      const userId = (request.query as { userId?: string }).userId;
-
-      if (!userId) {
-        return reply.status(400).send({ error: 'userId is required' });
-      }
-
       try {
+        const { id } = idParamsSchema.parse(request.params);
+        const { userId } = queryUserIdSchema.parse(request.query);
+
         const challenge = await deps.getChallenge.execute({ id, userId });
         // assignedToIdはレスポンスに含めない
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { assignedToId, ...challengeResponse } = challenge;
         return reply.send(challengeResponse);
       } catch (error) {
+        if (error instanceof z.ZodError) {
+          return reply.status(400).send({ error: 'Invalid input', issues: error.issues });
+        }
         if (error instanceof ApplicationError) {
           return reply.status(error.statusCode).send({ error: error.message });
         }
@@ -108,16 +117,23 @@ export async function writingRoutes(fastify: FastifyInstance, deps: WritingRoute
 
   // POST /writing/challenges - お題作成（管理者用）
   fastify.post('/challenges', async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = createChallengeSchema.parse(request.body);
+    try {
+      const body = createChallengeSchema.parse(request.body);
 
-    const challenge = await deps.createChallenge.execute(body);
-    return reply.status(201).send(challenge);
+      const challenge = await deps.createChallenge.execute(body);
+      return reply.status(201).send(challenge);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send({ error: 'Invalid input', issues: error.issues });
+      }
+      throw error;
+    }
   });
 
   // POST /writing/challenges/auto - LLMでお題を自動生成
   fastify.post('/challenges/auto', async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = autoGenerateChallengeSchema.parse(request.body);
     try {
+      const body = autoGenerateChallengeSchema.parse(request.body);
       const result = await deps.autoGenerateChallenge.execute(body);
       return reply.status(202).send({
         challengeId: result.challengeId,
@@ -125,6 +141,9 @@ export async function writingRoutes(fastify: FastifyInstance, deps: WritingRoute
         message: 'Challenge generation started',
       });
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send({ error: 'Invalid input', issues: error.issues });
+      }
       if (error instanceof ApplicationError) {
         return reply.status(error.statusCode).send({ error: error.message });
       }
@@ -170,12 +189,15 @@ export async function writingRoutes(fastify: FastifyInstance, deps: WritingRoute
   fastify.get(
     '/submissions/:id',
     async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-      const { id } = request.params;
-
       try {
+        const { id } = idParamsSchema.parse(request.params);
+
         const submission = await deps.getSubmission.execute(id);
         return reply.send(submission);
       } catch (error) {
+        if (error instanceof z.ZodError) {
+          return reply.status(400).send({ error: 'Invalid input', issues: error.issues });
+        }
         if (error instanceof ApplicationError) {
           return reply.status(error.statusCode).send({ error: error.message });
         }
@@ -189,15 +211,18 @@ export async function writingRoutes(fastify: FastifyInstance, deps: WritingRoute
   fastify.get(
     '/submissions',
     async (request: FastifyRequest<{ Querystring: { userId?: string } }>, reply: FastifyReply) => {
-      const { userId } = request.query;
+      try {
+        const { userId } = queryUserIdSchema.parse(request.query);
 
-      if (!userId) {
-        return reply.status(400).send({ error: 'userId is required' });
+        const submissions = await deps.listSubmissions.execute(userId);
+
+        return reply.send({ submissions });
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          return reply.status(400).send({ error: 'Invalid input', issues: error.issues });
+        }
+        throw error;
       }
-
-      const submissions = await deps.listSubmissions.execute(userId);
-
-      return reply.send({ submissions });
     }
   );
 
@@ -205,9 +230,9 @@ export async function writingRoutes(fastify: FastifyInstance, deps: WritingRoute
   fastify.post(
     '/submissions/:id/feedback',
     async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-      const { id } = request.params;
-
       try {
+        const { id } = idParamsSchema.parse(request.params);
+
         const result = await deps.requestFeedback.execute(id);
 
         return reply.status(202).send({
@@ -216,6 +241,9 @@ export async function writingRoutes(fastify: FastifyInstance, deps: WritingRoute
           message: 'Feedback generation started',
         });
       } catch (error) {
+        if (error instanceof z.ZodError) {
+          return reply.status(400).send({ error: 'Invalid input', issues: error.issues });
+        }
         if (error instanceof PromptInjectionError) {
           return reply.status(400).send({
             error: 'Invalid input',

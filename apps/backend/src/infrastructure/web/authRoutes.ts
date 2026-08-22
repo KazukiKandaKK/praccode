@@ -9,6 +9,7 @@ import type { VerifyEmailInput } from '../../application/usecases/VerifyEmailUse
 import type { RequestPasswordResetInput } from '../../application/usecases/RequestPasswordResetUseCase.js';
 import type { ResetPasswordInput } from '../../application/usecases/ResetPasswordUseCase.js';
 import { ApplicationError } from '../../application/errors/ApplicationError.js';
+import { hashUserId } from '../../lib/hashUserId.js';
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -84,7 +85,7 @@ export async function authRoutes(fastify: FastifyInstance, deps: AuthControllerD
       });
 
       fastify.log.info(
-        { userId: result.user.id, email: result.user.email, confirmUrl: result.confirmUrl },
+        { userIdHash: hashUserId(result.user.id) },
         'User registered, verification email sent, preset data assigned'
       );
 

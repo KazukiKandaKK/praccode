@@ -18,6 +18,10 @@ const byIdQuerySchema = z.object({
   userId: z.string().uuid(),
 });
 
+const idParamsSchema = z.object({
+  id: z.string().uuid(),
+});
+
 export function exerciseController(
   fastify: FastifyInstance,
   listExercises: ListExercisesUseCase,
@@ -44,7 +48,7 @@ export function exerciseController(
     '/:id',
     async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
       try {
-        const { id } = request.params;
+        const { id } = idParamsSchema.parse(request.params);
         const { userId } = byIdQuerySchema.parse(request.query);
 
         const exercise = await getExerciseById.execute({ exerciseId: id, userId });
@@ -70,7 +74,7 @@ export function exerciseController(
     '/:id/events',
     async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
       try {
-        const { id } = request.params;
+        const { id } = idParamsSchema.parse(request.params);
         const { userId } = byIdQuerySchema.parse(request.query);
 
         const exercise = await getExerciseById.execute({ exerciseId: id, userId });

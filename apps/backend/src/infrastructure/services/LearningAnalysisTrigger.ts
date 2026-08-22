@@ -3,13 +3,9 @@
  * 一定条件で学習分析を実行する
  */
 
-import crypto from 'node:crypto';
 import { prisma } from '../../lib/prisma.js';
+import { hashUserId } from '../../lib/hashUserId.js';
 import { analyzeLearningProgress } from '../llm/learning-analyzer.js';
-
-function hashUserId(userId: string): string {
-  return crypto.createHash('sha256').update(userId).digest('hex').slice(0, 12);
-}
 
 // 分析トリガー条件: N回提出ごと
 const ANALYSIS_TRIGGER_INTERVAL = 3;

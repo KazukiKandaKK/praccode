@@ -54,13 +54,32 @@ describe('exerciseController', () => {
       mockGetExerciseByIdUseCase.execute.mockResolvedValue({} as any);
       const response = await app.inject({
         method: 'GET',
-        url: '/123?userId=d2d3b878-348c-4f70-9a57-7988351f5c69',
+        url: '/d2d3b878-348c-4f70-9a57-7988351f5c6a?userId=d2d3b878-348c-4f70-9a57-7988351f5c69',
       });
       expect(response.statusCode).toBe(200);
       expect(mockGetExerciseByIdUseCase.execute).toHaveBeenCalledWith({
-        exerciseId: '123',
+        exerciseId: 'd2d3b878-348c-4f70-9a57-7988351f5c6a',
         userId: 'd2d3b878-348c-4f70-9a57-7988351f5c69',
       });
+    });
+
+    it('should return 400 for invalid id', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/not-a-uuid?userId=d2d3b878-348c-4f70-9a57-7988351f5c69',
+      });
+
+      expect(response.statusCode).toBe(400);
+      expect(mockGetExerciseByIdUseCase.execute).not.toHaveBeenCalled();
+    });
+
+    it('should return 400 for invalid userId', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/d2d3b878-348c-4f70-9a57-7988351f5c6a?userId=bad-id',
+      });
+
+      expect(response.statusCode).toBe(400);
     });
   });
 });
