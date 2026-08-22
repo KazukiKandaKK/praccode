@@ -1,15 +1,13 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import type {
   IMentorWorkflowRepository,
   MentorWorkflowState,
   MentorWorkflowStep,
 } from '@/domain/ports/IMentorWorkflowRepository';
 
-const client = new PrismaClient();
-
 export class PrismaMentorWorkflowRepository implements IMentorWorkflowRepository {
   async getByUser(userId: string): Promise<MentorWorkflowState | null> {
-    const row = await client.mentorWorkflowState.findUnique({
+    const row = await prisma.mentorWorkflowState.findUnique({
       where: { userId },
     });
 
@@ -25,7 +23,7 @@ export class PrismaMentorWorkflowRepository implements IMentorWorkflowRepository
   }
 
   async upsertStep(userId: string, step: MentorWorkflowStep): Promise<MentorWorkflowState> {
-    const row = await client.mentorWorkflowState.upsert({
+    const row = await prisma.mentorWorkflowState.upsert({
       where: { userId },
       create: {
         userId,

@@ -1,15 +1,13 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import type {
   IMentorSprintRepository,
   MentorSprint,
   MentorSprintStatus,
 } from '@/domain/ports/IMentorSprintRepository';
 
-const client = new PrismaClient();
-
 export class PrismaMentorSprintRepository implements IMentorSprintRepository {
   async getCurrent(userId: string): Promise<MentorSprint | null> {
-    const row = await client.mentorSprint.findFirst({
+    const row = await prisma.mentorSprint.findFirst({
       where: { userId, status: 'ACTIVE' },
       orderBy: { startDate: 'desc' },
     });
@@ -38,7 +36,7 @@ export class PrismaMentorSprintRepository implements IMentorSprintRepository {
     startDate: Date;
     endDate: Date;
   }): Promise<MentorSprint> {
-    const result = await client.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       await tx.mentorSprint.updateMany({
         where: { userId: params.userId, status: 'ACTIVE' },
         data: { status: 'COMPLETED' },
