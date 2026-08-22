@@ -24,7 +24,7 @@
     "@prisma/client": "^5.22.0",
     "bcryptjs": "^2.4.3",
     "fastify": "^4.28.1",
-    "openai": "^4.72.0",
+    "openai": "^7.5.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
