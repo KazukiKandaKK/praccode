@@ -11,6 +11,6 @@
     "test:coverage": "pnpm -r test:coverage"
   },
   "devDependencies": {
-    "prettier": "^3.7.4"
+    "prettier": "^3.9.6"
   }
 }
