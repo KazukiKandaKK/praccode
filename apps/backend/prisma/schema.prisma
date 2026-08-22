@@ -285,6 +285,9 @@ model Submission {
   evaluationMetrics EvaluationMetric[]
   mentorThreads MentorThread[]
 
+  @@index([userId])
+  @@index([exerciseId])
+  @@index([userId, status])
   @@map("submissions")
 }
 
@@ -388,6 +391,8 @@ model WritingSubmission {
   user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   evaluationMetrics EvaluationMetric[]
 
+  @@index([userId])
+  @@index([challengeId])
   @@map("writing_submissions")
 }
 
