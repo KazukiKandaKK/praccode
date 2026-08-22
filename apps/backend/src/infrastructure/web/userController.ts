@@ -90,10 +90,10 @@ export function userController(fastify: FastifyInstance, deps: UserControllerDep
 
   // POST /users/me/email-change/request - メール変更リクエスト
   fastify.post('/me/email-change/request', async (request, reply) => {
-    const body = requestEmailChangeSchema.parse(request.body);
-    const origin = process.env.APP_ORIGIN || process.env.CORS_ORIGIN || 'http://localhost:3000';
-
     try {
+      const body = requestEmailChangeSchema.parse(request.body);
+      const origin = process.env.APP_ORIGIN || process.env.CORS_ORIGIN || 'http://localhost:3000';
+
       const result = await deps.requestEmailChange.execute({
         userId: body.userId,
         newEmail: body.newEmail,
@@ -102,6 +102,9 @@ export function userController(fastify: FastifyInstance, deps: UserControllerDep
 
       return reply.status(202).send(result);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send({ error: 'Invalid input', issues: error.issues });
+      }
       if (error instanceof ApplicationError) {
         return reply.status(error.statusCode).send({ error: error.message });
       }
@@ -111,10 +114,10 @@ export function userController(fastify: FastifyInstance, deps: UserControllerDep
 
   // POST /users/me/email-change/confirm - メール変更確定
   fastify.post('/me/email-change/confirm', async (request, reply) => {
-    const body = confirmEmailChangeSchema.parse(request.body);
-    const tokenHash = sha256Hex(body.token);
-
     try {
+      const body = confirmEmailChangeSchema.parse(request.body);
+      const tokenHash = sha256Hex(body.token);
+
       const result = await deps.confirmEmailChange.execute({
         userId: body.userId,
         tokenHash,
@@ -122,6 +125,9 @@ export function userController(fastify: FastifyInstance, deps: UserControllerDep
 
       return reply.send(result);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send({ error: 'Invalid input', issues: error.issues });
+      }
       if (error instanceof ApplicationError) {
         return reply.status(error.statusCode).send({ error: error.message });
       }
@@ -131,9 +137,9 @@ export function userController(fastify: FastifyInstance, deps: UserControllerDep
 
   // POST /users/me/password - パスワード変更（現パス必須）
   fastify.post('/me/password', async (request, reply) => {
-    const body = changePasswordSchema.parse(request.body);
-
     try {
+      const body = changePasswordSchema.parse(request.body);
+
       const result = await deps.changePassword.execute({
         userId: body.userId,
         currentPassword: body.currentPassword,
@@ -142,6 +148,9 @@ export function userController(fastify: FastifyInstance, deps: UserControllerDep
 
       return reply.send(result);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send({ error: 'Invalid input', issues: error.issues });
+      }
       if (error instanceof ApplicationError) {
         return reply.status(error.statusCode).send({ error: error.message });
       }

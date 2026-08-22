@@ -25,6 +25,10 @@ const submissionListQuerySchema = z.object({
   limit: z.coerce.number().min(1).max(50).default(20),
 });
 
+const idParamsSchema = z.object({
+  id: z.string().uuid(),
+});
+
 export interface SubmissionControllerDeps {
   listSubmissions: ListSubmissionsUseCase;
   getSubmission: GetSubmissionUseCase;
@@ -36,18 +40,28 @@ export interface SubmissionControllerDeps {
 export function submissionController(fastify: FastifyInstance, deps: SubmissionControllerDeps) {
   // GET /submissions - ユーザーのサブミッション一覧
   fastify.get('/', async (request, reply) => {
-    const query = submissionListQuerySchema.parse(request.query);
-    const result = await deps.listSubmissions.execute(query);
-    return reply.send(result);
+    try {
+      const query = submissionListQuerySchema.parse(request.query);
+      const result = await deps.listSubmissions.execute(query);
+      return reply.send(result);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send({ error: 'Invalid input', issues: error.issues });
+      }
+      throw error;
+    }
   });
 
   // GET /submissions/:id - サブミッション詳細取得
   fastify.get('/:id', async (request, reply) => {
-    const { id } = request.params as { id: string };
     try {
+      const { id } = idParamsSchema.parse(request.params);
       const submission = await deps.getSubmission.execute(id);
       return reply.send(submission);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send({ error: 'Invalid input', issues: error.issues });
+      }
       if (error instanceof ApplicationError) {
         return reply.status(error.statusCode).send({ error: error.message });
       }
@@ -57,9 +71,8 @@ export function submissionController(fastify: FastifyInstance, deps: SubmissionC
 
   // PUT /submissions/:id/answers - 回答保存
   fastify.put('/:id/answers', async (request, reply) => {
-    const { id } = request.params as { id: string };
-
     try {
+      const { id } = idParamsSchema.parse(request.params);
       const body = answerInputSchema.parse(request.body);
       body.answers.forEach((answer, index) => {
         PromptSanitizer.sanitize(answer.answerText, `answers[${index}].answerText`);
@@ -91,8 +104,8 @@ export function submissionController(fastify: FastifyInstance, deps: SubmissionC
 
   // POST /submissions/:id/evaluate - LLM評価実行（非同期）
   fastify.post('/:id/evaluate', async (request, reply) => {
-    const { id } = request.params as { id: string };
     try {
+      const { id } = idParamsSchema.parse(request.params);
       const result = await deps.evaluateSubmission.execute(id);
       return reply.status(202).send(result);
     } catch (error) {
@@ -105,9 +118,8 @@ export function submissionController(fastify: FastifyInstance, deps: SubmissionC
 
   // GET /submissions/:id/events - SSEストリーム（評価完了通知）
   fastify.get('/:id/events', async (request, reply) => {
-    const { id } = request.params as { id: string };
-
     try {
+      const { id } = idParamsSchema.parse(request.params);
       const submission = await deps.getSubmission.execute(id);
 
       // 既に評価済みの場合は即座にイベントを送信して終了

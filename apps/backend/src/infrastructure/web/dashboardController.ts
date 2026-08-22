@@ -6,6 +6,7 @@ import { GetLearningAnalysisUseCase } from '../../application/usecases/dashboard
 import { GenerateRecommendationUseCase } from '../../application/usecases/dashboard/GenerateRecommendationUseCase.js';
 import { PromptSanitizer } from '../llm/prompt-sanitizer.js';
 import { PromptInjectionError } from '../llm/prompt-injection-error.js';
+import { ApplicationError } from '../../application/errors/ApplicationError.js';
 
 const statsQuerySchema = z.object({
   userId: z.string().uuid(),
@@ -30,21 +31,51 @@ export interface DashboardControllerDeps {
 
 export const dashboardController = (fastify: FastifyInstance, deps: DashboardControllerDeps) => {
   fastify.get('/dashboard/stats', async (request, reply) => {
-    const { userId } = statsQuerySchema.parse(request.query);
-    const result = await deps.getStats.execute(userId);
-    return reply.send(result);
+    try {
+      const { userId } = statsQuerySchema.parse(request.query);
+      const result = await deps.getStats.execute(userId);
+      return reply.send(result);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send({ error: 'Invalid input', issues: error.issues });
+      }
+      if (error instanceof ApplicationError) {
+        return reply.status(error.statusCode).send({ error: error.message });
+      }
+      throw error;
+    }
   });
 
   fastify.get('/dashboard/activity', async (request, reply) => {
-    const { userId } = statsQuerySchema.parse(request.query);
-    const result = await deps.getActivity.execute(userId);
-    return reply.send(result);
+    try {
+      const { userId } = statsQuerySchema.parse(request.query);
+      const result = await deps.getActivity.execute(userId);
+      return reply.send(result);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send({ error: 'Invalid input', issues: error.issues });
+      }
+      if (error instanceof ApplicationError) {
+        return reply.status(error.statusCode).send({ error: error.message });
+      }
+      throw error;
+    }
   });
 
   fastify.get('/dashboard/analysis', async (request, reply) => {
-    const { userId } = statsQuerySchema.parse(request.query);
-    const result = await deps.getLearningAnalysis.execute({ userId, force: false });
-    return reply.send(result);
+    try {
+      const { userId } = statsQuerySchema.parse(request.query);
+      const result = await deps.getLearningAnalysis.execute({ userId, force: false });
+      return reply.send(result);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send({ error: 'Invalid input', issues: error.issues });
+      }
+      if (error instanceof ApplicationError) {
+        return reply.status(error.statusCode).send({ error: error.message });
+      }
+      throw error;
+    }
   });
 
   fastify.post('/dashboard/analyze', async (request, reply) => {

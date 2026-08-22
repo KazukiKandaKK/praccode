@@ -39,7 +39,7 @@ describe('writingRoutes', () => {
 
   describe('GET /writing/challenges', () => {
     it('正常系: ユーザーに割り当てられた課題一覧を返す', async () => {
-      const userId = 'user-123';
+      const userId = 'd2d3b878-348c-4f70-9a57-7988351f5c69';
       (deps.listChallenges.execute as MockFn).mockResolvedValue([{ id: 'challenge-1' }]);
 
       const response = await app.inject({
