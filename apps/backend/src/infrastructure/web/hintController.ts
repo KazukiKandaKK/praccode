@@ -5,8 +5,8 @@ import { ApplicationError } from '../../application/errors/ApplicationError';
 
 const hintRequestSchema = z.object({
   exerciseId: z.string().uuid(),
-  questionIndex: z.number(),
-  userId: z.string(),
+  questionIndex: z.number().int().nonnegative(),
+  userId: z.string().uuid(),
 });
 
 export function hintController(fastify: FastifyInstance, useCase: GenerateHintUseCase) {

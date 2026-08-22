@@ -54,11 +54,11 @@ describe('exerciseController', () => {
       mockGetExerciseByIdUseCase.execute.mockResolvedValue({} as any);
       const response = await app.inject({
         method: 'GET',
-        url: '/123?userId=d2d3b878-348c-4f70-9a57-7988351f5c69',
+        url: '/d2d3b878-348c-4f70-9a57-7988351f5c6a?userId=d2d3b878-348c-4f70-9a57-7988351f5c69',
       });
       expect(response.statusCode).toBe(200);
       expect(mockGetExerciseByIdUseCase.execute).toHaveBeenCalledWith({
-        exerciseId: '123',
+        exerciseId: 'd2d3b878-348c-4f70-9a57-7988351f5c6a',
         userId: 'd2d3b878-348c-4f70-9a57-7988351f5c69',
       });
     });

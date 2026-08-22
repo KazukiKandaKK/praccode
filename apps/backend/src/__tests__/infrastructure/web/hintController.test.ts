@@ -32,7 +32,7 @@ describe('hintController', () => {
       payload: {
         exerciseId: 'd2d3b878-348c-4f70-9a57-7988351f5c69',
         questionIndex: 0,
-        userId: 'user-123',
+        userId: 'a1b2c3d4-e5f6-7a89-b0c1-d2e3f4a5b6c7',
       },
     });
 
@@ -41,7 +41,7 @@ describe('hintController', () => {
     expect(mockGenerateHintUseCase.execute).toHaveBeenCalledWith({
       exerciseId: 'd2d3b878-348c-4f70-9a57-7988351f5c69',
       questionIndex: 0,
-      userId: 'user-123',
+      userId: 'a1b2c3d4-e5f6-7a89-b0c1-d2e3f4a5b6c7',
     });
   });
 
@@ -54,7 +54,7 @@ describe('hintController', () => {
       payload: {
         exerciseId: 'd2d3b878-348c-4f70-9a57-7988351f5c69',
         questionIndex: 0,
-        userId: 'user-123',
+        userId: 'a1b2c3d4-e5f6-7a89-b0c1-d2e3f4a5b6c7',
       },
     });
 
